@@ -46,10 +46,36 @@ function writeData(data) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-// Initialize data file
-if (!fs.existsSync(DATA_FILE)) {
-  writeData(getDefaultData());
+// Initialize data file with seed data if empty
+function initializeData() {
+  const SEED_FILE = './data/seed.json';
+  let data;
+  
+  if (fs.existsSync(DATA_FILE)) {
+    data = readData();
+  } else {
+    data = getDefaultData();
+  }
+  
+  // If database is empty and seed file exists, load seed data
+  if (data.briefings.length === 0 && fs.existsSync(SEED_FILE)) {
+    try {
+      const seedData = JSON.parse(fs.readFileSync(SEED_FILE, 'utf8'));
+      console.log(`[Seed] Loading ${seedData.briefings.length} briefings from seed file...`);
+      data = seedData;
+      writeData(data);
+      console.log('[Seed] Seed data loaded successfully');
+    } catch (e) {
+      console.error('[Seed] Error loading seed data:', e);
+    }
+  }
+  
+  if (!fs.existsSync(DATA_FILE)) {
+    writeData(data);
+  }
 }
+
+initializeData();
 
 // ============================================
 // BRIEFINGS API
