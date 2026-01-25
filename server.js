@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || './data/briefings.json';
+const EXPENSES_FILE = process.env.EXPENSES_FILE || './data/expenses.json';
 
 // Middleware
 app.use(cors());
@@ -76,6 +77,42 @@ function initializeData() {
 }
 
 initializeData();
+
+// ============================================
+// EXPENSES DATA FUNCTIONS
+// ============================================
+
+function getDefaultExpensesData() {
+  return {
+    expenses: [],
+    categories: ['Food', 'Transport', 'Shopping', 'Entertainment', 'Bills', 'Health', 'Other'],
+    nextId: 1
+  };
+}
+
+function readExpenses() {
+  try {
+    if (fs.existsSync(EXPENSES_FILE)) {
+      return JSON.parse(fs.readFileSync(EXPENSES_FILE, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Error reading expenses:', e);
+  }
+  return getDefaultExpensesData();
+}
+
+function writeExpenses(data) {
+  const dir = path.dirname(EXPENSES_FILE);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(EXPENSES_FILE, JSON.stringify(data, null, 2));
+}
+
+// Initialize expenses file
+if (!fs.existsSync(EXPENSES_FILE)) {
+  writeExpenses(getDefaultExpensesData());
+}
 
 // ============================================
 // BRIEFINGS API
@@ -518,6 +555,144 @@ app.get('/api/stats', (req, res) => {
   });
   
   res.json({ total, unread, starred, byType });
+});
+
+// ============================================
+// EXPENSES API
+// ============================================
+
+// Get all expenses with filters
+app.get('/api/expenses', (req, res) => {
+  const { month, year, category, limit = 100 } = req.query;
+  const data = readExpenses();
+  let results = data.expenses;
+
+  // Filter by month/year
+  if (month && year) {
+    results = results.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() + 1 === parseInt(month) && d.getFullYear() === parseInt(year);
+    });
+  } else if (year) {
+    results = results.filter(e => {
+      const d = new Date(e.date);
+      return d.getFullYear() === parseInt(year);
+    });
+  }
+
+  // Filter by category
+  if (category) {
+    results = results.filter(e => e.category.toLowerCase() === category.toLowerCase());
+  }
+
+  results = results
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, parseInt(limit));
+
+  res.json(results);
+});
+
+// Get expense summary for a month
+app.get('/api/expenses/summary', (req, res) => {
+  const now = new Date();
+  const month = parseInt(req.query.month) || now.getMonth() + 1;
+  const year = parseInt(req.query.year) || now.getFullYear();
+  
+  const data = readExpenses();
+  const monthExpenses = data.expenses.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() + 1 === month && d.getFullYear() === year;
+  });
+
+  const total = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+  
+  const byCategory = {};
+  monthExpenses.forEach(e => {
+    byCategory[e.category] = (byCategory[e.category] || 0) + e.amount;
+  });
+
+  const recentExpenses = monthExpenses
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 10);
+
+  res.json({
+    month,
+    year,
+    total: Math.round(total * 100) / 100,
+    count: monthExpenses.length,
+    byCategory,
+    recentExpenses
+  });
+});
+
+// Add new expense
+app.post('/api/expenses', (req, res) => {
+  const { amount, category, description, date } = req.body;
+  
+  if (!amount || !category) {
+    return res.status(400).json({ error: 'Missing required fields: amount, category' });
+  }
+
+  const data = readExpenses();
+  const newExpense = {
+    id: data.nextId++,
+    amount: parseFloat(amount),
+    category,
+    description: description || '',
+    date: date || new Date().toISOString(),
+    created_at: new Date().toISOString()
+  };
+  
+  data.expenses.push(newExpense);
+  
+  // Add category if new
+  if (!data.categories.includes(category)) {
+    data.categories.push(category);
+  }
+  
+  writeExpenses(data);
+
+  res.json({ id: newExpense.id, message: 'Expense added successfully', expense: newExpense });
+});
+
+// Update expense
+app.patch('/api/expenses/:id', (req, res) => {
+  const data = readExpenses();
+  const expense = data.expenses.find(e => e.id === parseInt(req.params.id));
+  
+  if (!expense) {
+    return res.status(404).json({ error: 'Expense not found' });
+  }
+  
+  const { amount, category, description, date } = req.body;
+  if (amount !== undefined) expense.amount = parseFloat(amount);
+  if (category) expense.category = category;
+  if (description !== undefined) expense.description = description;
+  if (date) expense.date = date;
+  
+  expense.updated_at = new Date().toISOString();
+  writeExpenses(data);
+  
+  res.json(expense);
+});
+
+// Delete expense
+app.delete('/api/expenses/:id', (req, res) => {
+  const data = readExpenses();
+  const index = data.expenses.findIndex(e => e.id === parseInt(req.params.id));
+  
+  if (index !== -1) {
+    data.expenses.splice(index, 1);
+    writeExpenses(data);
+  }
+  
+  res.json({ message: 'Expense deleted' });
+});
+
+// Get categories
+app.get('/api/expenses/categories', (req, res) => {
+  const data = readExpenses();
+  res.json(data.categories);
 });
 
 // ============================================
