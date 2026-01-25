@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lumen Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .briefing-content { white-space: pre-wrap; }
+    .type-badge { font-size: 0.7rem; }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
+      <div class="p-4 border-b border-gray-700">
+        <h1 class="text-xl font-bold flex items-center gap-2">
+          <span class="text-2xl">🔆</span> Lumen Dashboard
+        </h1>
+        <p class="text-gray-400 text-sm mt-1">Daily Briefings & Ideas</p>
+      </div>
+      
+      <nav class="flex-1 p-4 space-y-2">
+        <button onclick="filterBy(null)" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2 filter-btn active" data-filter="all">
+          📋 All Briefings
+        </button>
+        <button onclick="filterBy('morning-briefing')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2 filter-btn" data-filter="morning-briefing">
+          ☀️ Morning Briefings
+        </button>
+        <button onclick="filterBy('ai-opportunities')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2 filter-btn" data-filter="ai-opportunities">
+          💡 AI Opportunities
+        </button>
+        <button onclick="filterBy('traffic')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2 filter-btn" data-filter="traffic">
+          🚗 Traffic Updates
+        </button>
+        <button onclick="filterBy('email')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2 filter-btn" data-filter="email">
+          📧 Email Summaries
+        </button>
+        <button onclick="filterBy('evening-wrap')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2 filter-btn" data-filter="evening-wrap">
+          🌙 Evening Wraps
+        </button>
+        <div class="border-t border-gray-700 my-3"></div>
+        <button onclick="filterStarred()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2 filter-btn" data-filter="starred">
+          ⭐ Starred
+        </button>
+      </nav>
+
+      <!-- Stats -->
+      <div class="p-4 border-t border-gray-700">
+        <div id="stats" class="text-sm text-gray-400 space-y-1">
+          Loading stats...
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <header class="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
+        <div>
+          <h2 id="current-filter" class="text-lg font-semibold">All Briefings</h2>
+          <p id="briefing-count" class="text-sm text-gray-400">Loading...</p>
+        </div>
+        <button onclick="refreshBriefings()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium">
+          🔄 Refresh
+        </button>
+      </header>
+
+      <!-- Content Area -->
+      <div class="flex-1 flex overflow-hidden">
+        <!-- Briefing List -->
+        <div id="briefing-list" class="w-96 border-r border-gray-700 overflow-y-auto">
+          <div class="p-4 text-gray-400 text-center">Loading briefings...</div>
+        </div>
+
+        <!-- Briefing Detail -->
+        <div id="briefing-detail" class="flex-1 overflow-y-auto p-6">
+          <div class="flex items-center justify-center h-full text-gray-500">
+            <div class="text-center">
+              <div class="text-6xl mb-4">🔆</div>
+              <p>Select a briefing to view details</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let currentFilter = null;
+    let starredFilter = false;
+    let briefings = [];
+
+    const typeLabels = {
+      'morning-briefing': { label: 'Morning Briefing', emoji: '☀️', color: 'bg-yellow-600' },
+      'ai-opportunities': { label: 'AI Opportunities', emoji: '💡', color: 'bg-purple-600' },
+      'traffic': { label: 'Traffic', emoji: '🚗', color: 'bg-green-600' },
+      'email': { label: 'Email Summary', emoji: '📧', color: 'bg-blue-600' },
+      'evening-wrap': { label: 'Evening Wrap', emoji: '🌙', color: 'bg-indigo-600' },
+      'ai-radar': { label: 'AI Radar', emoji: '📡', color: 'bg-pink-600' }
+    };
+
+    async function fetchBriefings() {
+      const params = new URLSearchParams();
+      if (currentFilter) params.append('type', currentFilter);
+      if (starredFilter) params.append('starred', 'true');
+      params.append('limit', '100');
+
+      const res = await fetch(`/api/briefings?${params}`);
+      briefings = await res.json();
+      renderBriefingList();
+      updateCount();
+    }
+
+    async function fetchStats() {
+      const res = await fetch('/api/stats');
+      const stats = await res.json();
+      document.getElementById('stats').innerHTML = `
+        <div class="flex justify-between"><span>Total:</span><span>${stats.total}</span></div>
+        <div class="flex justify-between"><span>Unread:</span><span class="text-blue-400">${stats.unread}</span></div>
+        <div class="flex justify-between"><span>Starred:</span><span class="text-yellow-400">${stats.starred}</span></div>
+      `;
+    }
+
+    function renderBriefingList() {
+      const list = document.getElementById('briefing-list');
+      
+      if (briefings.length === 0) {
+        list.innerHTML = `
+          <div class="p-8 text-center text-gray-500">
+            <div class="text-4xl mb-2">📭</div>
+            <p>No briefings yet</p>
+            <p class="text-sm mt-2">Briefings will appear here as they're generated</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = briefings.map(b => {
+        const type = typeLabels[b.type] || { label: b.type, emoji: '📄', color: 'bg-gray-600' };
+        const date = new Date(b.created_at).toLocaleDateString('en-US', { 
+          month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' 
+        });
+        const unreadDot = !b.read ? '<span class="w-2 h-2 bg-blue-500 rounded-full"></span>' : '';
+        
+        return `
+          <div onclick="viewBriefing(${b.id})" 
+               class="p-4 border-b border-gray-700 hover:bg-gray-800 cursor-pointer ${!b.read ? 'bg-gray-800/50' : ''}">
+            <div class="flex items-center gap-2 mb-1">
+              ${unreadDot}
+              <span class="type-badge px-2 py-0.5 rounded ${type.color}">${type.emoji} ${type.label}</span>
+              ${b.starred ? '<span class="text-yellow-400">⭐</span>' : ''}
+            </div>
+            <h3 class="font-medium text-sm truncate">${b.title}</h3>
+            <p class="text-xs text-gray-500 mt-1">${date}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function viewBriefing(id) {
+      const res = await fetch(`/api/briefings/${id}`);
+      const b = await res.json();
+      const type = typeLabels[b.type] || { label: b.type, emoji: '📄', color: 'bg-gray-600' };
+      const date = new Date(b.created_at).toLocaleString();
+
+      document.getElementById('briefing-detail').innerHTML = `
+        <div class="max-w-4xl">
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-3 py-1 rounded-lg ${type.color} text-sm">${type.emoji} ${type.label}</span>
+            <div class="flex gap-2">
+              <button onclick="toggleStar(${b.id})" class="px-3 py-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
+                ${b.starred ? '⭐ Starred' : '☆ Star'}
+              </button>
+              <button onclick="deleteBriefing(${b.id})" class="px-3 py-1 rounded-lg bg-red-900 hover:bg-red-800 text-sm">
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+          <h1 class="text-2xl font-bold mb-2">${b.title}</h1>
+          <p class="text-gray-400 text-sm mb-6">${date}</p>
+          ${b.summary ? `<div class="bg-gray-800 rounded-lg p-4 mb-6"><strong>Summary:</strong> ${b.summary}</div>` : ''}
+          <div class="briefing-content text-gray-200 leading-relaxed bg-gray-800 rounded-lg p-6">${formatContent(b.content)}</div>
+        </div>
+      `;
+      
+      // Update list to show as read
+      fetchBriefings();
+      fetchStats();
+    }
+
+    function formatContent(content) {
+      // Basic formatting: convert URLs to links, preserve newlines
+      return content
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-blue-400 hover:underline">$1</a>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^(\d+[\.\)]) /gm, '<span class="text-blue-400 font-bold">$1 </span>');
+    }
+
+    async function toggleStar(id) {
+      await fetch(`/api/briefings/${id}/star`, { method: 'PATCH' });
+      viewBriefing(id);
+    }
+
+    async function deleteBriefing(id) {
+      if (!confirm('Delete this briefing?')) return;
+      await fetch(`/api/briefings/${id}`, { method: 'DELETE' });
+      document.getElementById('briefing-detail').innerHTML = `
+        <div class="flex items-center justify-center h-full text-gray-500">
+          <p>Briefing deleted</p>
+        </div>
+      `;
+      fetchBriefings();
+      fetchStats();
+    }
+
+    function filterBy(type) {
+      currentFilter = type;
+      starredFilter = false;
+      updateActiveFilter(type || 'all');
+      document.getElementById('current-filter').textContent = type ? typeLabels[type]?.label || type : 'All Briefings';
+      fetchBriefings();
+    }
+
+    function filterStarred() {
+      starredFilter = true;
+      currentFilter = null;
+      updateActiveFilter('starred');
+      document.getElementById('current-filter').textContent = 'Starred';
+      fetchBriefings();
+    }
+
+    function updateActiveFilter(filter) {
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('bg-gray-700');
+        if (btn.dataset.filter === filter) {
+          btn.classList.add('bg-gray-700');
+        }
+      });
+    }
+
+    function updateCount() {
+      document.getElementById('briefing-count').textContent = `${briefings.length} briefing${briefings.length !== 1 ? 's' : ''}`;
+    }
+
+    function refreshBriefings() {
+      fetchBriefings();
+      fetchStats();
+    }
+
+    // Initial load
+    fetchBriefings();
+    fetchStats();
+    
+    // Auto-refresh every 5 minutes
+    setInterval(refreshBriefings, 5 * 60 * 1000);
+  </script>
+</body>
+</html>
