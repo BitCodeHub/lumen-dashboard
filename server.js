@@ -627,7 +627,7 @@ app.get('/api/expenses/summary', (req, res) => {
 
 // Add new expense
 app.post('/api/expenses', (req, res) => {
-  const { amount, category, description, date } = req.body;
+  const { amount, category, description, vendor, date } = req.body;
   
   if (!amount || !category) {
     return res.status(400).json({ error: 'Missing required fields: amount, category' });
@@ -639,6 +639,7 @@ app.post('/api/expenses', (req, res) => {
     amount: parseFloat(amount),
     category,
     description: description || '',
+    vendor: vendor || null,
     date: date || new Date().toISOString(),
     created_at: new Date().toISOString()
   };
@@ -664,10 +665,11 @@ app.patch('/api/expenses/:id', (req, res) => {
     return res.status(404).json({ error: 'Expense not found' });
   }
   
-  const { amount, category, description, date } = req.body;
+  const { amount, category, description, vendor, date } = req.body;
   if (amount !== undefined) expense.amount = parseFloat(amount);
   if (category) expense.category = category;
   if (description !== undefined) expense.description = description;
+  if (vendor !== undefined) expense.vendor = vendor;
   if (date) expense.date = date;
   
   expense.updated_at = new Date().toISOString();
