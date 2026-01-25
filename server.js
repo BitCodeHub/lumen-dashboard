@@ -109,10 +109,36 @@ function writeExpenses(data) {
   fs.writeFileSync(EXPENSES_FILE, JSON.stringify(data, null, 2));
 }
 
-// Initialize expenses file
-if (!fs.existsSync(EXPENSES_FILE)) {
-  writeExpenses(getDefaultExpensesData());
+// Initialize expenses file with seed data if empty
+function initializeExpenses() {
+  const EXPENSES_SEED_FILE = './data/expenses-seed.json';
+  let data;
+  
+  if (fs.existsSync(EXPENSES_FILE)) {
+    data = readExpenses();
+  } else {
+    data = getDefaultExpensesData();
+  }
+  
+  // If expenses empty and seed file exists, load seed data
+  if (data.expenses.length === 0 && fs.existsSync(EXPENSES_SEED_FILE)) {
+    try {
+      const seedData = JSON.parse(fs.readFileSync(EXPENSES_SEED_FILE, 'utf8'));
+      console.log(`[Seed] Loading ${seedData.expenses.length} expenses from seed file...`);
+      data = seedData;
+      writeExpenses(data);
+      console.log('[Seed] Expense seed data loaded successfully');
+    } catch (e) {
+      console.error('[Seed] Error loading expense seed data:', e);
+    }
+  }
+  
+  if (!fs.existsSync(EXPENSES_FILE)) {
+    writeExpenses(data);
+  }
 }
+
+initializeExpenses();
 
 // ============================================
 // BRIEFINGS API
