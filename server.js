@@ -563,9 +563,16 @@ app.get('/api/stats', (req, res) => {
 
 // Get all expenses with filters
 app.get('/api/expenses', (req, res) => {
-  const { month, year, category, limit = 100 } = req.query;
+  let { month, year, category, limit = 100 } = req.query;
   const data = readExpenses();
   let results = data.expenses;
+
+  // Support YYYY-MM format for month param
+  if (month && month.includes('-')) {
+    const [y, m] = month.split('-').map(Number);
+    year = y;
+    month = m;
+  }
 
   // Filter by month/year
   if (month && year) {
@@ -595,8 +602,17 @@ app.get('/api/expenses', (req, res) => {
 // Get expense summary for a month
 app.get('/api/expenses/summary', (req, res) => {
   const now = new Date();
-  const month = parseInt(req.query.month) || now.getMonth() + 1;
-  const year = parseInt(req.query.year) || now.getFullYear();
+  let month, year;
+  
+  // Support both YYYY-MM format and separate month/year params
+  if (req.query.month && req.query.month.includes('-')) {
+    const [y, m] = req.query.month.split('-').map(Number);
+    year = y;
+    month = m;
+  } else {
+    month = parseInt(req.query.month) || now.getMonth() + 1;
+    year = parseInt(req.query.year) || now.getFullYear();
+  }
   
   const data = readExpenses();
   const monthExpenses = data.expenses.filter(e => {
