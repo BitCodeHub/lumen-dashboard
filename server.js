@@ -733,6 +733,102 @@ app.delete('/api/expenses/:id', (req, res) => {
   res.json({ message: 'Expense deleted' });
 });
 
+// Get all vendors (for autocomplete)
+app.get('/api/expenses/vendors', (req, res) => {
+  const data = readExpenses();
+  const vendors = {};
+  
+  data.expenses.forEach(e => {
+    if (e.vendor) {
+      if (!vendors[e.vendor]) {
+        vendors[e.vendor] = { name: e.vendor, count: 0, total: 0 };
+      }
+      vendors[e.vendor].count++;
+      vendors[e.vendor].total += e.amount;
+    }
+  });
+  
+  const vendorList = Object.values(vendors)
+    .sort((a, b) => b.total - a.total)
+    .map(v => ({
+      ...v,
+      total: Math.round(v.total * 100) / 100,
+      avg: Math.round((v.total / v.count) * 100) / 100
+    }));
+  
+  res.json(vendorList);
+});
+
+// Get vendor analytics
+app.get('/api/expenses/vendors/:name', (req, res) => {
+  const vendorName = decodeURIComponent(req.params.name);
+  const data = readExpenses();
+  
+  const vendorExpenses = data.expenses.filter(e => 
+    e.vendor && e.vendor.toLowerCase() === vendorName.toLowerCase()
+  );
+  
+  if (vendorExpenses.length === 0) {
+    return res.status(404).json({ error: 'Vendor not found' });
+  }
+  
+  const total = vendorExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const avg = total / vendorExpenses.length;
+  
+  // Group by month
+  const byMonth = {};
+  vendorExpenses.forEach(e => {
+    const month = e.date.slice(0, 7);
+    byMonth[month] = (byMonth[month] || 0) + e.amount;
+  });
+  
+  // Group by category
+  const byCategory = {};
+  vendorExpenses.forEach(e => {
+    byCategory[e.category] = (byCategory[e.category] || 0) + e.amount;
+  });
+  
+  res.json({
+    vendor: vendorName,
+    total: Math.round(total * 100) / 100,
+    count: vendorExpenses.length,
+    average: Math.round(avg * 100) / 100,
+    firstVisit: vendorExpenses.sort((a, b) => new Date(a.date) - new Date(b.date))[0].date,
+    lastVisit: vendorExpenses.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date,
+    byMonth,
+    byCategory,
+    transactions: vendorExpenses
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 20)
+  });
+});
+
+// Search vendors
+app.get('/api/expenses/vendors/search/:query', (req, res) => {
+  const query = decodeURIComponent(req.params.query).toLowerCase();
+  const data = readExpenses();
+  
+  const vendors = {};
+  data.expenses.forEach(e => {
+    if (e.vendor && e.vendor.toLowerCase().includes(query)) {
+      if (!vendors[e.vendor]) {
+        vendors[e.vendor] = { name: e.vendor, count: 0, total: 0 };
+      }
+      vendors[e.vendor].count++;
+      vendors[e.vendor].total += e.amount;
+    }
+  });
+  
+  const results = Object.values(vendors)
+    .sort((a, b) => b.total - a.total)
+    .map(v => ({
+      ...v,
+      total: Math.round(v.total * 100) / 100
+    }));
+  
+  res.json(results);
+});
+
 // Get categories
 app.get('/api/expenses/categories', (req, res) => {
   const data = readExpenses();

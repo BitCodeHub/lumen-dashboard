@@ -640,20 +640,166 @@
     // ============================================
     // EXPENSES API & RENDERING
     // ============================================
+    let allVendors = [];
+    
     async function loadExpenses() {
       try {
-        const [expensesRes, summaryRes] = await Promise.all([
+        const [expensesRes, summaryRes, vendorsRes] = await Promise.all([
           fetch(`/api/expenses?month=${selectedMonth}`),
-          fetch(`/api/expenses/summary?month=${selectedMonth}`)
+          fetch(`/api/expenses/summary?month=${selectedMonth}`),
+          fetch('/api/expenses/vendors')
         ]);
         
         expenses = await expensesRes.json();
         expenseSummary = await summaryRes.json();
+        allVendors = await vendorsRes.json();
         
         renderExpensesView();
+        renderTopVendors();
+        initVendorSearch();
       } catch (err) {
         console.error('Error loading expenses:', err);
       }
+    }
+    
+    function renderTopVendors() {
+      const container = document.getElementById('topVendors');
+      if (!container) return;
+      
+      if (allVendors.length === 0) {
+        container.innerHTML = '<p class="text-sm text-zinc-500">No vendors tracked yet</p>';
+        return;
+      }
+      
+      container.innerHTML = allVendors.slice(0, 5).map(v => `
+        <div class="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg cursor-pointer hover:bg-zinc-700/50 transition-colors" onclick="showVendorAnalytics('${v.name.replace(/'/g, "\\'")}')">
+          <div>
+            <p class="text-sm font-medium text-zinc-200">${v.name}</p>
+            <p class="text-xs text-zinc-500">${v.count} transaction${v.count > 1 ? 's' : ''}</p>
+          </div>
+          <p class="text-sm font-semibold text-indigo-400">$${v.total.toFixed(2)}</p>
+        </div>
+      `).join('');
+    }
+    
+    function initVendorSearch() {
+      const input = document.getElementById('vendorSearch');
+      const suggestions = document.getElementById('vendorSuggestions');
+      if (!input || !suggestions) return;
+      
+      input.addEventListener('input', async (e) => {
+        const query = e.target.value.trim();
+        if (query.length < 1) {
+          suggestions.classList.add('hidden');
+          return;
+        }
+        
+        const matches = allVendors.filter(v => 
+          v.name.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        if (matches.length > 0) {
+          suggestions.innerHTML = matches.slice(0, 8).map(v => `
+            <div class="px-4 py-3 hover:bg-zinc-700 cursor-pointer flex justify-between items-center" onclick="showVendorAnalytics('${v.name.replace(/'/g, "\\'")}')">
+              <span class="text-zinc-200">${v.name}</span>
+              <span class="text-sm text-zinc-400">$${v.total.toFixed(2)}</span>
+            </div>
+          `).join('');
+          suggestions.classList.remove('hidden');
+        } else {
+          suggestions.innerHTML = '<div class="px-4 py-3 text-zinc-500">No vendors found</div>';
+          suggestions.classList.remove('hidden');
+        }
+      });
+      
+      input.addEventListener('blur', () => {
+        setTimeout(() => suggestions.classList.add('hidden'), 200);
+      });
+      
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const query = e.target.value.trim();
+          if (query) showVendorAnalytics(query);
+        }
+      });
+    }
+    
+    async function showVendorAnalytics(vendorName) {
+      const container = document.getElementById('vendorAnalytics');
+      const vendorList = document.getElementById('vendorList');
+      const input = document.getElementById('vendorSearch');
+      const suggestions = document.getElementById('vendorSuggestions');
+      
+      if (input) input.value = vendorName;
+      if (suggestions) suggestions.classList.add('hidden');
+      
+      try {
+        const res = await fetch(`/api/expenses/vendors/${encodeURIComponent(vendorName)}`);
+        if (!res.ok) throw new Error('Vendor not found');
+        
+        const data = await res.json();
+        
+        container.innerHTML = `
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-lg font-semibold text-zinc-100">${data.vendor}</h4>
+              <button onclick="hideVendorAnalytics()" class="text-zinc-400 hover:text-zinc-200">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-3">
+              <div class="bg-zinc-900/50 rounded-lg p-3 text-center">
+                <p class="text-2xl font-bold text-indigo-400">$${data.total.toFixed(2)}</p>
+                <p class="text-xs text-zinc-500">Total Spent</p>
+              </div>
+              <div class="bg-zinc-900/50 rounded-lg p-3 text-center">
+                <p class="text-2xl font-bold text-emerald-400">${data.count}</p>
+                <p class="text-xs text-zinc-500">Visits</p>
+              </div>
+              <div class="bg-zinc-900/50 rounded-lg p-3 text-center">
+                <p class="text-2xl font-bold text-amber-400">$${data.average.toFixed(2)}</p>
+                <p class="text-xs text-zinc-500">Avg/Visit</p>
+              </div>
+            </div>
+            
+            <div class="text-xs text-zinc-500">
+              First visit: ${new Date(data.firstVisit).toLocaleDateString()} · 
+              Last visit: ${new Date(data.lastVisit).toLocaleDateString()}
+            </div>
+            
+            ${data.transactions.length > 0 ? `
+              <div class="border-t border-zinc-700 pt-3">
+                <p class="text-sm text-zinc-400 mb-2">Recent Transactions:</p>
+                <div class="space-y-2 max-h-40 overflow-y-auto">
+                  ${data.transactions.slice(0, 10).map(t => `
+                    <div class="flex justify-between text-sm">
+                      <span class="text-zinc-400">${new Date(t.date).toLocaleDateString()} - ${t.description || t.category}</span>
+                      <span class="text-zinc-200">$${t.amount.toFixed(2)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+        
+        container.classList.remove('hidden');
+        if (vendorList) vendorList.classList.add('hidden');
+      } catch (err) {
+        container.innerHTML = `<p class="text-red-400">Vendor "${vendorName}" not found</p>`;
+        container.classList.remove('hidden');
+      }
+    }
+    
+    function hideVendorAnalytics() {
+      const container = document.getElementById('vendorAnalytics');
+      const vendorList = document.getElementById('vendorList');
+      const input = document.getElementById('vendorSearch');
+      
+      if (container) container.classList.add('hidden');
+      if (vendorList) vendorList.classList.remove('hidden');
+      if (input) input.value = '';
     }
 
     function renderExpensesView() {
@@ -815,6 +961,27 @@
             </div>
           </div>
           
+          <!-- Vendor Search -->
+          <div class="expense-card rounded-2xl bg-zinc-800/50 border border-zinc-700/50 overflow-hidden mb-6">
+            <div class="p-5 border-b border-zinc-700/50">
+              <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">🔍 Vendor Analytics</h3>
+              <div class="relative">
+                <input type="text" id="vendorSearch" placeholder="Search vendor/store name..." 
+                  class="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-700 rounded-xl text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                <div id="vendorSuggestions" class="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-lg hidden max-h-60 overflow-y-auto"></div>
+              </div>
+            </div>
+            <div id="vendorAnalytics" class="p-5 hidden">
+              <!-- Vendor analytics will be inserted here -->
+            </div>
+            <div id="vendorList" class="p-5">
+              <p class="text-sm text-zinc-400 mb-3">Top Vendors:</p>
+              <div id="topVendors" class="space-y-2">
+                <!-- Top vendors will be listed here -->
+              </div>
+            </div>
+          </div>
+
           <!-- Recent Transactions -->
           <div class="expense-card rounded-2xl bg-zinc-800/50 border border-zinc-700/50 overflow-hidden">
             <div class="p-5 border-b border-zinc-700/50 flex items-center justify-between">
