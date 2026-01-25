@@ -38,14 +38,23 @@
     @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
     @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
     @keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+    @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    @keyframes countUp { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    @keyframes progressFill { from { width: 0%; } }
+    @keyframes bounce-soft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); } 50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.5); } }
     
     .animate-fade-in { animation: fadeIn 0.2s ease-out; }
     .animate-slide-in { animation: slideIn 0.2s ease-out; }
     .animate-slide-in-right { animation: slideInRight 0.25s ease-out; }
     .animate-slide-in-left { animation: slideInLeft 0.25s ease-out; }
+    .animate-slide-in-up { animation: slideInUp 0.3s ease-out; }
     .animate-pulse-subtle { animation: pulse-subtle 2s ease-in-out infinite; }
+    .animate-count-up { animation: countUp 0.4s ease-out; }
+    .animate-bounce-soft { animation: bounce-soft 2s ease-in-out infinite; }
+    .animate-glow { animation: glow 2s ease-in-out infinite; }
     .skeleton { background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
     
     .prose { line-height: 1.7; }
@@ -71,6 +80,26 @@
     .chart-bar { transition: height 0.3s ease; }
     
     .search-highlight { background: rgba(99, 102, 241, 0.3); padding: 1px 2px; border-radius: 2px; }
+    
+    /* Expense-specific styles */
+    .expense-card { transition: all 0.2s ease; }
+    .expense-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); }
+    .expense-card:active { transform: scale(0.98); }
+    
+    .category-icon { transition: all 0.2s ease; }
+    .category-icon:hover { transform: scale(1.1); }
+    
+    .progress-bar { transition: width 0.5s ease-out; animation: progressFill 0.8s ease-out; }
+    
+    .donut-segment { transition: all 0.3s ease; transform-origin: center; }
+    .donut-segment:hover { transform: scale(1.05); filter: brightness(1.2); }
+    
+    .expense-item { transition: all 0.2s ease; }
+    .expense-item:hover { background: rgba(39, 39, 42, 0.5); }
+    .expense-item:active { background: rgba(39, 39, 42, 0.7); }
+    
+    .trend-bar { transition: all 0.3s ease; }
+    .trend-bar:hover { filter: brightness(1.2); }
     
     /* Mobile sidebar overlay */
     .sidebar-overlay {
@@ -127,6 +156,26 @@
       .safe-top { padding-top: max(0.5rem, env(safe-area-inset-top)); }
       .safe-bottom { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
     }
+
+    /* Floating action button */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+      transition: all 0.2s ease;
+      z-index: 30;
+    }
+    .fab:hover { transform: scale(1.05); box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5); }
+    .fab:active { transform: scale(0.95); }
+    
+    @media (max-width: 768px) {
+      .fab { bottom: 20px; right: 20px; width: 52px; height: 52px; }
+    }
   </style>
 </head>
 <body class="text-zinc-300 min-h-screen antialiased">
@@ -174,37 +223,37 @@
             <span class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Briefings</span>
           </div>
           <div class="space-y-0.5" id="nav-filters">
-            <button onclick="filterBy(null); closeSidebarOnMobile();" class="nav-item active relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3" data-filter="all">
+            <button onclick="switchView('briefings'); filterBy(null); closeSidebarOnMobile();" class="nav-item active relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3" data-filter="all">
               <svg class="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" /></svg>
               <span>All</span>
               <span id="count-all" class="ml-auto text-xs text-zinc-500 tabular-nums">—</span>
             </button>
-            <button onclick="filterBy('morning-briefing'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="morning-briefing">
+            <button onclick="switchView('briefings'); filterBy('morning-briefing'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="morning-briefing">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
               <span>Morning</span>
               <span id="count-morning" class="ml-auto text-xs text-zinc-600 tabular-nums">—</span>
             </button>
-            <button onclick="filterBy('ai-opportunities'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="ai-opportunities">
+            <button onclick="switchView('briefings'); filterBy('ai-opportunities'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="ai-opportunities">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" /></svg>
               <span>AI Opportunities</span>
               <span id="count-ai" class="ml-auto text-xs text-zinc-600 tabular-nums">—</span>
             </button>
-            <button onclick="filterBy('ai-radar'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="ai-radar">
+            <button onclick="switchView('briefings'); filterBy('ai-radar'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="ai-radar">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.808-3.808-9.98 0-13.789m13.788 0c3.808 3.808 3.808 9.981 0 13.79M12 12h.008v.007H12V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
               <span>AI Radar</span>
               <span id="count-radar" class="ml-auto text-xs text-zinc-600 tabular-nums">—</span>
             </button>
-            <button onclick="filterBy('email'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="email">
+            <button onclick="switchView('briefings'); filterBy('email'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="email">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
               <span>Email</span>
               <span id="count-email" class="ml-auto text-xs text-zinc-600 tabular-nums">—</span>
             </button>
-            <button onclick="filterBy('traffic'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="traffic">
+            <button onclick="switchView('briefings'); filterBy('traffic'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="traffic">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25m0 0V4.5m0 0H9.75" /></svg>
               <span>Traffic</span>
               <span id="count-traffic" class="ml-auto text-xs text-zinc-600 tabular-nums">—</span>
             </button>
-            <button onclick="filterBy('evening-wrap'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="evening-wrap">
+            <button onclick="switchView('briefings'); filterBy('evening-wrap'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="evening-wrap">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
               <span>Evening</span>
               <span id="count-evening" class="ml-auto text-xs text-zinc-600 tabular-nums">—</span>
@@ -216,15 +265,27 @@
           <div class="px-3 py-2">
             <span class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Saved</span>
           </div>
-          <button onclick="filterStarred(); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="starred">
+          <button onclick="switchView('briefings'); filterStarred(); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="starred">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
             <span>Starred</span>
             <span id="count-starred" class="ml-auto text-xs text-zinc-600 tabular-nums">—</span>
           </button>
-          <button onclick="filterArchived(); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="archived">
+          <button onclick="switchView('briefings'); filterArchived(); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="archived">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
             <span>Archived</span>
             <span id="count-archived" class="ml-auto text-xs text-zinc-600 tabular-nums">—</span>
+          </button>
+        </div>
+        
+        <!-- Expenses Section -->
+        <div class="border-t border-zinc-800/50 pt-3 mb-4">
+          <div class="px-3 py-2">
+            <span class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Finance</span>
+          </div>
+          <button onclick="switchView('expenses'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="expenses">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
+            <span>Expenses</span>
+            <span id="count-expenses" class="ml-auto text-xs text-zinc-600 tabular-nums">💰</span>
           </button>
         </div>
         
@@ -281,8 +342,8 @@
         </div>
       </header>
 
-      <!-- Content Area -->
-      <div class="flex-1 flex overflow-hidden relative">
+      <!-- Briefings View -->
+      <div id="briefings-view" class="flex-1 flex overflow-hidden relative">
         <!-- Briefing List -->
         <div class="briefing-list-panel w-full md:w-80 border-r border-zinc-800/50 flex flex-col bg-surface-950/30 md:shrink-0">
           <div id="briefing-list" class="flex-1 overflow-y-auto">
@@ -302,6 +363,27 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Expenses View -->
+      <div id="expenses-view" class="flex-1 overflow-y-auto hidden">
+        <div id="expenses-content" class="p-4 md:p-6 max-w-6xl mx-auto">
+          <!-- Loading state -->
+          <div class="space-y-4">
+            <div class="h-32 rounded-2xl skeleton"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="h-64 rounded-2xl skeleton"></div>
+              <div class="h-64 rounded-2xl skeleton"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Floating Add Button -->
+        <button onclick="showAddExpenseModal()" class="fab flex items-center justify-center text-white">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </button>
       </div>
     </main>
   </div>
@@ -401,8 +483,63 @@
     </div>
   </template>
 
+  <!-- Add Expense Modal -->
+  <template id="add-expense-modal-template">
+    <div class="modal-backdrop fixed inset-0 flex items-center justify-center p-4" onclick="closeModal(event)">
+      <div class="modal rounded-2xl shadow-2xl w-full max-w-md animate-slide-in-up" onclick="event.stopPropagation()">
+        <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-zinc-100">Add Expense</h2>
+          </div>
+          <button onclick="closeModal()" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div class="p-5">
+          <!-- Amount Input -->
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-zinc-400 uppercase tracking-wide mb-2">Amount</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-semibold text-zinc-500">$</span>
+              <input type="number" id="expense-amount" placeholder="0.00" step="0.01" min="0"
+                     class="w-full h-16 pl-10 pr-4 text-3xl font-semibold bg-zinc-800/50 border border-zinc-700 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all">
+            </div>
+          </div>
+          
+          <!-- Category Selection -->
+          <div class="mb-5">
+            <label class="block text-xs font-medium text-zinc-400 uppercase tracking-wide mb-3">Category</label>
+            <div class="grid grid-cols-3 gap-2" id="category-grid">
+              <!-- Categories will be inserted here -->
+            </div>
+          </div>
+          
+          <!-- Description -->
+          <div class="mb-6">
+            <label class="block text-xs font-medium text-zinc-400 uppercase tracking-wide mb-2">Description (optional)</label>
+            <input type="text" id="expense-description" placeholder="What was this for?"
+                   class="w-full h-12 px-4 text-sm bg-zinc-800/50 border border-zinc-700 rounded-xl text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all">
+          </div>
+          
+          <!-- Submit Button -->
+          <button onclick="submitExpense()" class="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/25">
+            Add Expense
+          </button>
+        </div>
+      </div>
+    </div>
+  </template>
+
   <script>
-    // State
+    // ============================================
+    // STATE
+    // ============================================
+    let currentView = 'briefings';
     let currentFilter = null;
     let starredFilter = false;
     let archivedFilter = false;
@@ -412,6 +549,25 @@
     let selectedId = null;
     let selectedIndex = -1;
     let isMobile = window.innerWidth < 768;
+    
+    // Expense state
+    let expenses = [];
+    let expenseSummary = {};
+    let selectedMonth = new Date().toISOString().slice(0, 7);
+    let selectedExpenseCategory = 'Food';
+
+    // Category configuration
+    const categoryConfig = {
+      'Food': { icon: '🍔', color: 'bg-orange-500', bgColor: 'bg-orange-500/20', textColor: 'text-orange-400', borderColor: 'border-orange-500/30' },
+      'Transport': { icon: '🚗', color: 'bg-blue-500', bgColor: 'bg-blue-500/20', textColor: 'text-blue-400', borderColor: 'border-blue-500/30' },
+      'Shopping': { icon: '🛍️', color: 'bg-pink-500', bgColor: 'bg-pink-500/20', textColor: 'text-pink-400', borderColor: 'border-pink-500/30' },
+      'Entertainment': { icon: '🎬', color: 'bg-purple-500', bgColor: 'bg-purple-500/20', textColor: 'text-purple-400', borderColor: 'border-purple-500/30' },
+      'Bills': { icon: '📄', color: 'bg-red-500', bgColor: 'bg-red-500/20', textColor: 'text-red-400', borderColor: 'border-red-500/30' },
+      'Health': { icon: '💊', color: 'bg-green-500', bgColor: 'bg-green-500/20', textColor: 'text-green-400', borderColor: 'border-green-500/30' },
+      'Gas': { icon: '⛽', color: 'bg-yellow-500', bgColor: 'bg-yellow-500/20', textColor: 'text-yellow-400', borderColor: 'border-yellow-500/30' },
+      'Groceries': { icon: '🛒', color: 'bg-teal-500', bgColor: 'bg-teal-500/20', textColor: 'text-teal-400', borderColor: 'border-teal-500/30' },
+      'Other': { icon: '📦', color: 'bg-zinc-500', bgColor: 'bg-zinc-500/20', textColor: 'text-zinc-400', borderColor: 'border-zinc-500/30' }
+    };
 
     const typeConfig = {
       'morning-briefing': { label: 'Morning', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
@@ -422,7 +578,30 @@
       'ai-radar': { label: 'AI Radar', color: 'bg-pink-500/20 text-pink-400 border-pink-500/30' }
     };
 
-    // Mobile Functions
+    // ============================================
+    // VIEW SWITCHING
+    // ============================================
+    function switchView(view) {
+      currentView = view;
+      const briefingsView = document.getElementById('briefings-view');
+      const expensesView = document.getElementById('expenses-view');
+      
+      if (view === 'expenses') {
+        briefingsView.classList.add('hidden');
+        expensesView.classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'Expenses';
+        document.getElementById('briefing-count').textContent = '';
+        updateActiveFilter('expenses');
+        loadExpenses();
+      } else {
+        briefingsView.classList.remove('hidden');
+        expensesView.classList.add('hidden');
+      }
+    }
+
+    // ============================================
+    // MOBILE FUNCTIONS
+    // ============================================
     function toggleSidebar() {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('sidebar-overlay');
@@ -449,7 +628,6 @@
       }
     }
 
-    // Update mobile state on resize
     window.addEventListener('resize', () => {
       isMobile = window.innerWidth < 768;
       if (!isMobile) {
@@ -459,7 +637,376 @@
       }
     });
 
-    // API Functions
+    // ============================================
+    // EXPENSES API & RENDERING
+    // ============================================
+    async function loadExpenses() {
+      try {
+        const [expensesRes, summaryRes] = await Promise.all([
+          fetch(`/api/expenses?month=${selectedMonth}`),
+          fetch(`/api/expenses/summary?month=${selectedMonth}`)
+        ]);
+        
+        expenses = await expensesRes.json();
+        expenseSummary = await summaryRes.json();
+        
+        renderExpensesView();
+      } catch (err) {
+        console.error('Error loading expenses:', err);
+      }
+    }
+
+    function renderExpensesView() {
+      const container = document.getElementById('expenses-content');
+      const budget = 3000; // Default monthly budget
+      const spent = expenseSummary.total || 0;
+      const remaining = budget - spent;
+      const progress = Math.min((spent / budget) * 100, 100);
+      const isOverBudget = spent > budget;
+      
+      // Calculate daily spending for trend chart
+      const dailySpending = {};
+      const today = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const key = date.toISOString().slice(0, 10);
+        dailySpending[key] = 0;
+      }
+      expenses.forEach(e => {
+        const date = e.created_at.slice(0, 10);
+        if (dailySpending[date] !== undefined) {
+          dailySpending[date] += e.amount;
+        }
+      });
+      const maxDaily = Math.max(...Object.values(dailySpending), 1);
+      
+      // Category breakdown
+      const categoryTotals = expenseSummary.byCategory || {};
+      const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+      
+      container.innerHTML = `
+        <div class="animate-fade-in space-y-6">
+          <!-- Month Selector & Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-zinc-100">Expense Tracker</h2>
+              <p class="text-sm text-zinc-500 mt-1">Track your spending habits</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <button onclick="changeMonth(-1)" class="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+              </button>
+              <div class="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-200 font-medium min-w-[140px] text-center">
+                ${formatMonthYear(selectedMonth)}
+              </div>
+              <button onclick="changeMonth(1)" class="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Summary Card -->
+          <div class="expense-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-zinc-700/50 p-6">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            <div class="relative">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div>
+                  <p class="text-sm text-zinc-400 mb-1">Total Spent</p>
+                  <div class="flex items-baseline gap-2">
+                    <span class="text-4xl md:text-5xl font-bold text-zinc-100 animate-count-up">$${spent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span class="text-lg text-zinc-500">/ $${budget.toLocaleString()}</span>
+                  </div>
+                  <p class="text-sm mt-2 ${isOverBudget ? 'text-red-400' : 'text-emerald-400'}">
+                    ${isOverBudget ? '⚠️ Over budget by $' + Math.abs(remaining).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '✓ $' + remaining.toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' remaining'}
+                  </p>
+                </div>
+                
+                <div class="flex-1 max-w-md">
+                  <!-- Progress Bar -->
+                  <div class="mb-3">
+                    <div class="flex justify-between text-xs text-zinc-500 mb-1">
+                      <span>Budget Progress</span>
+                      <span>${progress.toFixed(0)}%</span>
+                    </div>
+                    <div class="h-3 bg-zinc-700/50 rounded-full overflow-hidden">
+                      <div class="progress-bar h-full rounded-full ${isOverBudget ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-gradient-to-r from-emerald-500 to-teal-500'}" style="width: ${progress}%"></div>
+                    </div>
+                  </div>
+                  
+                  <!-- Quick Stats -->
+                  <div class="grid grid-cols-3 gap-3">
+                    <div class="text-center p-2 rounded-lg bg-zinc-800/50">
+                      <p class="text-lg font-semibold text-zinc-200">${expenses.length}</p>
+                      <p class="text-xs text-zinc-500">Transactions</p>
+                    </div>
+                    <div class="text-center p-2 rounded-lg bg-zinc-800/50">
+                      <p class="text-lg font-semibold text-zinc-200">$${expenses.length ? (spent / expenses.length).toFixed(0) : 0}</p>
+                      <p class="text-xs text-zinc-500">Avg/Transaction</p>
+                    </div>
+                    <div class="text-center p-2 rounded-lg bg-zinc-800/50">
+                      <p class="text-lg font-semibold text-zinc-200">${sortedCategories.length}</p>
+                      <p class="text-xs text-zinc-500">Categories</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Charts Row -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Category Breakdown -->
+            <div class="expense-card rounded-2xl bg-zinc-800/50 border border-zinc-700/50 p-5">
+              <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">Spending by Category</h3>
+              ${sortedCategories.length > 0 ? `
+                <div class="flex flex-col md:flex-row items-center gap-6">
+                  <!-- Donut Chart -->
+                  <div class="relative w-40 h-40 shrink-0">
+                    <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
+                      ${renderDonutChart(sortedCategories, spent)}
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                      <div class="text-center">
+                        <p class="text-2xl font-bold text-zinc-100">${sortedCategories.length}</p>
+                        <p class="text-xs text-zinc-500">Categories</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Legend -->
+                  <div class="flex-1 space-y-2 w-full">
+                    ${sortedCategories.map(([cat, amount]) => {
+                      const cfg = categoryConfig[cat] || categoryConfig['Other'];
+                      const pct = spent > 0 ? ((amount / spent) * 100).toFixed(1) : 0;
+                      return `
+                        <div class="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-700/30 transition-colors">
+                          <div class="flex items-center gap-3">
+                            <span class="text-xl">${cfg.icon}</span>
+                            <span class="text-sm text-zinc-300">${cat}</span>
+                          </div>
+                          <div class="text-right">
+                            <span class="text-sm font-medium text-zinc-200">$${amount.toFixed(2)}</span>
+                            <span class="text-xs text-zinc-500 ml-2">${pct}%</span>
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              ` : `
+                <div class="flex flex-col items-center justify-center py-12 text-center">
+                  <div class="text-4xl mb-3">📊</div>
+                  <p class="text-sm text-zinc-500">No expenses this month</p>
+                  <p class="text-xs text-zinc-600 mt-1">Add your first expense to see the breakdown</p>
+                </div>
+              `}
+            </div>
+            
+            <!-- Weekly Trend -->
+            <div class="expense-card rounded-2xl bg-zinc-800/50 border border-zinc-700/50 p-5">
+              <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">Last 7 Days</h3>
+              <div class="flex items-end justify-between gap-2 h-32">
+                ${Object.entries(dailySpending).map(([date, amount]) => {
+                  const height = maxDaily > 0 ? (amount / maxDaily) * 100 : 0;
+                  const dayName = new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
+                  const isToday = date === today.toISOString().slice(0, 10);
+                  return `
+                    <div class="flex-1 flex flex-col items-center gap-2">
+                      <div class="w-full flex items-end justify-center h-20">
+                        <div class="trend-bar w-full max-w-[32px] rounded-t-lg ${isToday ? 'bg-gradient-to-t from-indigo-600 to-indigo-400' : 'bg-gradient-to-t from-zinc-600 to-zinc-500'}" style="height: ${Math.max(height, 4)}%"></div>
+                      </div>
+                      <div class="text-center">
+                        <p class="text-xs font-medium ${isToday ? 'text-indigo-400' : 'text-zinc-400'}">${dayName}</p>
+                        <p class="text-[10px] text-zinc-500">$${amount.toFixed(0)}</p>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Recent Transactions -->
+          <div class="expense-card rounded-2xl bg-zinc-800/50 border border-zinc-700/50 overflow-hidden">
+            <div class="p-5 border-b border-zinc-700/50 flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wide">Recent Transactions</h3>
+              <span class="text-xs text-zinc-500">${expenses.length} total</span>
+            </div>
+            <div class="divide-y divide-zinc-700/30 max-h-[400px] overflow-y-auto">
+              ${expenses.length > 0 ? expenses.slice(0, 20).map(expense => {
+                const cfg = categoryConfig[expense.category] || categoryConfig['Other'];
+                const date = new Date(expense.created_at);
+                const timeStr = date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                return `
+                  <div class="expense-item flex items-center justify-between p-4 group">
+                    <div class="flex items-center gap-4">
+                      <div class="w-12 h-12 rounded-xl ${cfg.bgColor} ${cfg.borderColor} border flex items-center justify-center text-2xl category-icon">
+                        ${cfg.icon}
+                      </div>
+                      <div>
+                        <p class="text-sm font-medium text-zinc-200">${expense.description || expense.category}</p>
+                        <p class="text-xs text-zinc-500">${timeStr}</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="text-lg font-semibold ${cfg.textColor}">-$${expense.amount.toFixed(2)}</span>
+                      <button onclick="deleteExpense(${expense.id})" class="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('') : `
+                <div class="flex flex-col items-center justify-center py-16 text-center">
+                  <div class="w-16 h-16 rounded-2xl bg-zinc-700/30 flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" /></svg>
+                  </div>
+                  <p class="text-sm font-medium text-zinc-400 mb-1">No transactions yet</p>
+                  <p class="text-xs text-zinc-600">Tap the + button to add your first expense</p>
+                </div>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDonutChart(categories, total) {
+      if (categories.length === 0) return '';
+      
+      const colors = {
+        'Food': '#f97316',
+        'Transport': '#3b82f6',
+        'Shopping': '#ec4899',
+        'Entertainment': '#a855f7',
+        'Bills': '#ef4444',
+        'Health': '#22c55e',
+        'Gas': '#eab308',
+        'Groceries': '#14b8a6',
+        'Other': '#71717a'
+      };
+      
+      let offset = 0;
+      const radius = 15.915;
+      const circumference = 2 * Math.PI * radius;
+      
+      return categories.map(([cat, amount]) => {
+        const pct = total > 0 ? (amount / total) * 100 : 0;
+        const dashLength = (pct / 100) * circumference;
+        const color = colors[cat] || colors['Other'];
+        const segment = `
+          <circle
+            class="donut-segment"
+            cx="18" cy="18" r="${radius}"
+            fill="none"
+            stroke="${color}"
+            stroke-width="3"
+            stroke-dasharray="${dashLength} ${circumference - dashLength}"
+            stroke-dashoffset="${-offset}"
+            stroke-linecap="round"
+          />
+        `;
+        offset += dashLength;
+        return segment;
+      }).join('');
+    }
+
+    function formatMonthYear(monthStr) {
+      const [year, month] = monthStr.split('-');
+      const date = new Date(year, parseInt(month) - 1);
+      return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+
+    function changeMonth(delta) {
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const date = new Date(year, month - 1 + delta);
+      selectedMonth = date.toISOString().slice(0, 7);
+      loadExpenses();
+    }
+
+    function showAddExpenseModal() {
+      showModal('add-expense-modal-template');
+      selectedExpenseCategory = 'Food';
+      
+      // Render category grid
+      const grid = document.getElementById('category-grid');
+      grid.innerHTML = Object.entries(categoryConfig).map(([cat, cfg]) => `
+        <button onclick="selectCategory('${cat}')" 
+                class="category-btn flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${cat === selectedExpenseCategory ? cfg.bgColor + ' ' + cfg.borderColor : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600'}"
+                data-category="${cat}">
+          <span class="text-2xl mb-1">${cfg.icon}</span>
+          <span class="text-xs ${cat === selectedExpenseCategory ? cfg.textColor : 'text-zinc-400'}">${cat}</span>
+        </button>
+      `).join('');
+      
+      setTimeout(() => document.getElementById('expense-amount')?.focus(), 100);
+    }
+
+    function selectCategory(cat) {
+      selectedExpenseCategory = cat;
+      const cfg = categoryConfig[cat];
+      
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        const btnCat = btn.dataset.category;
+        const btnCfg = categoryConfig[btnCat];
+        if (btnCat === cat) {
+          btn.className = `category-btn flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${btnCfg.bgColor} ${btnCfg.borderColor}`;
+          btn.querySelector('span:last-child').className = `text-xs ${btnCfg.textColor}`;
+        } else {
+          btn.className = 'category-btn flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all bg-zinc-800/50 border-zinc-700 hover:border-zinc-600';
+          btn.querySelector('span:last-child').className = 'text-xs text-zinc-400';
+        }
+      });
+    }
+
+    async function submitExpense() {
+      const amount = parseFloat(document.getElementById('expense-amount').value);
+      const description = document.getElementById('expense-description').value.trim();
+      
+      if (!amount || amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/expenses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount,
+            category: selectedExpenseCategory,
+            description: description || null
+          })
+        });
+        
+        if (res.ok) {
+          closeModal();
+          loadExpenses();
+        } else {
+          const err = await res.json();
+          alert(err.error || 'Failed to add expense');
+        }
+      } catch (err) {
+        console.error('Error adding expense:', err);
+        alert('Failed to add expense');
+      }
+    }
+
+    async function deleteExpense(id) {
+      if (!confirm('Delete this expense?')) return;
+      
+      try {
+        await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+        loadExpenses();
+      } catch (err) {
+        console.error('Error deleting expense:', err);
+      }
+    }
+
+    // ============================================
+    // BRIEFINGS API
+    // ============================================
     async function fetchBriefings() {
       const params = new URLSearchParams();
       if (currentFilter) params.append('type', currentFilter);
@@ -669,6 +1216,7 @@
       currentFilter = type; starredFilter = false; archivedFilter = false; tagFilter = null;
       updateActiveFilter(type || 'all');
       document.getElementById('current-filter').textContent = type ? typeConfig[type]?.label || type : 'All Briefings';
+      document.getElementById('briefing-count').textContent = 'Loading...';
       selectedId = null; hideDetailPanel(); fetchBriefings();
     }
 
@@ -676,6 +1224,7 @@
       starredFilter = true; currentFilter = null; archivedFilter = false; tagFilter = null;
       updateActiveFilter('starred');
       document.getElementById('current-filter').textContent = 'Starred';
+      document.getElementById('briefing-count').textContent = 'Loading...';
       selectedId = null; hideDetailPanel(); fetchBriefings();
     }
 
@@ -683,6 +1232,7 @@
       archivedFilter = true; currentFilter = null; starredFilter = false; tagFilter = null;
       updateActiveFilter('archived');
       document.getElementById('current-filter').textContent = 'Archived';
+      document.getElementById('briefing-count').textContent = 'Loading...';
       selectedId = null; hideDetailPanel(); fetchBriefings();
     }
 
@@ -690,6 +1240,7 @@
       tagFilter = tag; currentFilter = null; starredFilter = false; archivedFilter = false;
       updateActiveFilter(null);
       document.getElementById('current-filter').textContent = `Tag: ${tag}`;
+      document.getElementById('briefing-count').textContent = 'Loading...';
       selectedId = null; hideDetailPanel(); fetchBriefings(); fetchTags();
     }
 
@@ -705,9 +1256,17 @@
       document.getElementById('briefing-count').textContent = `${briefings.length} briefing${briefings.length !== 1 ? 's' : ''}`;
     }
 
-    function refreshBriefings() { fetchBriefings(); fetchStats(); fetchTags(); }
+    function refreshBriefings() { 
+      if (currentView === 'expenses') {
+        loadExpenses();
+      } else {
+        fetchBriefings(); fetchStats(); fetchTags(); 
+      }
+    }
 
-    // Modals
+    // ============================================
+    // MODALS
+    // ============================================
     function showModal(templateId) {
       const template = document.getElementById(templateId);
       const container = document.getElementById('modal-container');
@@ -872,7 +1431,9 @@
       fetchTags();
     }
 
-    // Utilities
+    // ============================================
+    // UTILITIES
+    // ============================================
     function formatContent(content) {
       return escapeHtml(content)
         .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 break-all">$1</a>')
@@ -899,7 +1460,9 @@
       return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    // Keyboard Shortcuts (desktop only)
+    // ============================================
+    // KEYBOARD SHORTCUTS
+    // ============================================
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         if (e.key === 'Escape') e.target.blur();
@@ -945,7 +1508,9 @@
       }, 300);
     });
 
-    // Init
+    // ============================================
+    // INITIALIZATION
+    // ============================================
     fetchBriefings();
     fetchStats();
     fetchTags();
