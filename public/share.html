@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shared Briefing · Lumen</title>
+  <meta name="theme-color" content="#6366f1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', system-ui, sans-serif; }
+    body { background: #0c0c0e; }
+    .prose { line-height: 1.7; }
+    .prose p { margin-bottom: 1rem; }
+    .prose strong { color: #f4f4f5; font-weight: 600; }
+    .prose a { color: #818cf8; }
+    .badge { font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.025em; text-transform: uppercase; }
+  </style>
+</head>
+<body class="text-zinc-300 min-h-screen antialiased">
+  <div class="max-w-3xl mx-auto px-4 py-12">
+    <div id="content" class="animate-fade-in">
+      <div class="flex items-center justify-center py-24">
+        <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const typeConfig = {
+      'morning-briefing': { label: 'Morning Briefing', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+      'ai-opportunities': { label: 'AI Opportunity', color: 'bg-violet-500/20 text-violet-400 border-violet-500/30' },
+      'traffic': { label: 'Traffic', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+      'email': { label: 'Email Digest', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+      'evening-wrap': { label: 'Evening Wrap', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' },
+      'ai-radar': { label: 'AI Radar', color: 'bg-pink-500/20 text-pink-400 border-pink-500/30' }
+    };
+
+    async function loadBriefing() {
+      const token = window.location.pathname.split('/').pop();
+      
+      try {
+        const res = await fetch(`/api/share/${token}`);
+        if (!res.ok) throw new Error('Not found');
+        
+        const b = await res.json();
+        const type = typeConfig[b.type] || { label: b.type, color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' };
+        const date = new Date(b.created_at).toLocaleString('en-US', { 
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' 
+        });
+
+        document.title = `${b.title} · Lumen`;
+        document.getElementById('content').innerHTML = `
+          <div class="mb-8 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2 text-zinc-500 hover:text-zinc-300 transition-colors">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span class="text-sm font-medium">Lumen</span>
+            </a>
+            <span class="text-xs text-zinc-600">Shared briefing</span>
+          </div>
+          
+          <article class="bg-zinc-900/50 rounded-xl border border-zinc-800/50 p-8">
+            <div class="mb-6">
+              <span class="badge px-2.5 py-1 rounded border ${type.color} mb-4 inline-block">${type.label}</span>
+              <h1 class="text-2xl font-semibold text-zinc-100 mb-2">${escapeHtml(b.title)}</h1>
+              <p class="text-sm text-zinc-500">${date}</p>
+            </div>
+            
+            ${b.summary ? `
+            <div class="mb-6 p-4 rounded-lg bg-zinc-800/30 border border-zinc-700/50">
+              <div class="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-2">Summary</div>
+              <p class="text-sm text-zinc-300">${escapeHtml(b.summary)}</p>
+            </div>
+            ` : ''}
+            
+            <div class="prose text-zinc-300 text-sm">${formatContent(b.content)}</div>
+          </article>
+          
+          <div class="mt-8 text-center">
+            <p class="text-xs text-zinc-600">Powered by <a href="/" class="text-indigo-400 hover:text-indigo-300">Lumen Dashboard</a></p>
+          </div>
+        `;
+      } catch (e) {
+        document.getElementById('content').innerHTML = `
+          <div class="text-center py-24">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-800/50 flex items-center justify-center">
+              <svg class="w-8 h-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            </div>
+            <h1 class="text-lg font-medium text-zinc-300 mb-2">Briefing not found</h1>
+            <p class="text-sm text-zinc-500">This share link may have expired or been revoked.</p>
+            <a href="/" class="inline-block mt-4 text-sm text-indigo-400 hover:text-indigo-300">Go to Dashboard →</a>
+          </div>
+        `;
+      }
+    }
+
+    function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
+
+    function formatContent(content) {
+      return escapeHtml(content)
+        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300">$1</a>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '</p><p class="mb-4">')
+        .replace(/\n/g, '<br>');
+    }
+
+    loadBriefing();
+  </script>
+</body>
+</html>
