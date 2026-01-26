@@ -638,7 +638,12 @@ app.get('/api/expenses', async (req, res) => {
     params.push(parseInt(limit));
 
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    // Convert amount from string to number (PostgreSQL returns DECIMAL as string)
+    const expenses = result.rows.map(e => ({
+      ...e,
+      amount: parseFloat(e.amount)
+    }));
+    res.json(expenses);
   } catch (err) {
     console.error('Error getting expenses:', err);
     res.status(500).json({ error: 'Database error' });
@@ -690,7 +695,7 @@ app.get('/api/expenses/summary', async (req, res) => {
         acc[r.category] = Math.round(parseFloat(r.total) * 100) / 100; 
         return acc; 
       }, {}),
-      recentExpenses: recent.rows
+      recentExpenses: recent.rows.map(e => ({ ...e, amount: parseFloat(e.amount) }))
     });
   } catch (err) {
     console.error('Error getting expense summary:', err);
@@ -718,7 +723,8 @@ app.post('/api/expenses', async (req, res) => {
       [category]
     );
 
-    res.json({ id: result.rows[0].id, message: 'Expense added successfully', expense: result.rows[0] });
+    const expense = { ...result.rows[0], amount: parseFloat(result.rows[0].amount) };
+    res.json({ id: expense.id, message: 'Expense added successfully', expense });
   } catch (err) {
     console.error('Error adding expense:', err);
     res.status(500).json({ error: 'Database error' });
