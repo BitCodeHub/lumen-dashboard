@@ -898,6 +898,20 @@ app.get('/api/excel', (req, res) => {
   res.json(results);
 });
 
+// Get excel stats (MUST be before /:id routes)
+app.get('/api/excel/stats', (req, res) => {
+  const data = readExcelData();
+  const files = data.files;
+  
+  const total = files.length;
+  const pending = files.filter(f => f.status === 'pending').length;
+  const processing = files.filter(f => f.status === 'processing').length;
+  const completed = files.filter(f => f.status === 'completed').length;
+  const error = files.filter(f => f.status === 'error').length;
+  
+  res.json({ total, pending, processing, completed, error });
+});
+
 // Get single excel file metadata
 app.get('/api/excel/:id', (req, res) => {
   const data = readExcelData();
@@ -1097,20 +1111,6 @@ app.delete('/api/excel/:id', (req, res) => {
   writeExcelData(data);
   
   res.json({ message: 'File deleted successfully' });
-});
-
-// Get excel stats
-app.get('/api/excel/stats', (req, res) => {
-  const data = readExcelData();
-  const files = data.files;
-  
-  const total = files.length;
-  const pending = files.filter(f => f.status === 'pending').length;
-  const processing = files.filter(f => f.status === 'processing').length;
-  const completed = files.filter(f => f.status === 'completed').length;
-  const error = files.filter(f => f.status === 'error').length;
-  
-  res.json({ total, pending, processing, completed, error });
 });
 
 // ============================================
