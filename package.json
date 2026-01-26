@@ -9,11 +9,16 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "keywords": ["briefing", "dashboard", "ai"],
+  "keywords": [
+    "briefing",
+    "dashboard",
+    "ai"
+  ],
   "author": "Lumen",
   "license": "MIT",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "pg": "^8.17.2"
   }
 }

@@ -3,13 +3,19 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = process.env.DATA_FILE || './data/briefings.json';
-const EXPENSES_FILE = process.env.EXPENSES_FILE || './data/expenses.json';
-const EXCEL_FILE = process.env.EXCEL_FILE || './data/excel-files.json';
+
+// Excel file storage (still uses filesystem for actual files)
 const EXCEL_UPLOAD_DIR = process.env.EXCEL_UPLOAD_DIR || './data/excel-files';
+
+// PostgreSQL connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
 
 // Middleware
 app.use(cors());
@@ -18,478 +24,452 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static('public'));
 app.use('/excel-files', express.static(EXCEL_UPLOAD_DIR));
 
-// Data structure
-function getDefaultData() {
-  return {
-    briefings: [],
-    tags: [],
-    shares: {},
-    nextId: 1
-  };
-}
+// ============================================
+// DATABASE INITIALIZATION
+// ============================================
 
-function readData() {
+async function initDatabase() {
+  const client = await pool.connect();
   try {
-    if (fs.existsSync(DATA_FILE)) {
-      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-      // Migrate old data structure
-      if (!data.tags) data.tags = [];
-      if (!data.shares) data.shares = {};
-      return data;
+    // Create briefings table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_briefings (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(100) NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        summary TEXT,
+        tags TEXT[] DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP,
+        read BOOLEAN DEFAULT FALSE,
+        read_at TIMESTAMP,
+        starred BOOLEAN DEFAULT FALSE,
+        archived BOOLEAN DEFAULT FALSE,
+        archived_at TIMESTAMP
+      )
+    `);
+
+    // Create shares table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_shares (
+        id SERIAL PRIMARY KEY,
+        briefing_id INTEGER REFERENCES lumen_briefings(id) ON DELETE CASCADE,
+        token VARCHAR(64) UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        views INTEGER DEFAULT 0
+      )
+    `);
+
+    // Create expenses table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_expenses (
+        id SERIAL PRIMARY KEY,
+        amount DECIMAL(10,2) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        description TEXT,
+        vendor VARCHAR(255),
+        date TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP
+      )
+    `);
+
+    // Create categories table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_categories (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) UNIQUE NOT NULL
+      )
+    `);
+
+    // Insert default categories
+    const defaultCategories = ['Food', 'Transport', 'Shopping', 'Entertainment', 'Bills', 'Health', 'Gas', 'Groceries', 'Other'];
+    for (const cat of defaultCategories) {
+      await client.query(
+        'INSERT INTO lumen_categories (name) VALUES ($1) ON CONFLICT (name) DO NOTHING',
+        [cat]
+      );
     }
-  } catch (e) {
-    console.error('Error reading data:', e);
-  }
-  return getDefaultData();
-}
 
-function writeData(data) {
-  const dir = path.dirname(DATA_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
+    // Create excel files table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_excel_files (
+        id SERIAL PRIMARY KEY,
+        original_filename VARCHAR(255) NOT NULL,
+        stored_filename VARCHAR(255) NOT NULL,
+        processed_filename VARCHAR(255),
+        size INTEGER,
+        instructions TEXT,
+        status VARCHAR(50) DEFAULT 'pending',
+        status_message TEXT DEFAULT 'Awaiting processing',
+        preview_data JSONB,
+        created_at TIMESTAMP DEFAULT NOW(),
+        processed_at TIMESTAMP,
+        updated_at TIMESTAMP,
+        error TEXT
+      )
+    `);
 
-// Initialize data file with seed data if empty
-function initializeData() {
-  const SEED_FILE = './data/seed.json';
-  let data;
-  
-  if (fs.existsSync(DATA_FILE)) {
-    data = readData();
-  } else {
-    data = getDefaultData();
-  }
-  
-  // If database is empty and seed file exists, load seed data
-  if (data.briefings.length === 0 && fs.existsSync(SEED_FILE)) {
-    try {
-      const seedData = JSON.parse(fs.readFileSync(SEED_FILE, 'utf8'));
-      console.log(`[Seed] Loading ${seedData.briefings.length} briefings from seed file...`);
-      data = seedData;
-      writeData(data);
-      console.log('[Seed] Seed data loaded successfully');
-    } catch (e) {
-      console.error('[Seed] Error loading seed data:', e);
-    }
-  }
-  
-  if (!fs.existsSync(DATA_FILE)) {
-    writeData(data);
+    console.log('[DB] PostgreSQL tables initialized');
+  } finally {
+    client.release();
   }
 }
 
-initializeData();
-
-// ============================================
-// EXPENSES DATA FUNCTIONS
-// ============================================
-
-function getDefaultExpensesData() {
-  return {
-    expenses: [],
-    categories: ['Food', 'Transport', 'Shopping', 'Entertainment', 'Bills', 'Health', 'Other'],
-    nextId: 1
-  };
-}
-
-function readExpenses() {
-  try {
-    if (fs.existsSync(EXPENSES_FILE)) {
-      return JSON.parse(fs.readFileSync(EXPENSES_FILE, 'utf8'));
-    }
-  } catch (e) {
-    console.error('Error reading expenses:', e);
-  }
-  return getDefaultExpensesData();
-}
-
-function writeExpenses(data) {
-  const dir = path.dirname(EXPENSES_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(EXPENSES_FILE, JSON.stringify(data, null, 2));
-}
-
-// Initialize expenses file with seed data if empty
-function initializeExpenses() {
-  const EXPENSES_SEED_FILE = './data/expenses-seed.json';
-  let data;
-  
-  if (fs.existsSync(EXPENSES_FILE)) {
-    data = readExpenses();
-  } else {
-    data = getDefaultExpensesData();
-  }
-  
-  // If expenses empty and seed file exists, load seed data
-  if (data.expenses.length === 0 && fs.existsSync(EXPENSES_SEED_FILE)) {
-    try {
-      const seedData = JSON.parse(fs.readFileSync(EXPENSES_SEED_FILE, 'utf8'));
-      console.log(`[Seed] Loading ${seedData.expenses.length} expenses from seed file...`);
-      data = seedData;
-      writeExpenses(data);
-      console.log('[Seed] Expense seed data loaded successfully');
-    } catch (e) {
-      console.error('[Seed] Error loading expense seed data:', e);
-    }
-  }
-  
-  if (!fs.existsSync(EXPENSES_FILE)) {
-    writeExpenses(data);
-  }
-}
-
-initializeExpenses();
-
-// ============================================
-// EXCEL DATA FUNCTIONS
-// ============================================
-
-function getDefaultExcelData() {
-  return {
-    files: [],
-    nextId: 1
-  };
-}
-
-function readExcelData() {
-  try {
-    if (fs.existsSync(EXCEL_FILE)) {
-      return JSON.parse(fs.readFileSync(EXCEL_FILE, 'utf8'));
-    }
-  } catch (e) {
-    console.error('Error reading excel data:', e);
-  }
-  return getDefaultExcelData();
-}
-
-function writeExcelData(data) {
-  const dir = path.dirname(EXCEL_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(EXCEL_FILE, JSON.stringify(data, null, 2));
-}
-
-// Initialize excel directories and data file
+// Initialize database and excel directory
 if (!fs.existsSync(EXCEL_UPLOAD_DIR)) {
   fs.mkdirSync(EXCEL_UPLOAD_DIR, { recursive: true });
 }
-if (!fs.existsSync(EXCEL_FILE)) {
-  writeExcelData(getDefaultExcelData());
-}
+
+initDatabase().catch(err => {
+  console.error('[DB] Failed to initialize database:', err);
+});
 
 // ============================================
 // BRIEFINGS API
 // ============================================
 
 // Get all briefings with search and filters
-app.get('/api/briefings', (req, res) => {
-  const { type, limit = 50, starred, archived, tag, q } = req.query;
-  const data = readData();
-  let results = data.briefings;
+app.get('/api/briefings', async (req, res) => {
+  try {
+    const { type, limit = 50, starred, archived, tag, q } = req.query;
+    
+    let query = 'SELECT * FROM lumen_briefings WHERE 1=1';
+    const params = [];
+    let paramCount = 0;
 
-  // Filter out archived by default
-  if (archived !== 'true') {
-    results = results.filter(b => !b.archived);
-  } else if (archived === 'only') {
-    results = results.filter(b => b.archived);
-  }
+    // Filter out archived by default
+    if (archived !== 'true' && archived !== 'only') {
+      query += ' AND (archived = FALSE OR archived IS NULL)';
+    } else if (archived === 'only') {
+      query += ' AND archived = TRUE';
+    }
 
-  if (type) {
-    results = results.filter(b => b.type === type);
-  }
-  if (starred === 'true') {
-    results = results.filter(b => b.starred);
-  }
-  if (tag) {
-    results = results.filter(b => b.tags && b.tags.includes(tag));
-  }
-  
-  // Full-text search
-  if (q) {
-    const query = q.toLowerCase();
-    results = results.filter(b => 
-      b.title.toLowerCase().includes(query) ||
-      b.content.toLowerCase().includes(query) ||
-      (b.summary && b.summary.toLowerCase().includes(query)) ||
-      (b.tags && b.tags.some(t => t.toLowerCase().includes(query)))
-    );
-  }
+    if (type) {
+      paramCount++;
+      query += ` AND type = $${paramCount}`;
+      params.push(type);
+    }
 
-  results = results
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, parseInt(limit));
+    if (starred === 'true') {
+      query += ' AND starred = TRUE';
+    }
 
-  res.json(results);
+    if (tag) {
+      paramCount++;
+      query += ` AND $${paramCount} = ANY(tags)`;
+      params.push(tag);
+    }
+
+    if (q) {
+      paramCount++;
+      const searchParam = `%${q.toLowerCase()}%`;
+      query += ` AND (LOWER(title) LIKE $${paramCount} OR LOWER(content) LIKE $${paramCount} OR LOWER(summary) LIKE $${paramCount})`;
+      params.push(searchParam);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    params.push(parseInt(limit));
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error getting briefings:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Get single briefing
-app.get('/api/briefings/:id', (req, res) => {
-  const data = readData();
-  const briefing = data.briefings.find(b => b.id === parseInt(req.params.id));
-  
-  if (!briefing) {
-    return res.status(404).json({ error: 'Briefing not found' });
+app.get('/api/briefings/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE lumen_briefings SET read = TRUE, read_at = NOW() WHERE id = $1 RETURNING *',
+      [req.params.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Briefing not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error getting briefing:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  // Mark as read
-  briefing.read = true;
-  briefing.read_at = new Date().toISOString();
-  writeData(data);
-  
-  res.json(briefing);
 });
 
 // Add new briefing
-app.post('/api/briefings', (req, res) => {
-  const { type, title, content, summary, tags } = req.body;
-  
-  if (!type || !title || !content) {
-    return res.status(400).json({ error: 'Missing required fields: type, title, content' });
+app.post('/api/briefings', async (req, res) => {
+  try {
+    const { type, title, content, summary, tags } = req.body;
+    
+    if (!type || !title || !content) {
+      return res.status(400).json({ error: 'Missing required fields: type, title, content' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO lumen_briefings (type, title, content, summary, tags) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [type, title, content, summary || null, tags || []]
+    );
+
+    res.json({ id: result.rows[0].id, message: 'Briefing added successfully' });
+  } catch (err) {
+    console.error('Error adding briefing:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-
-  const data = readData();
-  const newBriefing = {
-    id: data.nextId++,
-    type,
-    title,
-    content,
-    summary: summary || null,
-    tags: tags || [],
-    created_at: new Date().toISOString(),
-    read: false,
-    read_at: null,
-    starred: false,
-    archived: false
-  };
-  
-  data.briefings.push(newBriefing);
-  writeData(data);
-
-  res.json({ id: newBriefing.id, message: 'Briefing added successfully' });
 });
 
 // Update briefing
-app.patch('/api/briefings/:id', (req, res) => {
-  const data = readData();
-  const briefing = data.briefings.find(b => b.id === parseInt(req.params.id));
-  
-  if (!briefing) {
-    return res.status(404).json({ error: 'Briefing not found' });
+app.patch('/api/briefings/:id', async (req, res) => {
+  try {
+    const { title, content, summary, tags } = req.body;
+    const updates = [];
+    const params = [];
+    let paramCount = 0;
+
+    if (title) {
+      paramCount++;
+      updates.push(`title = $${paramCount}`);
+      params.push(title);
+    }
+    if (content) {
+      paramCount++;
+      updates.push(`content = $${paramCount}`);
+      params.push(content);
+    }
+    if (summary !== undefined) {
+      paramCount++;
+      updates.push(`summary = $${paramCount}`);
+      params.push(summary);
+    }
+    if (tags) {
+      paramCount++;
+      updates.push(`tags = $${paramCount}`);
+      params.push(tags);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updates.push('updated_at = NOW()');
+    paramCount++;
+    params.push(req.params.id);
+
+    const result = await pool.query(
+      `UPDATE lumen_briefings SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+      params
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Briefing not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating briefing:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  const { title, content, summary, tags } = req.body;
-  if (title) briefing.title = title;
-  if (content) briefing.content = content;
-  if (summary !== undefined) briefing.summary = summary;
-  if (tags) briefing.tags = tags;
-  
-  briefing.updated_at = new Date().toISOString();
-  writeData(data);
-  
-  res.json(briefing);
 });
 
 // Toggle starred
-app.patch('/api/briefings/:id/star', (req, res) => {
-  const data = readData();
-  const briefing = data.briefings.find(b => b.id === parseInt(req.params.id));
-  
-  if (!briefing) {
-    return res.status(404).json({ error: 'Briefing not found' });
+app.patch('/api/briefings/:id/star', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE lumen_briefings SET starred = NOT starred WHERE id = $1 RETURNING starred',
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Briefing not found' });
+    }
+
+    res.json({ starred: result.rows[0].starred });
+  } catch (err) {
+    console.error('Error toggling star:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  briefing.starred = !briefing.starred;
-  writeData(data);
-  
-  res.json({ starred: briefing.starred });
 });
 
-// Archive briefing (soft delete)
-app.patch('/api/briefings/:id/archive', (req, res) => {
-  const data = readData();
-  const briefing = data.briefings.find(b => b.id === parseInt(req.params.id));
-  
-  if (!briefing) {
-    return res.status(404).json({ error: 'Briefing not found' });
+// Archive briefing
+app.patch('/api/briefings/:id/archive', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE lumen_briefings 
+       SET archived = NOT archived, 
+           archived_at = CASE WHEN archived THEN NULL ELSE NOW() END 
+       WHERE id = $1 RETURNING archived`,
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Briefing not found' });
+    }
+
+    res.json({ archived: result.rows[0].archived });
+  } catch (err) {
+    console.error('Error archiving briefing:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  briefing.archived = !briefing.archived;
-  briefing.archived_at = briefing.archived ? new Date().toISOString() : null;
-  writeData(data);
-  
-  res.json({ archived: briefing.archived });
 });
 
-// Delete briefing (permanent)
-app.delete('/api/briefings/:id', (req, res) => {
-  const data = readData();
-  const index = data.briefings.findIndex(b => b.id === parseInt(req.params.id));
-  
-  if (index !== -1) {
-    // Also remove any shares
-    delete data.shares[req.params.id];
-    data.briefings.splice(index, 1);
-    writeData(data);
+// Delete briefing
+app.delete('/api/briefings/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM lumen_briefings WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Briefing deleted' });
+  } catch (err) {
+    console.error('Error deleting briefing:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  res.json({ message: 'Briefing deleted' });
 });
 
 // ============================================
 // TAGS API
 // ============================================
 
-// Get all tags
-app.get('/api/tags', (req, res) => {
-  const data = readData();
-  
-  // Collect all unique tags from briefings
-  const tagCounts = {};
-  data.briefings.forEach(b => {
-    if (b.tags) {
-      b.tags.forEach(tag => {
-        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      });
-    }
-  });
-  
-  const tags = Object.entries(tagCounts)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count);
-  
-  res.json(tags);
+app.get('/api/tags', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT unnest(tags) as name, COUNT(*) as count 
+      FROM lumen_briefings 
+      WHERE archived = FALSE OR archived IS NULL
+      GROUP BY name 
+      ORDER BY count DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error getting tags:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Add tag to briefing
-app.post('/api/briefings/:id/tags', (req, res) => {
-  const { tag } = req.body;
-  if (!tag) {
-    return res.status(400).json({ error: 'Tag is required' });
+app.post('/api/briefings/:id/tags', async (req, res) => {
+  try {
+    const { tag } = req.body;
+    if (!tag) {
+      return res.status(400).json({ error: 'Tag is required' });
+    }
+
+    const result = await pool.query(
+      'UPDATE lumen_briefings SET tags = array_append(tags, $1) WHERE id = $2 AND NOT ($1 = ANY(tags)) RETURNING tags',
+      [tag, req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      const existing = await pool.query('SELECT tags FROM lumen_briefings WHERE id = $1', [req.params.id]);
+      if (existing.rows.length === 0) {
+        return res.status(404).json({ error: 'Briefing not found' });
+      }
+      return res.json({ tags: existing.rows[0].tags });
+    }
+
+    res.json({ tags: result.rows[0].tags });
+  } catch (err) {
+    console.error('Error adding tag:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  const data = readData();
-  const briefing = data.briefings.find(b => b.id === parseInt(req.params.id));
-  
-  if (!briefing) {
-    return res.status(404).json({ error: 'Briefing not found' });
-  }
-  
-  if (!briefing.tags) briefing.tags = [];
-  if (!briefing.tags.includes(tag)) {
-    briefing.tags.push(tag);
-    writeData(data);
-  }
-  
-  res.json({ tags: briefing.tags });
 });
 
 // Remove tag from briefing
-app.delete('/api/briefings/:id/tags/:tag', (req, res) => {
-  const data = readData();
-  const briefing = data.briefings.find(b => b.id === parseInt(req.params.id));
-  
-  if (!briefing) {
-    return res.status(404).json({ error: 'Briefing not found' });
+app.delete('/api/briefings/:id/tags/:tag', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE lumen_briefings SET tags = array_remove(tags, $1) WHERE id = $2 RETURNING tags',
+      [req.params.tag, req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Briefing not found' });
+    }
+
+    res.json({ tags: result.rows[0].tags });
+  } catch (err) {
+    console.error('Error removing tag:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  if (briefing.tags) {
-    briefing.tags = briefing.tags.filter(t => t !== req.params.tag);
-    writeData(data);
-  }
-  
-  res.json({ tags: briefing.tags || [] });
 });
 
 // ============================================
 // SHARE API
 // ============================================
 
-// Create share link
-app.post('/api/briefings/:id/share', (req, res) => {
-  const data = readData();
-  const briefing = data.briefings.find(b => b.id === parseInt(req.params.id));
-  
-  if (!briefing) {
-    return res.status(404).json({ error: 'Briefing not found' });
+app.post('/api/briefings/:id/share', async (req, res) => {
+  try {
+    const token = crypto.randomBytes(16).toString('hex');
+    
+    await pool.query(
+      'INSERT INTO lumen_shares (briefing_id, token) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [req.params.id, token]
+    );
+
+    const shareUrl = `${req.protocol}://${req.get('host')}/share/${token}`;
+    res.json({ shareUrl, token });
+  } catch (err) {
+    console.error('Error creating share:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  // Generate unique share token
-  const token = crypto.randomBytes(16).toString('hex');
-  data.shares[req.params.id] = {
-    token,
-    created_at: new Date().toISOString(),
-    views: 0
-  };
-  writeData(data);
-  
-  const shareUrl = `${req.protocol}://${req.get('host')}/share/${token}`;
-  res.json({ shareUrl, token });
 });
 
-// Revoke share link
-app.delete('/api/briefings/:id/share', (req, res) => {
-  const data = readData();
-  delete data.shares[req.params.id];
-  writeData(data);
-  res.json({ message: 'Share link revoked' });
+app.delete('/api/briefings/:id/share', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM lumen_shares WHERE briefing_id = $1', [req.params.id]);
+    res.json({ message: 'Share link revoked' });
+  } catch (err) {
+    console.error('Error revoking share:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
-// View shared briefing
-app.get('/api/share/:token', (req, res) => {
-  const data = readData();
-  
-  // Find briefing by share token
-  let briefingId = null;
-  for (const [id, share] of Object.entries(data.shares)) {
-    if (share.token === req.params.token) {
-      briefingId = parseInt(id);
-      share.views++;
-      break;
+app.get('/api/share/:token', async (req, res) => {
+  try {
+    const shareResult = await pool.query(
+      'UPDATE lumen_shares SET views = views + 1 WHERE token = $1 RETURNING briefing_id',
+      [req.params.token]
+    );
+
+    if (shareResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Share link not found or expired' });
     }
+
+    const briefingResult = await pool.query(
+      'SELECT title, type, content, summary, created_at FROM lumen_briefings WHERE id = $1',
+      [shareResult.rows[0].briefing_id]
+    );
+
+    if (briefingResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Briefing not found' });
+    }
+
+    res.json(briefingResult.rows[0]);
+  } catch (err) {
+    console.error('Error getting shared briefing:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  if (!briefingId) {
-    return res.status(404).json({ error: 'Share link not found or expired' });
-  }
-  
-  const briefing = data.briefings.find(b => b.id === briefingId);
-  if (!briefing) {
-    return res.status(404).json({ error: 'Briefing not found' });
-  }
-  
-  writeData(data);
-  
-  // Return limited briefing data for share
-  res.json({
-    title: briefing.title,
-    type: briefing.type,
-    content: briefing.content,
-    summary: briefing.summary,
-    created_at: briefing.created_at
-  });
 });
 
 // ============================================
 // EXPORT API
 // ============================================
 
-// Export briefing as markdown
-app.get('/api/briefings/:id/export', (req, res) => {
-  const { format = 'markdown' } = req.query;
-  const data = readData();
-  const briefing = data.briefings.find(b => b.id === parseInt(req.params.id));
-  
-  if (!briefing) {
-    return res.status(404).json({ error: 'Briefing not found' });
-  }
-  
-  if (format === 'markdown') {
-    const md = `# ${briefing.title}
+app.get('/api/briefings/:id/export', async (req, res) => {
+  try {
+    const { format = 'markdown' } = req.query;
+    const result = await pool.query('SELECT * FROM lumen_briefings WHERE id = $1', [req.params.id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Briefing not found' });
+    }
+
+    const briefing = result.rows[0];
+
+    if (format === 'markdown') {
+      const md = `# ${briefing.title}
 
 **Type:** ${briefing.type}  
 **Date:** ${new Date(briefing.created_at).toLocaleString()}  
@@ -500,28 +480,29 @@ ${briefing.tags && briefing.tags.length ? `**Tags:** ${briefing.tags.join(', ')}
 ${briefing.summary ? `## Summary\n\n${briefing.summary}\n\n---\n\n` : ''}
 ${briefing.content}
 `;
-    
-    res.setHeader('Content-Type', 'text/markdown');
-    res.setHeader('Content-Disposition', `attachment; filename="briefing-${briefing.id}.md"`);
-    res.send(md);
-  } else if (format === 'json') {
-    res.setHeader('Content-Disposition', `attachment; filename="briefing-${briefing.id}.json"`);
-    res.json(briefing);
-  } else {
-    res.status(400).json({ error: 'Unsupported format. Use markdown or json.' });
+      res.setHeader('Content-Type', 'text/markdown');
+      res.setHeader('Content-Disposition', `attachment; filename="briefing-${briefing.id}.md"`);
+      res.send(md);
+    } else if (format === 'json') {
+      res.setHeader('Content-Disposition', `attachment; filename="briefing-${briefing.id}.json"`);
+      res.json(briefing);
+    } else {
+      res.status(400).json({ error: 'Unsupported format. Use markdown or json.' });
+    }
+  } catch (err) {
+    console.error('Error exporting briefing:', err);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 
-// Export all briefings
-app.get('/api/export', (req, res) => {
-  const { format = 'json' } = req.query;
-  const data = readData();
-  
-  if (format === 'json') {
+app.get('/api/export', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM lumen_briefings ORDER BY created_at DESC');
     res.setHeader('Content-Disposition', `attachment; filename="lumen-briefings-${Date.now()}.json"`);
-    res.json(data.briefings);
-  } else {
-    res.status(400).json({ error: 'Unsupported format for bulk export. Use json.' });
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error exporting all:', err);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 
@@ -529,414 +510,411 @@ app.get('/api/export', (req, res) => {
 // ANALYTICS API
 // ============================================
 
-app.get('/api/analytics', (req, res) => {
-  const data = readData();
-  const briefings = data.briefings.filter(b => !b.archived);
-  
-  // Basic stats
-  const total = briefings.length;
-  const unread = briefings.filter(b => !b.read).length;
-  const starred = briefings.filter(b => b.starred).length;
-  const archived = data.briefings.filter(b => b.archived).length;
-  
-  // By type
-  const byType = {};
-  briefings.forEach(b => {
-    byType[b.type] = (byType[b.type] || 0) + 1;
-  });
-  
-  // By day (last 30 days)
-  const byDay = {};
-  const now = new Date();
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    const key = date.toISOString().split('T')[0];
-    byDay[key] = 0;
+app.get('/api/analytics', async (req, res) => {
+  try {
+    const stats = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE archived = FALSE OR archived IS NULL) as total,
+        COUNT(*) FILTER (WHERE read = FALSE AND (archived = FALSE OR archived IS NULL)) as unread,
+        COUNT(*) FILTER (WHERE starred = TRUE AND (archived = FALSE OR archived IS NULL)) as starred,
+        COUNT(*) FILTER (WHERE archived = TRUE) as archived
+      FROM lumen_briefings
+    `);
+
+    const byType = await pool.query(`
+      SELECT type, COUNT(*) as count 
+      FROM lumen_briefings 
+      WHERE archived = FALSE OR archived IS NULL
+      GROUP BY type
+    `);
+
+    const byDay = await pool.query(`
+      SELECT DATE(created_at) as date, COUNT(*) as count
+      FROM lumen_briefings
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY DATE(created_at)
+      ORDER BY date
+    `);
+
+    const topTags = await pool.query(`
+      SELECT unnest(tags) as name, COUNT(*) as count 
+      FROM lumen_briefings 
+      WHERE archived = FALSE OR archived IS NULL
+      GROUP BY name 
+      ORDER BY count DESC
+      LIMIT 10
+    `);
+
+    const s = stats.rows[0];
+    const readRate = s.total > 0 ? ((s.total - s.unread) / s.total * 100).toFixed(1) : 0;
+
+    res.json({
+      total: parseInt(s.total),
+      unread: parseInt(s.unread),
+      starred: parseInt(s.starred),
+      archived: parseInt(s.archived),
+      readRate: parseFloat(readRate),
+      byType: byType.rows.reduce((acc, r) => { acc[r.type] = parseInt(r.count); return acc; }, {}),
+      byDay: byDay.rows.reduce((acc, r) => { acc[r.date.toISOString().split('T')[0]] = parseInt(r.count); return acc; }, {}),
+      topTags: topTags.rows.map(r => ({ name: r.name, count: parseInt(r.count) }))
+    });
+  } catch (err) {
+    console.error('Error getting analytics:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  briefings.forEach(b => {
-    const key = b.created_at.split('T')[0];
-    if (byDay.hasOwnProperty(key)) {
-      byDay[key]++;
-    }
-  });
-  
-  // By hour
-  const byHour = Array(24).fill(0);
-  briefings.forEach(b => {
-    const hour = new Date(b.created_at).getHours();
-    byHour[hour]++;
-  });
-  
-  // Read rate
-  const readRate = total > 0 ? ((total - unread) / total * 100).toFixed(1) : 0;
-  
-  // Top tags
-  const tagCounts = {};
-  briefings.forEach(b => {
-    if (b.tags) {
-      b.tags.forEach(tag => {
-        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      });
-    }
-  });
-  const topTags = Object.entries(tagCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([name, count]) => ({ name, count }));
-  
-  // Recent activity
-  const recentlyRead = briefings
-    .filter(b => b.read_at)
-    .sort((a, b) => new Date(b.read_at) - new Date(a.read_at))
-    .slice(0, 5)
-    .map(b => ({ id: b.id, title: b.title, read_at: b.read_at }));
-  
-  res.json({
-    total,
-    unread,
-    starred,
-    archived,
-    readRate: parseFloat(readRate),
-    byType,
-    byDay,
-    byHour,
-    topTags,
-    recentlyRead
-  });
 });
 
-// ============================================
-// STATS API (simple)
-// ============================================
+app.get('/api/stats', async (req, res) => {
+  try {
+    const stats = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE archived = FALSE OR archived IS NULL) as total,
+        COUNT(*) FILTER (WHERE read = FALSE AND (archived = FALSE OR archived IS NULL)) as unread,
+        COUNT(*) FILTER (WHERE starred = TRUE AND (archived = FALSE OR archived IS NULL)) as starred
+      FROM lumen_briefings
+    `);
 
-app.get('/api/stats', (req, res) => {
-  const data = readData();
-  const briefings = data.briefings.filter(b => !b.archived);
-  const total = briefings.length;
-  const unread = briefings.filter(b => !b.read).length;
-  const starred = briefings.filter(b => b.starred).length;
-  
-  const byType = {};
-  briefings.forEach(b => {
-    byType[b.type] = (byType[b.type] || 0) + 1;
-  });
-  
-  res.json({ total, unread, starred, byType });
+    const byType = await pool.query(`
+      SELECT type, COUNT(*) as count 
+      FROM lumen_briefings 
+      WHERE archived = FALSE OR archived IS NULL
+      GROUP BY type
+    `);
+
+    const s = stats.rows[0];
+    res.json({
+      total: parseInt(s.total),
+      unread: parseInt(s.unread),
+      starred: parseInt(s.starred),
+      byType: byType.rows.reduce((acc, r) => { acc[r.type] = parseInt(r.count); return acc; }, {})
+    });
+  } catch (err) {
+    console.error('Error getting stats:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // ============================================
 // EXPENSES API
 // ============================================
 
-// Get all expenses with filters
-app.get('/api/expenses', (req, res) => {
-  let { month, year, category, limit = 100 } = req.query;
-  const data = readExpenses();
-  let results = data.expenses;
+app.get('/api/expenses', async (req, res) => {
+  try {
+    let { month, year, category, limit = 100 } = req.query;
+    
+    let query = 'SELECT * FROM lumen_expenses WHERE 1=1';
+    const params = [];
+    let paramCount = 0;
 
-  // Support YYYY-MM format for month param
-  if (month && month.includes('-')) {
-    const [y, m] = month.split('-').map(Number);
-    year = y;
-    month = m;
-  }
-
-  // Filter by month/year
-  if (month && year) {
-    results = results.filter(e => {
-      const d = new Date(e.date);
-      return d.getMonth() + 1 === parseInt(month) && d.getFullYear() === parseInt(year);
-    });
-  } else if (year) {
-    results = results.filter(e => {
-      const d = new Date(e.date);
-      return d.getFullYear() === parseInt(year);
-    });
-  }
-
-  // Filter by category
-  if (category) {
-    results = results.filter(e => e.category.toLowerCase() === category.toLowerCase());
-  }
-
-  results = results
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, parseInt(limit));
-
-  res.json(results);
-});
-
-// Get expense summary for a month
-app.get('/api/expenses/summary', (req, res) => {
-  const now = new Date();
-  let month, year;
-  
-  // Support both YYYY-MM format and separate month/year params
-  if (req.query.month && req.query.month.includes('-')) {
-    const [y, m] = req.query.month.split('-').map(Number);
-    year = y;
-    month = m;
-  } else {
-    month = parseInt(req.query.month) || now.getMonth() + 1;
-    year = parseInt(req.query.year) || now.getFullYear();
-  }
-  
-  const data = readExpenses();
-  const monthExpenses = data.expenses.filter(e => {
-    const d = new Date(e.date);
-    return d.getMonth() + 1 === month && d.getFullYear() === year;
-  });
-
-  const total = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
-  
-  const byCategory = {};
-  monthExpenses.forEach(e => {
-    byCategory[e.category] = (byCategory[e.category] || 0) + e.amount;
-  });
-
-  const recentExpenses = monthExpenses
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 10);
-
-  res.json({
-    month,
-    year,
-    total: Math.round(total * 100) / 100,
-    count: monthExpenses.length,
-    byCategory,
-    recentExpenses
-  });
-});
-
-// Add new expense
-app.post('/api/expenses', (req, res) => {
-  const { amount, category, description, vendor, date } = req.body;
-  
-  if (!amount || !category) {
-    return res.status(400).json({ error: 'Missing required fields: amount, category' });
-  }
-
-  const data = readExpenses();
-  const newExpense = {
-    id: data.nextId++,
-    amount: parseFloat(amount),
-    category,
-    description: description || '',
-    vendor: vendor || null,
-    date: date || new Date().toISOString(),
-    created_at: new Date().toISOString()
-  };
-  
-  data.expenses.push(newExpense);
-  
-  // Add category if new
-  if (!data.categories.includes(category)) {
-    data.categories.push(category);
-  }
-  
-  writeExpenses(data);
-
-  res.json({ id: newExpense.id, message: 'Expense added successfully', expense: newExpense });
-});
-
-// Update expense
-app.patch('/api/expenses/:id', (req, res) => {
-  const data = readExpenses();
-  const expense = data.expenses.find(e => e.id === parseInt(req.params.id));
-  
-  if (!expense) {
-    return res.status(404).json({ error: 'Expense not found' });
-  }
-  
-  const { amount, category, description, vendor, date } = req.body;
-  if (amount !== undefined) expense.amount = parseFloat(amount);
-  if (category) expense.category = category;
-  if (description !== undefined) expense.description = description;
-  if (vendor !== undefined) expense.vendor = vendor;
-  if (date) expense.date = date;
-  
-  expense.updated_at = new Date().toISOString();
-  writeExpenses(data);
-  
-  res.json(expense);
-});
-
-// Delete expense
-app.delete('/api/expenses/:id', (req, res) => {
-  const data = readExpenses();
-  const index = data.expenses.findIndex(e => e.id === parseInt(req.params.id));
-  
-  if (index !== -1) {
-    data.expenses.splice(index, 1);
-    writeExpenses(data);
-  }
-  
-  res.json({ message: 'Expense deleted' });
-});
-
-// Get all vendors (for autocomplete)
-app.get('/api/expenses/vendors', (req, res) => {
-  const data = readExpenses();
-  const vendors = {};
-  
-  data.expenses.forEach(e => {
-    if (e.vendor) {
-      if (!vendors[e.vendor]) {
-        vendors[e.vendor] = { name: e.vendor, count: 0, total: 0 };
-      }
-      vendors[e.vendor].count++;
-      vendors[e.vendor].total += e.amount;
+    // Support YYYY-MM format
+    if (month && month.includes('-')) {
+      const [y, m] = month.split('-').map(Number);
+      year = y;
+      month = m;
     }
-  });
-  
-  const vendorList = Object.values(vendors)
-    .sort((a, b) => b.total - a.total)
-    .map(v => ({
-      ...v,
-      total: Math.round(v.total * 100) / 100,
-      avg: Math.round((v.total / v.count) * 100) / 100
-    }));
-  
-  res.json(vendorList);
-});
 
-// Get vendor analytics
-app.get('/api/expenses/vendors/:name', (req, res) => {
-  const vendorName = decodeURIComponent(req.params.name);
-  const data = readExpenses();
-  
-  const vendorExpenses = data.expenses.filter(e => 
-    e.vendor && e.vendor.toLowerCase() === vendorName.toLowerCase()
-  );
-  
-  if (vendorExpenses.length === 0) {
-    return res.status(404).json({ error: 'Vendor not found' });
-  }
-  
-  const total = vendorExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const avg = total / vendorExpenses.length;
-  
-  // Group by month
-  const byMonth = {};
-  vendorExpenses.forEach(e => {
-    const month = e.date.slice(0, 7);
-    byMonth[month] = (byMonth[month] || 0) + e.amount;
-  });
-  
-  // Group by category
-  const byCategory = {};
-  vendorExpenses.forEach(e => {
-    byCategory[e.category] = (byCategory[e.category] || 0) + e.amount;
-  });
-  
-  res.json({
-    vendor: vendorName,
-    total: Math.round(total * 100) / 100,
-    count: vendorExpenses.length,
-    average: Math.round(avg * 100) / 100,
-    firstVisit: vendorExpenses.sort((a, b) => new Date(a.date) - new Date(b.date))[0].date,
-    lastVisit: vendorExpenses.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date,
-    byMonth,
-    byCategory,
-    transactions: vendorExpenses
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 20)
-  });
-});
-
-// Search vendors
-app.get('/api/expenses/vendors/search/:query', (req, res) => {
-  const query = decodeURIComponent(req.params.query).toLowerCase();
-  const data = readExpenses();
-  
-  const vendors = {};
-  data.expenses.forEach(e => {
-    if (e.vendor && e.vendor.toLowerCase().includes(query)) {
-      if (!vendors[e.vendor]) {
-        vendors[e.vendor] = { name: e.vendor, count: 0, total: 0 };
-      }
-      vendors[e.vendor].count++;
-      vendors[e.vendor].total += e.amount;
+    if (month && year) {
+      paramCount++;
+      query += ` AND EXTRACT(MONTH FROM date) = $${paramCount}`;
+      params.push(parseInt(month));
+      paramCount++;
+      query += ` AND EXTRACT(YEAR FROM date) = $${paramCount}`;
+      params.push(parseInt(year));
+    } else if (year) {
+      paramCount++;
+      query += ` AND EXTRACT(YEAR FROM date) = $${paramCount}`;
+      params.push(parseInt(year));
     }
-  });
-  
-  const results = Object.values(vendors)
-    .sort((a, b) => b.total - a.total)
-    .map(v => ({
-      ...v,
-      total: Math.round(v.total * 100) / 100
-    }));
-  
-  res.json(results);
+
+    if (category) {
+      paramCount++;
+      query += ` AND LOWER(category) = LOWER($${paramCount})`;
+      params.push(category);
+    }
+
+    query += ' ORDER BY date DESC';
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    params.push(parseInt(limit));
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error getting expenses:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
-// Get categories
-app.get('/api/expenses/categories', (req, res) => {
-  const data = readExpenses();
-  res.json(data.categories);
+app.get('/api/expenses/summary', async (req, res) => {
+  try {
+    const now = new Date();
+    let month, year;
+    
+    if (req.query.month && req.query.month.includes('-')) {
+      const [y, m] = req.query.month.split('-').map(Number);
+      year = y;
+      month = m;
+    } else {
+      month = parseInt(req.query.month) || now.getMonth() + 1;
+      year = parseInt(req.query.year) || now.getFullYear();
+    }
+
+    const summary = await pool.query(`
+      SELECT 
+        COALESCE(SUM(amount), 0) as total,
+        COUNT(*) as count
+      FROM lumen_expenses 
+      WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2
+    `, [month, year]);
+
+    const byCategory = await pool.query(`
+      SELECT category, SUM(amount) as total
+      FROM lumen_expenses 
+      WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2
+      GROUP BY category
+    `, [month, year]);
+
+    const recent = await pool.query(`
+      SELECT * FROM lumen_expenses 
+      WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2
+      ORDER BY date DESC LIMIT 10
+    `, [month, year]);
+
+    const s = summary.rows[0];
+    res.json({
+      month,
+      year,
+      total: Math.round(parseFloat(s.total) * 100) / 100,
+      count: parseInt(s.count),
+      byCategory: byCategory.rows.reduce((acc, r) => { 
+        acc[r.category] = Math.round(parseFloat(r.total) * 100) / 100; 
+        return acc; 
+      }, {}),
+      recentExpenses: recent.rows
+    });
+  } catch (err) {
+    console.error('Error getting expense summary:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.post('/api/expenses', async (req, res) => {
+  try {
+    const { amount, category, description, vendor, date } = req.body;
+    
+    if (!amount || !category) {
+      return res.status(400).json({ error: 'Missing required fields: amount, category' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO lumen_expenses (amount, category, description, vendor, date) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [parseFloat(amount), category, description || '', vendor || null, date || new Date()]
+    );
+
+    // Add category if new
+    await pool.query(
+      'INSERT INTO lumen_categories (name) VALUES ($1) ON CONFLICT (name) DO NOTHING',
+      [category]
+    );
+
+    res.json({ id: result.rows[0].id, message: 'Expense added successfully', expense: result.rows[0] });
+  } catch (err) {
+    console.error('Error adding expense:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.patch('/api/expenses/:id', async (req, res) => {
+  try {
+    const { amount, category, description, vendor, date } = req.body;
+    const updates = [];
+    const params = [];
+    let paramCount = 0;
+
+    if (amount !== undefined) {
+      paramCount++;
+      updates.push(`amount = $${paramCount}`);
+      params.push(parseFloat(amount));
+    }
+    if (category) {
+      paramCount++;
+      updates.push(`category = $${paramCount}`);
+      params.push(category);
+    }
+    if (description !== undefined) {
+      paramCount++;
+      updates.push(`description = $${paramCount}`);
+      params.push(description);
+    }
+    if (vendor !== undefined) {
+      paramCount++;
+      updates.push(`vendor = $${paramCount}`);
+      params.push(vendor);
+    }
+    if (date) {
+      paramCount++;
+      updates.push(`date = $${paramCount}`);
+      params.push(date);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updates.push('updated_at = NOW()');
+    paramCount++;
+    params.push(req.params.id);
+
+    const result = await pool.query(
+      `UPDATE lumen_expenses SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+      params
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Expense not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating expense:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.delete('/api/expenses/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM lumen_expenses WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Expense deleted' });
+  } catch (err) {
+    console.error('Error deleting expense:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.get('/api/expenses/vendors', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT vendor as name, COUNT(*) as count, SUM(amount) as total
+      FROM lumen_expenses 
+      WHERE vendor IS NOT NULL AND vendor != ''
+      GROUP BY vendor
+      ORDER BY total DESC
+    `);
+
+    res.json(result.rows.map(v => ({
+      name: v.name,
+      count: parseInt(v.count),
+      total: Math.round(parseFloat(v.total) * 100) / 100,
+      avg: Math.round((parseFloat(v.total) / parseInt(v.count)) * 100) / 100
+    })));
+  } catch (err) {
+    console.error('Error getting vendors:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.get('/api/expenses/categories', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT name FROM lumen_categories ORDER BY name');
+    res.json(result.rows.map(r => r.name));
+  } catch (err) {
+    console.error('Error getting categories:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // ============================================
 // EXCEL API
 // ============================================
 
-// Get all excel files
-app.get('/api/excel', (req, res) => {
-  const { status, limit = 50 } = req.query;
-  const data = readExcelData();
-  let results = data.files;
-  
-  if (status) {
-    results = results.filter(f => f.status === status);
-  }
-  
-  results = results
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, parseInt(limit));
-  
-  res.json(results);
-});
-
-// Get excel stats (MUST be before /:id routes)
-app.get('/api/excel/stats', (req, res) => {
-  const data = readExcelData();
-  const files = data.files;
-  
-  const total = files.length;
-  const pending = files.filter(f => f.status === 'pending').length;
-  const processing = files.filter(f => f.status === 'processing').length;
-  const completed = files.filter(f => f.status === 'completed').length;
-  const error = files.filter(f => f.status === 'error').length;
-  
-  res.json({ total, pending, processing, completed, error });
-});
-
-// Get single excel file metadata
-app.get('/api/excel/:id', (req, res) => {
-  const data = readExcelData();
-  const file = data.files.find(f => f.id === parseInt(req.params.id));
-  
-  if (!file) {
-    return res.status(404).json({ error: 'File not found' });
-  }
-  
-  res.json(file);
-});
-
-// Upload excel file (base64)
-app.post('/api/excel/upload', (req, res) => {
-  const { filename, content, instructions } = req.body;
-  
-  if (!filename || !content) {
-    return res.status(400).json({ error: 'Missing required fields: filename, content (base64)' });
-  }
-  
+app.get('/api/excel', async (req, res) => {
   try {
-    const data = readExcelData();
-    const fileId = data.nextId++;
+    const { status, limit = 50 } = req.query;
+    
+    let query = 'SELECT * FROM lumen_excel_files WHERE 1=1';
+    const params = [];
+    let paramCount = 0;
+
+    if (status) {
+      paramCount++;
+      query += ` AND status = $${paramCount}`;
+      params.push(status);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    params.push(parseInt(limit));
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error getting excel files:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.get('/api/excel/stats', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE status = 'pending') as pending,
+        COUNT(*) FILTER (WHERE status = 'processing') as processing,
+        COUNT(*) FILTER (WHERE status = 'completed') as completed,
+        COUNT(*) FILTER (WHERE status = 'error') as error
+      FROM lumen_excel_files
+    `);
+
+    const s = result.rows[0];
+    res.json({
+      total: parseInt(s.total),
+      pending: parseInt(s.pending),
+      processing: parseInt(s.processing),
+      completed: parseInt(s.completed),
+      error: parseInt(s.error)
+    });
+  } catch (err) {
+    console.error('Error getting excel stats:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.get('/api/excel/:id', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM lumen_excel_files WHERE id = $1', [req.params.id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error getting excel file:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.post('/api/excel/upload', async (req, res) => {
+  try {
+    const { filename, content, instructions } = req.body;
+    
+    if (!filename || !content) {
+      return res.status(400).json({ error: 'Missing required fields: filename, content (base64)' });
+    }
+
     const timestamp = Date.now();
     const ext = path.extname(filename) || '.xlsx';
+    
+    // First insert to get ID
+    const insertResult = await pool.query(
+      `INSERT INTO lumen_excel_files (original_filename, stored_filename, size, instructions) 
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+      [filename, 'temp', 0, instructions || null]
+    );
+    
+    const fileId = insertResult.rows[0].id;
     const safeFilename = `${fileId}_${timestamp}_original${ext}`;
     const filePath = path.join(EXCEL_UPLOAD_DIR, safeFilename);
     
@@ -944,79 +922,100 @@ app.post('/api/excel/upload', (req, res) => {
     const buffer = Buffer.from(content, 'base64');
     fs.writeFileSync(filePath, buffer);
     
-    const newFile = {
-      id: fileId,
-      original_filename: filename,
-      stored_filename: safeFilename,
-      processed_filename: null,
-      size: buffer.length,
-      instructions: instructions || null,
-      status: 'pending', // pending, processing, completed, error
-      status_message: 'Awaiting processing',
-      preview_data: null,
-      created_at: new Date().toISOString(),
-      processed_at: null,
-      error: null
-    };
-    
-    data.files.push(newFile);
-    writeExcelData(data);
-    
+    // Update with actual filename and size
+    const result = await pool.query(
+      `UPDATE lumen_excel_files SET stored_filename = $1, size = $2 WHERE id = $3 RETURNING *`,
+      [safeFilename, buffer.length, fileId]
+    );
+
     res.json({ 
       id: fileId, 
       message: 'File uploaded successfully',
-      file: newFile
+      file: result.rows[0]
     });
-  } catch (e) {
-    console.error('Error uploading excel file:', e);
-    res.status(500).json({ error: 'Failed to upload file: ' + e.message });
+  } catch (err) {
+    console.error('Error uploading excel file:', err);
+    res.status(500).json({ error: 'Failed to upload file: ' + err.message });
   }
 });
 
-// Update excel file (after processing)
-app.patch('/api/excel/:id', (req, res) => {
-  const data = readExcelData();
-  const file = data.files.find(f => f.id === parseInt(req.params.id));
-  
-  if (!file) {
-    return res.status(404).json({ error: 'File not found' });
-  }
-  
-  const { status, status_message, processed_filename, preview_data, error, instructions } = req.body;
-  
-  if (status) file.status = status;
-  if (status_message) file.status_message = status_message;
-  if (processed_filename !== undefined) file.processed_filename = processed_filename;
-  if (preview_data !== undefined) file.preview_data = preview_data;
-  if (error !== undefined) file.error = error;
-  if (instructions !== undefined) file.instructions = instructions;
-  
-  if (status === 'completed') {
-    file.processed_at = new Date().toISOString();
-  }
-  
-  file.updated_at = new Date().toISOString();
-  writeExcelData(data);
-  
-  res.json(file);
-});
-
-// Upload processed file (base64)
-app.post('/api/excel/:id/processed', (req, res) => {
-  const data = readExcelData();
-  const file = data.files.find(f => f.id === parseInt(req.params.id));
-  
-  if (!file) {
-    return res.status(404).json({ error: 'File not found' });
-  }
-  
-  const { content, preview_data } = req.body;
-  
-  if (!content) {
-    return res.status(400).json({ error: 'Missing required field: content (base64)' });
-  }
-  
+app.patch('/api/excel/:id', async (req, res) => {
   try {
+    const { status, status_message, processed_filename, preview_data, error, instructions } = req.body;
+    const updates = [];
+    const params = [];
+    let paramCount = 0;
+
+    if (status) {
+      paramCount++;
+      updates.push(`status = $${paramCount}`);
+      params.push(status);
+    }
+    if (status_message) {
+      paramCount++;
+      updates.push(`status_message = $${paramCount}`);
+      params.push(status_message);
+    }
+    if (processed_filename !== undefined) {
+      paramCount++;
+      updates.push(`processed_filename = $${paramCount}`);
+      params.push(processed_filename);
+    }
+    if (preview_data !== undefined) {
+      paramCount++;
+      updates.push(`preview_data = $${paramCount}`);
+      params.push(JSON.stringify(preview_data));
+    }
+    if (error !== undefined) {
+      paramCount++;
+      updates.push(`error = $${paramCount}`);
+      params.push(error);
+    }
+    if (instructions !== undefined) {
+      paramCount++;
+      updates.push(`instructions = $${paramCount}`);
+      params.push(instructions);
+    }
+
+    if (status === 'completed') {
+      updates.push('processed_at = NOW()');
+    }
+
+    updates.push('updated_at = NOW()');
+    paramCount++;
+    params.push(req.params.id);
+
+    const result = await pool.query(
+      `UPDATE lumen_excel_files SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+      params
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating excel file:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.post('/api/excel/:id/processed', async (req, res) => {
+  try {
+    const fileResult = await pool.query('SELECT * FROM lumen_excel_files WHERE id = $1', [req.params.id]);
+    
+    if (fileResult.rows.length === 0) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    const file = fileResult.rows[0];
+    const { content, preview_data } = req.body;
+    
+    if (!content) {
+      return res.status(400).json({ error: 'Missing required field: content (base64)' });
+    }
+
     const timestamp = Date.now();
     const ext = path.extname(file.original_filename) || '.xlsx';
     const processedFilename = `${file.id}_${timestamp}_processed${ext}`;
@@ -1025,113 +1024,127 @@ app.post('/api/excel/:id/processed', (req, res) => {
     // Decode base64 and save processed file
     const buffer = Buffer.from(content, 'base64');
     fs.writeFileSync(filePath, buffer);
-    
-    file.processed_filename = processedFilename;
-    file.status = 'completed';
-    file.status_message = 'Processing complete';
-    file.processed_at = new Date().toISOString();
-    if (preview_data) file.preview_data = preview_data;
-    
-    writeExcelData(data);
-    
+
+    const result = await pool.query(
+      `UPDATE lumen_excel_files 
+       SET processed_filename = $1, status = 'completed', status_message = 'Processing complete', 
+           processed_at = NOW(), preview_data = $2, updated_at = NOW()
+       WHERE id = $3 RETURNING *`,
+      [processedFilename, preview_data ? JSON.stringify(preview_data) : null, req.params.id]
+    );
+
     res.json({ 
       message: 'Processed file uploaded successfully',
-      file
+      file: result.rows[0]
     });
-  } catch (e) {
-    console.error('Error uploading processed file:', e);
-    res.status(500).json({ error: 'Failed to upload processed file: ' + e.message });
+  } catch (err) {
+    console.error('Error uploading processed file:', err);
+    res.status(500).json({ error: 'Failed to upload processed file: ' + err.message });
   }
 });
 
-// Download original file
-app.get('/api/excel/:id/download/original', (req, res) => {
-  const data = readExcelData();
-  const file = data.files.find(f => f.id === parseInt(req.params.id));
-  
-  if (!file) {
-    return res.status(404).json({ error: 'File not found' });
-  }
-  
-  const filePath = path.join(EXCEL_UPLOAD_DIR, file.stored_filename);
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Original file not found on disk' });
-  }
-  
-  res.download(filePath, file.original_filename);
-});
-
-// Download processed file
-app.get('/api/excel/:id/download/processed', (req, res) => {
-  const data = readExcelData();
-  const file = data.files.find(f => f.id === parseInt(req.params.id));
-  
-  if (!file) {
-    return res.status(404).json({ error: 'File not found' });
-  }
-  
-  if (!file.processed_filename) {
-    return res.status(404).json({ error: 'Processed file not available yet' });
-  }
-  
-  const filePath = path.join(EXCEL_UPLOAD_DIR, file.processed_filename);
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Processed file not found on disk' });
-  }
-  
-  const downloadName = file.original_filename.replace(/(\.[^.]+)$/, '_processed$1');
-  res.download(filePath, downloadName);
-});
-
-// Delete excel file
-app.delete('/api/excel/:id', (req, res) => {
-  const data = readExcelData();
-  const index = data.files.findIndex(f => f.id === parseInt(req.params.id));
-  
-  if (index === -1) {
-    return res.status(404).json({ error: 'File not found' });
-  }
-  
-  const file = data.files[index];
-  
-  // Delete files from disk
+app.get('/api/excel/:id/download/original', async (req, res) => {
   try {
-    const originalPath = path.join(EXCEL_UPLOAD_DIR, file.stored_filename);
-    if (fs.existsSync(originalPath)) fs.unlinkSync(originalPath);
+    const result = await pool.query('SELECT * FROM lumen_excel_files WHERE id = $1', [req.params.id]);
     
-    if (file.processed_filename) {
-      const processedPath = path.join(EXCEL_UPLOAD_DIR, file.processed_filename);
-      if (fs.existsSync(processedPath)) fs.unlinkSync(processedPath);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'File not found' });
     }
-  } catch (e) {
-    console.error('Error deleting files:', e);
+
+    const file = result.rows[0];
+    const filePath = path.join(EXCEL_UPLOAD_DIR, file.stored_filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Original file not found on disk' });
+    }
+    
+    res.download(filePath, file.original_filename);
+  } catch (err) {
+    console.error('Error downloading original:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  data.files.splice(index, 1);
-  writeExcelData(data);
-  
-  res.json({ message: 'File deleted successfully' });
+});
+
+app.get('/api/excel/:id/download/processed', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM lumen_excel_files WHERE id = $1', [req.params.id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    const file = result.rows[0];
+    
+    if (!file.processed_filename) {
+      return res.status(404).json({ error: 'Processed file not available yet' });
+    }
+
+    const filePath = path.join(EXCEL_UPLOAD_DIR, file.processed_filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Processed file not found on disk' });
+    }
+    
+    const downloadName = file.original_filename.replace(/(\.[^.]+)$/, '_processed$1');
+    res.download(filePath, downloadName);
+  } catch (err) {
+    console.error('Error downloading processed:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.delete('/api/excel/:id', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM lumen_excel_files WHERE id = $1', [req.params.id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    const file = result.rows[0];
+
+    // Delete files from disk
+    try {
+      const originalPath = path.join(EXCEL_UPLOAD_DIR, file.stored_filename);
+      if (fs.existsSync(originalPath)) fs.unlinkSync(originalPath);
+      
+      if (file.processed_filename) {
+        const processedPath = path.join(EXCEL_UPLOAD_DIR, file.processed_filename);
+        if (fs.existsSync(processedPath)) fs.unlinkSync(processedPath);
+      }
+    } catch (e) {
+      console.error('Error deleting files:', e);
+    }
+
+    await pool.query('DELETE FROM lumen_excel_files WHERE id = $1', [req.params.id]);
+    res.json({ message: 'File deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting excel file:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // ============================================
 // HEALTH & MISC
 // ============================================
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '2.1.0' });
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString(), version: '3.0.0' });
+  } catch (err) {
+    res.json({ status: 'degraded', database: 'disconnected', timestamp: new Date().toISOString(), version: '3.0.0' });
+  }
 });
 
-// Serve shared briefing page
 app.get('/share/:token', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'share.html'));
 });
 
-// Serve frontend
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// PWA manifest
 app.get('/manifest.json', (req, res) => {
   res.json({
     name: 'Lumen Dashboard',
@@ -1148,12 +1161,11 @@ app.get('/manifest.json', (req, res) => {
   });
 });
 
-// Catch-all for SPA routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🔆 Lumen Dashboard v2.0 running on port ${PORT}`);
+  console.log(`🔆 Lumen Dashboard v3.0 (PostgreSQL) running on port ${PORT}`);
 });
