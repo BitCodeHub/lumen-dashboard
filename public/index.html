@@ -176,6 +176,118 @@
     @media (max-width: 768px) {
       .fab { bottom: 20px; right: 20px; width: 52px; height: 52px; }
     }
+    
+    /* Excel Spreadsheet Styles */
+    .excel-table {
+      border-collapse: collapse;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 13px;
+    }
+    .excel-table th {
+      background: #1f1f23;
+      color: #a1a1aa;
+      font-weight: 500;
+      font-size: 11px;
+      text-transform: uppercase;
+      padding: 8px 12px;
+      border: 1px solid #27272a;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      min-width: 100px;
+    }
+    .excel-table th.row-header {
+      position: sticky;
+      left: 0;
+      z-index: 20;
+      min-width: 50px;
+      width: 50px;
+      text-align: center;
+    }
+    .excel-table th.corner {
+      position: sticky;
+      top: 0;
+      left: 0;
+      z-index: 30;
+      min-width: 50px;
+      width: 50px;
+    }
+    .excel-table td {
+      padding: 0;
+      border: 1px solid #27272a;
+      background: #0c0c0e;
+      min-width: 100px;
+      height: 32px;
+      vertical-align: middle;
+    }
+    .excel-table td.row-header {
+      background: #1f1f23;
+      color: #a1a1aa;
+      font-weight: 500;
+      font-size: 11px;
+      text-align: center;
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      min-width: 50px;
+      width: 50px;
+      padding: 0 8px;
+    }
+    .excel-cell {
+      width: 100%;
+      height: 100%;
+      padding: 6px 10px;
+      color: #e4e4e7;
+      cursor: cell;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .excel-cell:hover {
+      background: rgba(99, 102, 241, 0.1);
+    }
+    .excel-cell.selected {
+      outline: 2px solid #6366f1;
+      outline-offset: -2px;
+      background: rgba(99, 102, 241, 0.15);
+    }
+    .excel-cell.editing {
+      padding: 0;
+    }
+    .excel-cell-input {
+      width: 100%;
+      height: 100%;
+      padding: 6px 10px;
+      background: #18181b;
+      border: none;
+      color: #e4e4e7;
+      font-size: 13px;
+      font-family: inherit;
+      outline: 2px solid #6366f1;
+      outline-offset: -2px;
+    }
+    .excel-cell-input:focus {
+      outline: 2px solid #10b981;
+      outline-offset: -2px;
+    }
+    .excel-cell.formula {
+      color: #818cf8;
+    }
+    .excel-cell.number {
+      text-align: right;
+    }
+    
+    /* Excel file list item */
+    .excel-file-item {
+      transition: all 0.15s ease;
+    }
+    .excel-file-item:hover {
+      background: rgba(39, 39, 42, 0.5);
+    }
+    .excel-file-item.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-left: 3px solid #6366f1;
+    }
   </style>
 </head>
 <body class="text-zinc-300 min-h-screen antialiased">
@@ -398,56 +510,109 @@
         </button>
       </div>
 
-      <!-- Excel View -->
-      <div id="excel-view" class="flex-1 overflow-y-auto hidden">
-        <div id="excel-content" class="p-4 md:p-6 max-w-7xl mx-auto">
-          <!-- Header Stats -->
-          <div class="mb-6">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <div>
-                <h2 class="text-2xl font-bold text-zinc-100 flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M13.125 12h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125M20.625 12c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25-3.75h7.5M3.375 12c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m7.5-3.75v1.5c0 .621.504 1.125 1.125 1.125m-1.125-2.625c0 .621.504 1.125 1.125 1.125m0 1.5v-1.5m0 0c0-.621.504-1.125 1.125-1.125m-1.125 1.125c0 .621-.504 1.125-1.125 1.125M12 15.375h-7.5" /></svg>
-                  </div>
-                  Excel Files
-                </h2>
-                <p class="text-zinc-500 text-sm mt-1">Upload, process, and download Excel files</p>
-              </div>
-              <button onclick="showUploadExcelModal()" class="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-sm font-medium rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
-                Upload File
+      <!-- Excel View - Two Panel Layout -->
+      <div id="excel-view" class="flex-1 flex overflow-hidden hidden">
+        <!-- Left Panel: File List -->
+        <div class="excel-list-panel w-72 border-r border-zinc-800/50 flex flex-col bg-surface-950/30 shrink-0">
+          <!-- Header -->
+          <div class="p-4 border-b border-zinc-800/50">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-sm font-semibold text-zinc-100">Excel Files</h2>
+              <button onclick="showUploadExcelModal()" class="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors" title="Upload File">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
               </button>
             </div>
-            
-            <!-- Stats Cards -->
-            <div id="excel-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
-                <div class="text-2xl font-bold text-zinc-100" id="excel-stat-total">0</div>
-                <div class="text-xs text-zinc-500">Total Files</div>
+            <!-- Mini Stats -->
+            <div class="grid grid-cols-4 gap-2 text-center">
+              <div class="p-2 bg-zinc-800/50 rounded-lg">
+                <div class="text-sm font-bold text-zinc-100" id="excel-stat-total">0</div>
+                <div class="text-[10px] text-zinc-500">All</div>
               </div>
-              <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
-                <div class="text-2xl font-bold text-amber-400" id="excel-stat-pending">0</div>
-                <div class="text-xs text-zinc-500">Pending</div>
+              <div class="p-2 bg-zinc-800/50 rounded-lg">
+                <div class="text-sm font-bold text-amber-400" id="excel-stat-pending">0</div>
+                <div class="text-[10px] text-zinc-500">Pending</div>
               </div>
-              <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
-                <div class="text-2xl font-bold text-blue-400" id="excel-stat-processing">0</div>
-                <div class="text-xs text-zinc-500">Processing</div>
+              <div class="p-2 bg-zinc-800/50 rounded-lg">
+                <div class="text-sm font-bold text-blue-400" id="excel-stat-processing">0</div>
+                <div class="text-[10px] text-zinc-500">Working</div>
               </div>
-              <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
-                <div class="text-2xl font-bold text-emerald-400" id="excel-stat-completed">0</div>
-                <div class="text-xs text-zinc-500">Completed</div>
+              <div class="p-2 bg-zinc-800/50 rounded-lg">
+                <div class="text-sm font-bold text-emerald-400" id="excel-stat-completed">0</div>
+                <div class="text-[10px] text-zinc-500">Done</div>
               </div>
             </div>
           </div>
-          
           <!-- File List -->
-          <div id="excel-files-list" class="space-y-3">
-            <div class="text-center py-12 text-zinc-500">
-              <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-800/50 flex items-center justify-center">
-                <svg class="w-8 h-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+          <div id="excel-files-list" class="flex-1 overflow-y-auto">
+            <div class="p-4 text-center text-zinc-500">
+              <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-zinc-800/50 flex items-center justify-center">
+                <svg class="w-6 h-6 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
               </div>
-              <p class="text-sm">No Excel files yet</p>
-              <p class="text-xs text-zinc-600 mt-1">Upload a file to get started</p>
+              <p class="text-xs">No files yet</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Spreadsheet Editor -->
+        <div id="excel-editor-panel" class="flex-1 flex flex-col bg-surface-900 overflow-hidden">
+          <!-- Empty State -->
+          <div id="excel-empty-state" class="flex-1 flex items-center justify-center">
+            <div class="text-center px-4">
+              <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-600/20 flex items-center justify-center">
+                <svg class="w-10 h-10 text-emerald-500/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375" /></svg>
+              </div>
+              <p class="text-sm text-zinc-400 mb-1">Select a file to edit</p>
+              <p class="text-xs text-zinc-600">Or upload a new Excel file</p>
+            </div>
+          </div>
+          
+          <!-- Spreadsheet Editor (hidden by default) -->
+          <div id="excel-spreadsheet" class="flex-1 flex flex-col hidden">
+            <!-- Toolbar -->
+            <div class="h-14 px-4 flex items-center justify-between border-b border-zinc-800/50 bg-surface-950/50 shrink-0">
+              <div class="flex items-center gap-3">
+                <button onclick="backToExcelList()" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 transition-colors md:hidden">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                </button>
+                <div>
+                  <h3 id="excel-editor-filename" class="text-sm font-medium text-zinc-100 truncate max-w-[200px]">filename.xlsx</h3>
+                  <p id="excel-editor-status" class="text-xs text-zinc-500">Ready</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="excel-unsaved-badge" class="hidden px-2 py-1 text-xs bg-amber-500/20 text-amber-400 rounded-full">Unsaved changes</span>
+                <button onclick="saveExcelChanges()" id="excel-save-btn" class="hidden px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  Save
+                </button>
+                <button onclick="downloadCurrentExcel('original')" class="px-3 py-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 text-sm rounded-lg transition-colors flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                  Original
+                </button>
+                <button onclick="downloadCurrentExcel('processed')" id="excel-download-processed-btn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                  Download
+                </button>
+              </div>
+            </div>
+            
+            <!-- Formula Bar -->
+            <div class="h-10 px-4 flex items-center gap-3 border-b border-zinc-800/50 bg-zinc-900/50 shrink-0">
+              <span id="excel-cell-ref" class="w-16 text-xs font-mono text-zinc-400 bg-zinc-800 px-2 py-1 rounded">A1</span>
+              <input type="text" id="excel-formula-bar" class="flex-1 h-7 px-2 text-sm bg-zinc-800/50 border border-zinc-700/50 rounded text-zinc-200 font-mono focus:outline-none focus:border-emerald-500/50" placeholder="Select a cell to edit" onchange="updateCellFromFormulaBar()">
+            </div>
+            
+            <!-- Spreadsheet Grid -->
+            <div id="excel-grid-container" class="flex-1 overflow-auto bg-zinc-950">
+              <table id="excel-grid" class="excel-table w-full border-collapse">
+                <!-- Grid will be rendered here -->
+              </table>
+            </div>
+            
+            <!-- Status Bar -->
+            <div class="h-8 px-4 flex items-center justify-between border-t border-zinc-800/50 bg-surface-950/50 text-xs text-zinc-500 shrink-0">
+              <span id="excel-row-count">0 rows</span>
+              <span id="excel-selection-info">Click a cell to edit</span>
             </div>
           </div>
         </div>
@@ -655,53 +820,6 @@
           <button id="excel-upload-btn" onclick="submitExcelUpload()" disabled class="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/25 disabled:shadow-none">
             Upload File
           </button>
-        </div>
-      </div>
-    </div>
-  </template>
-
-  <!-- Excel Preview Modal -->
-  <template id="excel-preview-modal-template">
-    <div class="modal-backdrop fixed inset-0 flex items-center justify-center p-4" onclick="closeModal(event)">
-      <div class="modal rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col animate-slide-in-up" onclick="event.stopPropagation()">
-        <div class="p-5 border-b border-zinc-800 flex items-center justify-between shrink-0">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            </div>
-            <div>
-              <h2 id="excel-preview-title" class="text-lg font-semibold text-zinc-100">File Preview</h2>
-              <p id="excel-preview-subtitle" class="text-xs text-zinc-500"></p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <button id="excel-download-original-btn" onclick="downloadExcelOriginal()" class="px-3 py-2 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              Original
-            </button>
-            <button id="excel-download-processed-btn" onclick="downloadExcelProcessed()" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-sm font-medium rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              Download Processed
-            </button>
-            <button onclick="closeModal()" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-        </div>
-        
-        <!-- File Info -->
-        <div id="excel-preview-info" class="p-4 border-b border-zinc-800 bg-zinc-900/50 shrink-0">
-          <!-- Info will be inserted here -->
-        </div>
-        
-        <!-- Data Preview -->
-        <div class="flex-1 overflow-auto p-4">
-          <div id="excel-preview-table" class="overflow-x-auto">
-            <div class="text-center py-12 text-zinc-500">
-              <div class="w-6 h-6 mx-auto mb-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-              <p class="text-sm">Loading preview...</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -1775,8 +1893,12 @@
     }
 
     // ============================================
-    // EXCEL API & RENDERING
+    // EXCEL API & SPREADSHEET EDITOR
     // ============================================
+    let currentExcelData = [];
+    let excelHasChanges = false;
+    let selectedCell = null;
+    
     async function loadExcelFiles() {
       try {
         const response = await fetch('/api/excel');
@@ -1806,55 +1928,35 @@
       
       if (excelFiles.length === 0) {
         container.innerHTML = `
-          <div class="text-center py-12 text-zinc-500">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-800/50 flex items-center justify-center">
-              <svg class="w-8 h-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+          <div class="p-4 text-center text-zinc-500">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-zinc-800/50 flex items-center justify-center">
+              <svg class="w-6 h-6 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
             </div>
-            <p class="text-sm">No Excel files yet</p>
-            <p class="text-xs text-zinc-600 mt-1">Upload a file to get started</p>
+            <p class="text-xs">No files yet</p>
           </div>
         `;
         return;
       }
 
-      container.innerHTML = excelFiles.map(file => {
-        const statusConfig = {
-          'pending': { color: 'bg-amber-500', bgColor: 'bg-amber-500/20', text: 'Pending', icon: '⏳' },
-          'processing': { color: 'bg-blue-500', bgColor: 'bg-blue-500/20', text: 'Processing', icon: '⚙️' },
-          'completed': { color: 'bg-emerald-500', bgColor: 'bg-emerald-500/20', text: 'Completed', icon: '✅' },
-          'error': { color: 'bg-red-500', bgColor: 'bg-red-500/20', text: 'Error', icon: '❌' }
-        };
-        const status = statusConfig[file.status] || statusConfig['pending'];
+      container.innerHTML = `<div class="divide-y divide-zinc-800/50">` + excelFiles.map(file => {
+        const statusIcons = { 'pending': '⏳', 'processing': '⚙️', 'completed': '✅', 'error': '❌' };
+        const isActive = currentPreviewFileId === file.id;
         
         return `
-          <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50 hover:border-zinc-600 transition-all cursor-pointer" onclick="previewExcelFile(${file.id})">
-            <div class="flex items-start gap-4">
-              <div class="w-12 h-12 rounded-xl ${status.bgColor} flex items-center justify-center shrink-0 text-xl">
-                ${status.icon}
-              </div>
+          <div class="excel-file-item p-3 cursor-pointer ${isActive ? 'active' : ''}" onclick="openExcelFile(${file.id})">
+            <div class="flex items-center gap-3">
+              <span class="text-lg">${statusIcons[file.status] || '📄'}</span>
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <h3 class="text-sm font-medium text-zinc-100 truncate">${escapeHtml(file.original_filename)}</h3>
-                  <span class="px-2 py-0.5 text-[10px] font-medium rounded-full ${status.bgColor} ${status.color.replace('bg-', 'text-')}">${status.text}</span>
-                </div>
-                <p class="text-xs text-zinc-500 mb-2">${formatFileSize(file.size)} · ${formatRelativeTime(file.created_at)}</p>
-                ${file.instructions ? `<p class="text-xs text-zinc-400 truncate">📝 ${escapeHtml(file.instructions)}</p>` : ''}
-                ${file.status === 'error' && file.error ? `<p class="text-xs text-red-400 mt-1">❌ ${escapeHtml(file.error)}</p>` : ''}
+                <p class="text-sm text-zinc-200 truncate">${escapeHtml(file.original_filename)}</p>
+                <p class="text-xs text-zinc-500">${formatFileSize(file.size)} · ${formatRelativeTime(file.created_at)}</p>
               </div>
-              <div class="flex items-center gap-2 shrink-0">
-                ${file.status === 'completed' ? `
-                  <button onclick="event.stopPropagation(); downloadExcelFile(${file.id}, 'processed')" class="p-2 hover:bg-zinc-700 rounded-lg text-emerald-400 hover:text-emerald-300 transition-colors" title="Download Processed">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                  </button>
-                ` : ''}
-                <button onclick="event.stopPropagation(); deleteExcelFile(${file.id})" class="p-2 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-red-400 transition-colors" title="Delete">
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                </button>
-              </div>
+              <button onclick="event.stopPropagation(); deleteExcelFile(${file.id})" class="p-1.5 hover:bg-zinc-700 rounded text-zinc-500 hover:text-red-400">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
           </div>
         `;
-      }).join('');
+      }).join('') + '</div>';
     }
 
     function formatFileSize(bytes) {
@@ -1863,27 +1965,277 @@
       return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
+    // Open file in spreadsheet editor
+    async function openExcelFile(id) {
+      currentPreviewFileId = id;
+      renderExcelFiles(); // Update active state
+      
+      try {
+        const response = await fetch(`/api/excel/${id}`);
+        const file = await response.json();
+        
+        // Show spreadsheet, hide empty state
+        document.getElementById('excel-empty-state').classList.add('hidden');
+        document.getElementById('excel-spreadsheet').classList.remove('hidden');
+        
+        // Update toolbar
+        document.getElementById('excel-editor-filename').textContent = file.original_filename;
+        const statusText = { 'pending': 'Pending processing', 'processing': 'Processing...', 'completed': 'Ready', 'error': 'Error' };
+        document.getElementById('excel-editor-status').textContent = statusText[file.status] || 'Ready';
+        
+        // Show/hide download button
+        const downloadBtn = document.getElementById('excel-download-processed-btn');
+        if (file.status === 'completed' && file.processed_filename) {
+          downloadBtn.disabled = false;
+          downloadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+          downloadBtn.disabled = true;
+          downloadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+        
+        // Load data into spreadsheet
+        if (file.preview_data && Array.isArray(file.preview_data) && file.preview_data.length > 0) {
+          currentExcelData = JSON.parse(JSON.stringify(file.preview_data)); // Deep copy
+          renderSpreadsheet();
+        } else {
+          document.getElementById('excel-grid').innerHTML = `
+            <tr><td class="p-8 text-center text-zinc-500">
+              <p class="mb-2">No data available</p>
+              <p class="text-xs text-zinc-600">${file.status === 'pending' ? 'File is awaiting processing' : 'Upload a new file or wait for processing'}</p>
+            </td></tr>
+          `;
+        }
+        
+        excelHasChanges = false;
+        updateSaveButton();
+        
+      } catch (e) {
+        console.error('Error opening file:', e);
+      }
+    }
+
+    function renderSpreadsheet() {
+      if (!currentExcelData || currentExcelData.length === 0) return;
+      
+      const headers = currentExcelData[0];
+      const rows = currentExcelData.slice(1);
+      const grid = document.getElementById('excel-grid');
+      
+      // Column letters
+      const colLetters = headers.map((_, i) => String.fromCharCode(65 + i));
+      
+      let html = `
+        <thead>
+          <tr>
+            <th class="corner"></th>
+            ${colLetters.map(letter => `<th>${letter}</th>`).join('')}
+          </tr>
+          <tr>
+            <th class="row-header">1</th>
+            ${headers.map((h, ci) => `
+              <td>
+                <div class="excel-cell" data-row="0" data-col="${ci}" onclick="selectExcelCell(this)" ondblclick="editExcelCell(this)">
+                  ${escapeHtml(String(h || ''))}
+                </div>
+              </td>
+            `).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((row, ri) => `
+            <tr>
+              <td class="row-header">${ri + 2}</td>
+              ${row.map((cell, ci) => {
+                const isNumber = typeof cell === 'number' || (!isNaN(cell) && cell !== '');
+                const isFormula = String(cell).startsWith('=');
+                return `
+                  <td>
+                    <div class="excel-cell ${isNumber ? 'number' : ''} ${isFormula ? 'formula' : ''}" data-row="${ri + 1}" data-col="${ci}" onclick="selectExcelCell(this)" ondblclick="editExcelCell(this)">
+                      ${escapeHtml(String(cell || ''))}
+                    </div>
+                  </td>
+                `;
+              }).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      `;
+      
+      grid.innerHTML = html;
+      document.getElementById('excel-row-count').textContent = `${rows.length + 1} rows`;
+    }
+
+    function selectExcelCell(cell) {
+      // Remove previous selection
+      document.querySelectorAll('.excel-cell.selected').forEach(c => c.classList.remove('selected'));
+      
+      // Select new cell
+      cell.classList.add('selected');
+      selectedCell = cell;
+      
+      const row = parseInt(cell.dataset.row);
+      const col = parseInt(cell.dataset.col);
+      const colLetter = String.fromCharCode(65 + col);
+      
+      document.getElementById('excel-cell-ref').textContent = `${colLetter}${row + 1}`;
+      document.getElementById('excel-formula-bar').value = currentExcelData[row][col] || '';
+      document.getElementById('excel-selection-info').textContent = `Cell ${colLetter}${row + 1}`;
+    }
+
+    function editExcelCell(cell) {
+      cell.classList.add('editing');
+      const row = parseInt(cell.dataset.row);
+      const col = parseInt(cell.dataset.col);
+      const value = currentExcelData[row][col] || '';
+      
+      cell.innerHTML = `<input type="text" class="excel-cell-input" value="${escapeHtml(String(value))}" onblur="finishEditCell(this, ${row}, ${col})" onkeydown="handleCellKeydown(event, this, ${row}, ${col})">`;
+      cell.querySelector('input').focus();
+      cell.querySelector('input').select();
+    }
+
+    function finishEditCell(input, row, col) {
+      const newValue = input.value;
+      const oldValue = currentExcelData[row][col];
+      
+      if (newValue !== String(oldValue || '')) {
+        currentExcelData[row][col] = newValue;
+        excelHasChanges = true;
+        updateSaveButton();
+      }
+      
+      const cell = input.parentElement;
+      cell.classList.remove('editing');
+      const isNumber = !isNaN(newValue) && newValue !== '';
+      const isFormula = newValue.startsWith('=');
+      cell.className = `excel-cell selected ${isNumber ? 'number' : ''} ${isFormula ? 'formula' : ''}`;
+      cell.innerHTML = escapeHtml(newValue || '');
+      
+      document.getElementById('excel-formula-bar').value = newValue;
+    }
+
+    function handleCellKeydown(event, input, row, col) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        finishEditCell(input, row, col);
+        // Move to next row
+        const nextCell = document.querySelector(`.excel-cell[data-row="${row + 1}"][data-col="${col}"]`);
+        if (nextCell) selectExcelCell(nextCell);
+      } else if (event.key === 'Tab') {
+        event.preventDefault();
+        finishEditCell(input, row, col);
+        // Move to next column
+        const nextCell = document.querySelector(`.excel-cell[data-row="${row}"][data-col="${col + 1}"]`);
+        if (nextCell) selectExcelCell(nextCell);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        const cell = input.parentElement;
+        cell.classList.remove('editing');
+        cell.innerHTML = escapeHtml(String(currentExcelData[row][col] || ''));
+      }
+    }
+
+    function updateCellFromFormulaBar() {
+      if (!selectedCell) return;
+      const row = parseInt(selectedCell.dataset.row);
+      const col = parseInt(selectedCell.dataset.col);
+      const newValue = document.getElementById('excel-formula-bar').value;
+      
+      if (newValue !== String(currentExcelData[row][col] || '')) {
+        currentExcelData[row][col] = newValue;
+        excelHasChanges = true;
+        updateSaveButton();
+        
+        const isNumber = !isNaN(newValue) && newValue !== '';
+        const isFormula = newValue.startsWith('=');
+        selectedCell.className = `excel-cell selected ${isNumber ? 'number' : ''} ${isFormula ? 'formula' : ''}`;
+        selectedCell.innerHTML = escapeHtml(newValue || '');
+      }
+    }
+
+    function updateSaveButton() {
+      const saveBtn = document.getElementById('excel-save-btn');
+      const badge = document.getElementById('excel-unsaved-badge');
+      if (excelHasChanges) {
+        saveBtn.classList.remove('hidden');
+        badge.classList.remove('hidden');
+      } else {
+        saveBtn.classList.add('hidden');
+        badge.classList.add('hidden');
+      }
+    }
+
+    async function saveExcelChanges() {
+      if (!currentPreviewFileId || !excelHasChanges) return;
+      
+      const saveBtn = document.getElementById('excel-save-btn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...';
+      
+      try {
+        // Update preview data on server
+        await fetch(`/api/excel/${currentPreviewFileId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            preview_data: currentExcelData,
+            status: 'completed',
+            status_message: 'Edited and saved'
+          })
+        });
+        
+        excelHasChanges = false;
+        updateSaveButton();
+        document.getElementById('excel-editor-status').textContent = 'Saved';
+        
+        // Reload file list
+        loadExcelFiles();
+        
+      } catch (e) {
+        console.error('Error saving:', e);
+        alert('Failed to save changes');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Save';
+      }
+    }
+
+    function downloadCurrentExcel(type) {
+      if (currentPreviewFileId) {
+        window.open(`/api/excel/${currentPreviewFileId}/download/${type}`, '_blank');
+      }
+    }
+
+    function backToExcelList() {
+      document.getElementById('excel-empty-state').classList.remove('hidden');
+      document.getElementById('excel-spreadsheet').classList.add('hidden');
+      currentPreviewFileId = null;
+      renderExcelFiles();
+    }
+
     // Excel Upload Modal
     function showUploadExcelModal() {
       showModal('upload-excel-modal-template');
       excelFileToUpload = null;
       
-      // Setup drag and drop
-      const dropZone = document.getElementById('excel-drop-zone');
-      dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('border-emerald-500', 'bg-emerald-500/5');
-      });
-      dropZone.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/5');
-      });
-      dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/5');
-        const file = e.dataTransfer.files[0];
-        if (file) handleExcelFile(file);
-      });
+      setTimeout(() => {
+        const dropZone = document.getElementById('excel-drop-zone');
+        if (!dropZone) return;
+        
+        dropZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dropZone.classList.add('border-emerald-500', 'bg-emerald-500/5');
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+          e.preventDefault();
+          dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/5');
+        });
+        dropZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/5');
+          const file = e.dataTransfer.files[0];
+          if (file) handleExcelFile(file);
+        });
+      }, 100);
     }
 
     function handleExcelFileSelect(event) {
@@ -1892,22 +2244,15 @@
     }
 
     function handleExcelFile(file) {
-      const validTypes = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-excel',
-        'text/csv'
-      ];
       const validExtensions = ['.xlsx', '.xls', '.csv'];
       const ext = '.' + file.name.split('.').pop().toLowerCase();
       
-      if (!validTypes.includes(file.type) && !validExtensions.includes(ext)) {
+      if (!validExtensions.includes(ext)) {
         alert('Please upload an Excel file (.xlsx, .xls, or .csv)');
         return;
       }
       
       excelFileToUpload = file;
-      
-      // Show selected file
       document.getElementById('excel-drop-zone').classList.add('hidden');
       document.getElementById('excel-selected-file').classList.remove('hidden');
       document.getElementById('excel-filename-display').textContent = file.name;
@@ -1931,7 +2276,6 @@
       btn.textContent = 'Uploading...';
       
       try {
-        // Read file as base64
         const content = await readFileAsBase64(excelFileToUpload);
         const instructions = document.getElementById('excel-instructions').value.trim();
         
@@ -1950,6 +2294,10 @@
         if (response.ok) {
           closeModal();
           loadExcelFiles();
+          // Open the newly uploaded file
+          if (result.id) {
+            setTimeout(() => openExcelFile(result.id), 500);
+          }
         } else {
           alert('Upload failed: ' + (result.error || 'Unknown error'));
         }
@@ -1965,132 +2313,20 @@
     function readFileAsBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => {
-          const base64 = reader.result.split(',')[1];
-          resolve(base64);
-        };
+        reader.onload = () => resolve(reader.result.split(',')[1]);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
     }
 
-    // Excel Preview
-    async function previewExcelFile(id) {
-      currentPreviewFileId = id;
-      showModal('excel-preview-modal-template');
-      
-      try {
-        const response = await fetch(`/api/excel/${id}`);
-        const file = await response.json();
-        
-        document.getElementById('excel-preview-title').textContent = file.original_filename;
-        document.getElementById('excel-preview-subtitle').textContent = `${formatFileSize(file.size)} · Uploaded ${formatRelativeTime(file.created_at)}`;
-        
-        // Show/hide download buttons based on status
-        const processedBtn = document.getElementById('excel-download-processed-btn');
-        if (file.status === 'completed' && file.processed_filename) {
-          processedBtn.disabled = false;
-          processedBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        } else {
-          processedBtn.disabled = true;
-          processedBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        }
-        
-        // Show file info
-        const statusConfig = {
-          'pending': { color: 'text-amber-400', bg: 'bg-amber-500/20', text: 'Pending' },
-          'processing': { color: 'text-blue-400', bg: 'bg-blue-500/20', text: 'Processing' },
-          'completed': { color: 'text-emerald-400', bg: 'bg-emerald-500/20', text: 'Completed' },
-          'error': { color: 'text-red-400', bg: 'bg-red-500/20', text: 'Error' }
-        };
-        const status = statusConfig[file.status] || statusConfig['pending'];
-        
-        document.getElementById('excel-preview-info').innerHTML = `
-          <div class="flex flex-wrap items-center gap-4 text-sm">
-            <div class="flex items-center gap-2">
-              <span class="text-zinc-500">Status:</span>
-              <span class="px-2 py-0.5 rounded-full ${status.bg} ${status.color} text-xs font-medium">${status.text}</span>
-            </div>
-            ${file.status_message ? `<div class="text-zinc-400">${escapeHtml(file.status_message)}</div>` : ''}
-            ${file.instructions ? `
-              <div class="flex items-center gap-2">
-                <span class="text-zinc-500">Instructions:</span>
-                <span class="text-zinc-300">${escapeHtml(file.instructions)}</span>
-              </div>
-            ` : ''}
-            ${file.processed_at ? `
-              <div class="flex items-center gap-2">
-                <span class="text-zinc-500">Processed:</span>
-                <span class="text-zinc-300">${formatRelativeTime(file.processed_at)}</span>
-              </div>
-            ` : ''}
-          </div>
-        `;
-        
-        // Render preview data if available
-        const tableContainer = document.getElementById('excel-preview-table');
-        if (file.preview_data && Array.isArray(file.preview_data) && file.preview_data.length > 0) {
-          tableContainer.innerHTML = renderExcelTable(file.preview_data);
-        } else {
-          tableContainer.innerHTML = `
-            <div class="text-center py-12 text-zinc-500">
-              <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-800/50 flex items-center justify-center">
-                <svg class="w-8 h-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375" /></svg>
-              </div>
-              <p class="text-sm">Preview not available</p>
-              <p class="text-xs text-zinc-600 mt-1">${file.status === 'pending' ? 'File is awaiting processing' : 'Preview data will be available after processing'}</p>
-            </div>
-          `;
-        }
-      } catch (e) {
-        console.error('Error loading preview:', e);
-      }
-    }
-
-    function renderExcelTable(data) {
-      if (!data || data.length === 0) return '';
-      
-      const headers = data[0];
-      const rows = data.slice(1, 51); // Show first 50 rows
-      
-      return `
-        <div class="text-xs text-zinc-500 mb-2">${data.length > 51 ? `Showing first 50 of ${data.length - 1} rows` : `${data.length - 1} rows`}</div>
-        <table class="w-full text-sm border-collapse">
-          <thead>
-            <tr class="bg-zinc-800/50">
-              ${headers.map(h => `<th class="px-3 py-2 text-left text-xs font-semibold text-zinc-300 border border-zinc-700">${escapeHtml(String(h || ''))}</th>`).join('')}
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map((row, i) => `
-              <tr class="${i % 2 === 0 ? 'bg-zinc-900/30' : 'bg-zinc-800/20'} hover:bg-zinc-700/30">
-                ${row.map(cell => `<td class="px-3 py-2 text-zinc-300 border border-zinc-700/50">${escapeHtml(String(cell || ''))}</td>`).join('')}
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-    }
-
-    // Excel Download
-    function downloadExcelFile(id, type) {
-      window.open(`/api/excel/${id}/download/${type}`, '_blank');
-    }
-
-    function downloadExcelOriginal() {
-      if (currentPreviewFileId) downloadExcelFile(currentPreviewFileId, 'original');
-    }
-
-    function downloadExcelProcessed() {
-      if (currentPreviewFileId) downloadExcelFile(currentPreviewFileId, 'processed');
-    }
-
-    // Excel Delete
     async function deleteExcelFile(id) {
-      if (!confirm('Are you sure you want to delete this file?')) return;
+      if (!confirm('Delete this file?')) return;
       
       try {
         await fetch(`/api/excel/${id}`, { method: 'DELETE' });
+        if (currentPreviewFileId === id) {
+          backToExcelList();
+        }
         loadExcelFiles();
       } catch (e) {
         console.error('Error deleting file:', e);
