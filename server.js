@@ -8,11 +8,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || './data/briefings.json';
 const EXPENSES_FILE = process.env.EXPENSES_FILE || './data/expenses.json';
+const EXCEL_FILE = process.env.EXCEL_FILE || './data/excel-files.json';
+const EXCEL_UPLOAD_DIR = process.env.EXCEL_UPLOAD_DIR || './data/excel-files';
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static('public'));
+app.use('/excel-files', express.static(EXCEL_UPLOAD_DIR));
 
 // Data structure
 function getDefaultData() {
@@ -139,6 +143,44 @@ function initializeExpenses() {
 }
 
 initializeExpenses();
+
+// ============================================
+// EXCEL DATA FUNCTIONS
+// ============================================
+
+function getDefaultExcelData() {
+  return {
+    files: [],
+    nextId: 1
+  };
+}
+
+function readExcelData() {
+  try {
+    if (fs.existsSync(EXCEL_FILE)) {
+      return JSON.parse(fs.readFileSync(EXCEL_FILE, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Error reading excel data:', e);
+  }
+  return getDefaultExcelData();
+}
+
+function writeExcelData(data) {
+  const dir = path.dirname(EXCEL_FILE);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(EXCEL_FILE, JSON.stringify(data, null, 2));
+}
+
+// Initialize excel directories and data file
+if (!fs.existsSync(EXCEL_UPLOAD_DIR)) {
+  fs.mkdirSync(EXCEL_UPLOAD_DIR, { recursive: true });
+}
+if (!fs.existsSync(EXCEL_FILE)) {
+  writeExcelData(getDefaultExcelData());
+}
 
 // ============================================
 // BRIEFINGS API
@@ -836,11 +878,247 @@ app.get('/api/expenses/categories', (req, res) => {
 });
 
 // ============================================
+// EXCEL API
+// ============================================
+
+// Get all excel files
+app.get('/api/excel', (req, res) => {
+  const { status, limit = 50 } = req.query;
+  const data = readExcelData();
+  let results = data.files;
+  
+  if (status) {
+    results = results.filter(f => f.status === status);
+  }
+  
+  results = results
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, parseInt(limit));
+  
+  res.json(results);
+});
+
+// Get single excel file metadata
+app.get('/api/excel/:id', (req, res) => {
+  const data = readExcelData();
+  const file = data.files.find(f => f.id === parseInt(req.params.id));
+  
+  if (!file) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  res.json(file);
+});
+
+// Upload excel file (base64)
+app.post('/api/excel/upload', (req, res) => {
+  const { filename, content, instructions } = req.body;
+  
+  if (!filename || !content) {
+    return res.status(400).json({ error: 'Missing required fields: filename, content (base64)' });
+  }
+  
+  try {
+    const data = readExcelData();
+    const fileId = data.nextId++;
+    const timestamp = Date.now();
+    const ext = path.extname(filename) || '.xlsx';
+    const safeFilename = `${fileId}_${timestamp}_original${ext}`;
+    const filePath = path.join(EXCEL_UPLOAD_DIR, safeFilename);
+    
+    // Decode base64 and save file
+    const buffer = Buffer.from(content, 'base64');
+    fs.writeFileSync(filePath, buffer);
+    
+    const newFile = {
+      id: fileId,
+      original_filename: filename,
+      stored_filename: safeFilename,
+      processed_filename: null,
+      size: buffer.length,
+      instructions: instructions || null,
+      status: 'pending', // pending, processing, completed, error
+      status_message: 'Awaiting processing',
+      preview_data: null,
+      created_at: new Date().toISOString(),
+      processed_at: null,
+      error: null
+    };
+    
+    data.files.push(newFile);
+    writeExcelData(data);
+    
+    res.json({ 
+      id: fileId, 
+      message: 'File uploaded successfully',
+      file: newFile
+    });
+  } catch (e) {
+    console.error('Error uploading excel file:', e);
+    res.status(500).json({ error: 'Failed to upload file: ' + e.message });
+  }
+});
+
+// Update excel file (after processing)
+app.patch('/api/excel/:id', (req, res) => {
+  const data = readExcelData();
+  const file = data.files.find(f => f.id === parseInt(req.params.id));
+  
+  if (!file) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  const { status, status_message, processed_filename, preview_data, error, instructions } = req.body;
+  
+  if (status) file.status = status;
+  if (status_message) file.status_message = status_message;
+  if (processed_filename !== undefined) file.processed_filename = processed_filename;
+  if (preview_data !== undefined) file.preview_data = preview_data;
+  if (error !== undefined) file.error = error;
+  if (instructions !== undefined) file.instructions = instructions;
+  
+  if (status === 'completed') {
+    file.processed_at = new Date().toISOString();
+  }
+  
+  file.updated_at = new Date().toISOString();
+  writeExcelData(data);
+  
+  res.json(file);
+});
+
+// Upload processed file (base64)
+app.post('/api/excel/:id/processed', (req, res) => {
+  const data = readExcelData();
+  const file = data.files.find(f => f.id === parseInt(req.params.id));
+  
+  if (!file) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  const { content, preview_data } = req.body;
+  
+  if (!content) {
+    return res.status(400).json({ error: 'Missing required field: content (base64)' });
+  }
+  
+  try {
+    const timestamp = Date.now();
+    const ext = path.extname(file.original_filename) || '.xlsx';
+    const processedFilename = `${file.id}_${timestamp}_processed${ext}`;
+    const filePath = path.join(EXCEL_UPLOAD_DIR, processedFilename);
+    
+    // Decode base64 and save processed file
+    const buffer = Buffer.from(content, 'base64');
+    fs.writeFileSync(filePath, buffer);
+    
+    file.processed_filename = processedFilename;
+    file.status = 'completed';
+    file.status_message = 'Processing complete';
+    file.processed_at = new Date().toISOString();
+    if (preview_data) file.preview_data = preview_data;
+    
+    writeExcelData(data);
+    
+    res.json({ 
+      message: 'Processed file uploaded successfully',
+      file
+    });
+  } catch (e) {
+    console.error('Error uploading processed file:', e);
+    res.status(500).json({ error: 'Failed to upload processed file: ' + e.message });
+  }
+});
+
+// Download original file
+app.get('/api/excel/:id/download/original', (req, res) => {
+  const data = readExcelData();
+  const file = data.files.find(f => f.id === parseInt(req.params.id));
+  
+  if (!file) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  const filePath = path.join(EXCEL_UPLOAD_DIR, file.stored_filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Original file not found on disk' });
+  }
+  
+  res.download(filePath, file.original_filename);
+});
+
+// Download processed file
+app.get('/api/excel/:id/download/processed', (req, res) => {
+  const data = readExcelData();
+  const file = data.files.find(f => f.id === parseInt(req.params.id));
+  
+  if (!file) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  if (!file.processed_filename) {
+    return res.status(404).json({ error: 'Processed file not available yet' });
+  }
+  
+  const filePath = path.join(EXCEL_UPLOAD_DIR, file.processed_filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Processed file not found on disk' });
+  }
+  
+  const downloadName = file.original_filename.replace(/(\.[^.]+)$/, '_processed$1');
+  res.download(filePath, downloadName);
+});
+
+// Delete excel file
+app.delete('/api/excel/:id', (req, res) => {
+  const data = readExcelData();
+  const index = data.files.findIndex(f => f.id === parseInt(req.params.id));
+  
+  if (index === -1) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  const file = data.files[index];
+  
+  // Delete files from disk
+  try {
+    const originalPath = path.join(EXCEL_UPLOAD_DIR, file.stored_filename);
+    if (fs.existsSync(originalPath)) fs.unlinkSync(originalPath);
+    
+    if (file.processed_filename) {
+      const processedPath = path.join(EXCEL_UPLOAD_DIR, file.processed_filename);
+      if (fs.existsSync(processedPath)) fs.unlinkSync(processedPath);
+    }
+  } catch (e) {
+    console.error('Error deleting files:', e);
+  }
+  
+  data.files.splice(index, 1);
+  writeExcelData(data);
+  
+  res.json({ message: 'File deleted successfully' });
+});
+
+// Get excel stats
+app.get('/api/excel/stats', (req, res) => {
+  const data = readExcelData();
+  const files = data.files;
+  
+  const total = files.length;
+  const pending = files.filter(f => f.status === 'pending').length;
+  const processing = files.filter(f => f.status === 'processing').length;
+  const completed = files.filter(f => f.status === 'completed').length;
+  const error = files.filter(f => f.status === 'error').length;
+  
+  res.json({ total, pending, processing, completed, error });
+});
+
+// ============================================
 // HEALTH & MISC
 // ============================================
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '2.0.0' });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '2.1.0' });
 });
 
 // Serve shared briefing page
