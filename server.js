@@ -71,9 +71,43 @@ async function initDatabase() {
         vendor VARCHAR(255),
         date TIMESTAMP DEFAULT NOW(),
         created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP
+        updated_at TIMESTAMP,
+        merchant_address TEXT,
+        merchant_phone VARCHAR(50),
+        items JSONB,
+        subtotal DECIMAL(10,2),
+        tax DECIMAL(10,2),
+        tip DECIMAL(10,2),
+        discount DECIMAL(10,2),
+        payment_method VARCHAR(50),
+        card_type VARCHAR(50),
+        card_last_four VARCHAR(4),
+        receipt_number VARCHAR(100),
+        transaction_time VARCHAR(20)
       )
     `);
+
+    // Add new columns if they don't exist (for existing tables)
+    const newColumns = [
+      ['merchant_address', 'TEXT'],
+      ['merchant_phone', 'VARCHAR(50)'],
+      ['items', 'JSONB'],
+      ['subtotal', 'DECIMAL(10,2)'],
+      ['tax', 'DECIMAL(10,2)'],
+      ['tip', 'DECIMAL(10,2)'],
+      ['discount', 'DECIMAL(10,2)'],
+      ['payment_method', 'VARCHAR(50)'],
+      ['card_type', 'VARCHAR(50)'],
+      ['card_last_four', 'VARCHAR(4)'],
+      ['receipt_number', 'VARCHAR(100)'],
+      ['transaction_time', 'VARCHAR(20)']
+    ];
+    
+    for (const [col, type] of newColumns) {
+      await client.query(`
+        ALTER TABLE lumen_expenses ADD COLUMN IF NOT EXISTS ${col} ${type}
+      `).catch(() => {});
+    }
 
     // Create categories table
     await client.query(`
@@ -705,16 +739,57 @@ app.get('/api/expenses/summary', async (req, res) => {
 
 app.post('/api/expenses', async (req, res) => {
   try {
-    const { amount, category, description, vendor, date } = req.body;
+    const { 
+      amount, category, description, vendor, date,
+      merchant_address, merchant_phone, items,
+      subtotal, tax, tip, discount,
+      payment_method, card_type, card_last_four,
+      receipt_number, transaction_time,
+      // Also accept nested 'merchant' and 'payment' objects
+      merchant, payment
+    } = req.body;
     
     if (!amount || !category) {
       return res.status(400).json({ error: 'Missing required fields: amount, category' });
     }
 
+    // Handle nested merchant object
+    const finalMerchantAddress = merchant_address || (merchant && merchant.address) || null;
+    const finalMerchantPhone = merchant_phone || (merchant && merchant.phone) || null;
+    const finalVendor = vendor || (merchant && merchant.name) || null;
+
+    // Handle nested payment object
+    const finalPaymentMethod = payment_method || (payment && payment.method) || null;
+    const finalCardType = card_type || (payment && payment.cardType) || null;
+    const finalCardLastFour = card_last_four || (payment && payment.lastFour) || null;
+
     const result = await pool.query(
-      `INSERT INTO lumen_expenses (amount, category, description, vendor, date) 
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [parseFloat(amount), category, description || '', vendor || null, date || new Date()]
+      `INSERT INTO lumen_expenses (
+        amount, category, description, vendor, date,
+        merchant_address, merchant_phone, items,
+        subtotal, tax, tip, discount,
+        payment_method, card_type, card_last_four,
+        receipt_number, transaction_time
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
+      [
+        parseFloat(amount), 
+        category, 
+        description || '', 
+        finalVendor,
+        date || new Date(),
+        finalMerchantAddress,
+        finalMerchantPhone,
+        items ? JSON.stringify(items) : null,
+        subtotal ? parseFloat(subtotal) : null,
+        tax ? parseFloat(tax) : null,
+        tip ? parseFloat(tip) : null,
+        discount ? parseFloat(discount) : null,
+        finalPaymentMethod,
+        finalCardType,
+        finalCardLastFour,
+        receipt_number || null,
+        transaction_time || null
+      ]
     );
 
     // Add category if new
