@@ -483,6 +483,30 @@
             <span id="count-ideas" class="ml-auto text-xs text-zinc-600 tabular-nums">💡</span>
           </button>
         </div>
+
+        <!-- Jobs Section -->
+        <div class="border-t border-zinc-800/50 pt-3 mb-4">
+          <div class="px-3 py-2">
+            <span class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Job Search</span>
+          </div>
+          <button onclick="switchView('jobs'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="jobs">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" /></svg>
+            <span>Jobs</span>
+            <span id="count-jobs" class="ml-auto text-xs text-zinc-600 tabular-nums">💼</span>
+          </button>
+        </div>
+
+        <!-- Resources Section -->
+        <div class="border-t border-zinc-800/50 pt-3 mb-4">
+          <div class="px-3 py-2">
+            <span class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Resources</span>
+          </div>
+          <button onclick="switchView('resources'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="resources">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+            <span>Links & Files</span>
+            <span id="count-resources" class="ml-auto text-xs text-zinc-600 tabular-nums">🔗</span>
+          </button>
+        </div>
         
         <!-- Tags -->
         <div class="border-t border-zinc-800/50 pt-3">
@@ -592,6 +616,61 @@
               <div class="h-48 rounded-2xl skeleton"></div>
               <div class="h-48 rounded-2xl skeleton"></div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jobs View -->
+      <div id="jobs-view" class="flex-1 overflow-y-auto hidden">
+        <div id="jobs-content" class="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+          <!-- Stats Bar -->
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <div class="bg-zinc-800/50 rounded-xl p-3 text-center">
+              <div class="text-2xl font-bold text-zinc-100" id="jobs-stat-total">0</div>
+              <div class="text-xs text-zinc-500">Total</div>
+            </div>
+            <div class="bg-zinc-800/50 rounded-xl p-3 text-center">
+              <div class="text-2xl font-bold text-blue-400" id="jobs-stat-new">0</div>
+              <div class="text-xs text-zinc-500">New</div>
+            </div>
+            <div class="bg-zinc-800/50 rounded-xl p-3 text-center">
+              <div class="text-2xl font-bold text-yellow-400" id="jobs-stat-interested">0</div>
+              <div class="text-xs text-zinc-500">Interested</div>
+            </div>
+            <div class="bg-zinc-800/50 rounded-xl p-3 text-center">
+              <div class="text-2xl font-bold text-emerald-400" id="jobs-stat-applied">0</div>
+              <div class="text-xs text-zinc-500">Applied</div>
+            </div>
+            <div class="bg-zinc-800/50 rounded-xl p-3 text-center">
+              <div class="text-2xl font-bold text-purple-400" id="jobs-stat-interviewing">0</div>
+              <div class="text-xs text-zinc-500">Interviewing</div>
+            </div>
+          </div>
+          <!-- Jobs List -->
+          <div id="jobs-list" class="space-y-3">
+            <div class="h-24 rounded-2xl skeleton"></div>
+            <div class="h-24 rounded-2xl skeleton"></div>
+            <div class="h-24 rounded-2xl skeleton"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resources View -->
+      <div id="resources-view" class="flex-1 overflow-y-auto hidden">
+        <div id="resources-content" class="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-semibold text-zinc-100">Saved Links & Files</h2>
+            <button onclick="showAddResourceModal()" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Add Resource
+            </button>
+          </div>
+          <!-- Resources List -->
+          <div id="resources-list" class="space-y-3">
+            <div class="h-20 rounded-2xl skeleton"></div>
+            <div class="h-20 rounded-2xl skeleton"></div>
+            <div class="h-20 rounded-2xl skeleton"></div>
           </div>
         </div>
       </div>
@@ -1047,6 +1126,8 @@
       document.getElementById('expenses-view').classList.add('hidden');
       document.getElementById('ideas-view').classList.add('hidden');
       document.getElementById('excel-view').classList.add('hidden');
+      document.getElementById('jobs-view').classList.add('hidden');
+      document.getElementById('resources-view').classList.add('hidden');
       
       // Update header
       document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1078,6 +1159,18 @@
         document.getElementById('briefing-count').textContent = '';
         document.querySelector('[data-filter="excel"]').classList.add('active');
         loadExcelFiles();
+      } else if (view === 'jobs') {
+        document.getElementById('jobs-view').classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'Job Search';
+        document.getElementById('briefing-count').textContent = '';
+        document.querySelector('[data-filter="jobs"]').classList.add('active');
+        loadJobs();
+      } else if (view === 'resources') {
+        document.getElementById('resources-view').classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'Links & Files';
+        document.getElementById('briefing-count').textContent = '';
+        document.querySelector('[data-filter="resources"]').classList.add('active');
+        loadResources();
       }
     }
 
@@ -2484,6 +2577,242 @@
         fetchBriefings();
       }, 300);
     });
+
+    // ============================================
+    // JOBS
+    // ============================================
+    const jobStatusConfig = {
+      'new': { label: 'New', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+      'interested': { label: 'Interested', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
+      'applied': { label: 'Applied', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+      'interviewing': { label: 'Interviewing', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+      'rejected': { label: 'Rejected', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+      'offer': { label: 'Offer!', color: 'bg-green-500/20 text-green-400 border-green-500/30' }
+    };
+
+    async function loadJobs() {
+      try {
+        const [jobsRes, statsRes] = await Promise.all([
+          fetch('/api/jobs'),
+          fetch('/api/jobs/stats')
+        ]);
+        const jobs = await jobsRes.json();
+        const stats = await statsRes.json();
+        renderJobsView(jobs, stats);
+      } catch (err) {
+        console.error('Error loading jobs:', err);
+        document.getElementById('jobs-list').innerHTML = '<div class="text-center text-red-400 py-8">Failed to load jobs</div>';
+      }
+    }
+
+    function renderJobsView(jobs, stats) {
+      // Update stats
+      document.getElementById('jobs-stat-total').textContent = stats.total || 0;
+      document.getElementById('jobs-stat-new').textContent = stats.new || 0;
+      document.getElementById('jobs-stat-interested').textContent = stats.interested || 0;
+      document.getElementById('jobs-stat-applied').textContent = stats.applied || 0;
+      document.getElementById('jobs-stat-interviewing').textContent = stats.interviewing || 0;
+
+      const container = document.getElementById('jobs-list');
+      
+      if (!jobs || jobs.length === 0) {
+        container.innerHTML = '<div class="text-center text-zinc-500 py-12">No jobs yet. Jobs from your daily search will appear here.</div>';
+        return;
+      }
+
+      container.innerHTML = jobs.map(job => {
+        const status = jobStatusConfig[job.status] || jobStatusConfig['new'];
+        return `
+          <div class="p-4 rounded-xl bg-zinc-800/50 hover:bg-zinc-800/70 border border-zinc-700/50 transition-all">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <h3 class="font-semibold text-zinc-100 truncate">${job.title}</h3>
+                  ${job.starred ? '<span class="text-yellow-400">★</span>' : ''}
+                </div>
+                <p class="text-sm text-zinc-400 mb-2">${job.company}${job.location ? ' · ' + job.location : ''}</p>
+                ${job.salary_text ? `<p class="text-sm text-emerald-400 font-medium mb-2">${job.salary_text}</p>` : ''}
+                ${job.fit_notes ? `<p class="text-xs text-zinc-500 mb-2">${job.fit_notes}</p>` : ''}
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="px-2 py-0.5 text-xs rounded-full border ${status.color}">${status.label}</span>
+                  ${job.tags?.map(t => `<span class="px-2 py-0.5 text-xs rounded-full bg-zinc-700/50 text-zinc-400">${t}</span>`).join('') || ''}
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <select onchange="updateJobStatus(${job.id}, this.value)" class="text-xs bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-zinc-300">
+                  ${Object.entries(jobStatusConfig).map(([k, v]) => `<option value="${k}" ${job.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}
+                </select>
+                ${job.url ? `<a href="${job.url}" target="_blank" class="p-2 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-200 transition-colors" title="Apply">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+                </a>` : ''}
+                <button onclick="toggleJobStar(${job.id})" class="p-2 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-yellow-400 transition-colors" title="Star">
+                  <svg class="w-4 h-4" fill="${job.starred ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function updateJobStatus(id, status) {
+      try {
+        await fetch(`/api/jobs/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        loadJobs();
+      } catch (err) {
+        console.error('Error updating job status:', err);
+      }
+    }
+
+    async function toggleJobStar(id) {
+      try {
+        await fetch(`/api/jobs/${id}/star`, { method: 'PATCH' });
+        loadJobs();
+      } catch (err) {
+        console.error('Error toggling job star:', err);
+      }
+    }
+
+    // ============================================
+    // RESOURCES
+    // ============================================
+    async function loadResources() {
+      try {
+        const response = await fetch('/api/resources');
+        const resources = await response.json();
+        renderResourcesView(resources);
+      } catch (err) {
+        console.error('Error loading resources:', err);
+        document.getElementById('resources-list').innerHTML = '<div class="text-center text-red-400 py-8">Failed to load resources</div>';
+      }
+    }
+
+    function renderResourcesView(resources) {
+      const container = document.getElementById('resources-list');
+      
+      if (!resources || resources.length === 0) {
+        container.innerHTML = '<div class="text-center text-zinc-500 py-12">No resources saved yet. Links and files shared in chat will appear here.</div>';
+        return;
+      }
+
+      container.innerHTML = resources.map(res => `
+        <div class="p-4 rounded-xl bg-zinc-800/50 hover:bg-zinc-800/70 border border-zinc-700/50 transition-all">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-lg">${res.type === 'file' ? '📄' : '🔗'}</span>
+                <h3 class="font-medium text-zinc-100 truncate">${res.title}</h3>
+                ${res.starred ? '<span class="text-yellow-400">★</span>' : ''}
+              </div>
+              ${res.url ? `<a href="${res.url}" target="_blank" class="text-sm text-indigo-400 hover:text-indigo-300 truncate block mb-1">${res.url}</a>` : ''}
+              ${res.description ? `<p class="text-xs text-zinc-500 mb-2">${res.description}</p>` : ''}
+              <div class="flex items-center gap-2">
+                ${res.category ? `<span class="px-2 py-0.5 text-xs rounded-full bg-zinc-700/50 text-zinc-400">${res.category}</span>` : ''}
+                <span class="text-xs text-zinc-600">${new Date(res.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              ${res.url ? `<a href="${res.url}" target="_blank" class="p-2 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-200 transition-colors" title="Open">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+              </a>` : ''}
+              <button onclick="toggleResourceStar(${res.id})" class="p-2 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-yellow-400 transition-colors">
+                <svg class="w-4 h-4" fill="${res.starred ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
+              </button>
+              <button onclick="deleteResource(${res.id})" class="p-2 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-red-400 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function toggleResourceStar(id) {
+      try {
+        await fetch(`/api/resources/${id}/star`, { method: 'PATCH' });
+        loadResources();
+      } catch (err) {
+        console.error('Error toggling resource star:', err);
+      }
+    }
+
+    async function deleteResource(id) {
+      if (!confirm('Delete this resource?')) return;
+      try {
+        await fetch(`/api/resources/${id}`, { method: 'DELETE' });
+        loadResources();
+      } catch (err) {
+        console.error('Error deleting resource:', err);
+      }
+    }
+
+    function showAddResourceModal() {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+      modal.id = 'add-resource-modal';
+      modal.innerHTML = `
+        <div class="bg-surface-900 rounded-2xl border border-zinc-700/50 w-full max-w-md p-6 animate-fade-in">
+          <h3 class="text-lg font-semibold text-zinc-100 mb-4">Add Resource</h3>
+          <form onsubmit="submitResource(event)">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm text-zinc-400 mb-1">Title *</label>
+                <input type="text" id="resource-title" required class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 focus:border-indigo-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-sm text-zinc-400 mb-1">URL</label>
+                <input type="url" id="resource-url" class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 focus:border-indigo-500 focus:outline-none" placeholder="https://...">
+              </div>
+              <div>
+                <label class="block text-sm text-zinc-400 mb-1">Description</label>
+                <textarea id="resource-desc" rows="2" class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 focus:border-indigo-500 focus:outline-none resize-none"></textarea>
+              </div>
+              <div>
+                <label class="block text-sm text-zinc-400 mb-1">Category</label>
+                <input type="text" id="resource-category" class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 focus:border-indigo-500 focus:outline-none" placeholder="e.g., Tools, Articles, Reference">
+              </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+              <button type="button" onclick="closeResourceModal()" class="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200">Cancel</button>
+              <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg">Add Resource</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      document.getElementById('resource-title').focus();
+    }
+
+    function closeResourceModal() {
+      document.getElementById('add-resource-modal')?.remove();
+    }
+
+    async function submitResource(e) {
+      e.preventDefault();
+      const data = {
+        title: document.getElementById('resource-title').value,
+        url: document.getElementById('resource-url').value || null,
+        description: document.getElementById('resource-desc').value || null,
+        category: document.getElementById('resource-category').value || null,
+        type: document.getElementById('resource-url').value ? 'link' : 'note'
+      };
+      try {
+        await fetch('/api/resources', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        closeResourceModal();
+        loadResources();
+      } catch (err) {
+        console.error('Error adding resource:', err);
+        alert('Failed to add resource');
+      }
+    }
 
     // ============================================
     // INITIALIZATION
