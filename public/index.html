@@ -413,6 +413,18 @@
           </button>
         </div>
         
+        <!-- Ideas Section -->
+        <div class="border-t border-zinc-800/50 pt-3 mb-4">
+          <div class="px-3 py-2">
+            <span class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Ideas</span>
+          </div>
+          <button onclick="switchView('ideas'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="ideas">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" /></svg>
+            <span>AI Ideas</span>
+            <span id="count-ideas" class="ml-auto text-xs text-zinc-600 tabular-nums">💡</span>
+          </button>
+        </div>
+        
         <!-- Tags -->
         <div class="border-t border-zinc-800/50 pt-3">
           <div class="px-3 py-2 flex items-center justify-between">
@@ -508,6 +520,21 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
         </button>
+      </div>
+
+      <!-- Ideas View -->
+      <div id="ideas-view" class="flex-1 overflow-y-auto hidden">
+        <div id="ideas-content" class="p-4 md:p-6 max-w-6xl mx-auto">
+          <!-- Loading state -->
+          <div class="space-y-4">
+            <div class="h-32 rounded-2xl skeleton"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="h-40 rounded-2xl skeleton"></div>
+              <div class="h-40 rounded-2xl skeleton"></div>
+              <div class="h-40 rounded-2xl skeleton"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Excel View - Two Panel Layout -->
@@ -882,11 +909,13 @@
       const briefingsView = document.getElementById('briefings-view');
       const expensesView = document.getElementById('expenses-view');
       const excelView = document.getElementById('excel-view');
+      const ideasView = document.getElementById('ideas-view');
       
       // Hide all views first
       briefingsView.classList.add('hidden');
       expensesView.classList.add('hidden');
       excelView.classList.add('hidden');
+      ideasView.classList.add('hidden');
       
       if (view === 'expenses') {
         expensesView.classList.remove('hidden');
@@ -894,6 +923,12 @@
         document.getElementById('briefing-count').textContent = '';
         updateActiveFilter('expenses');
         loadExpenses();
+      } else if (view === 'ideas') {
+        ideasView.classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'AI Ideas';
+        document.getElementById('briefing-count').textContent = '';
+        updateActiveFilter('ideas');
+        loadIdeas();
       } else if (view === 'excel') {
         excelView.classList.remove('hidden');
         document.getElementById('current-filter').textContent = 'Excel Files';
@@ -1890,6 +1925,140 @@
       closeModal();
       viewBriefing(parseInt(id));
       fetchTags();
+    }
+
+    // ============================================
+    // IDEAS API
+    // ============================================
+    let ideas = [];
+    let ideasFilter = { category: null, type: null, status: null };
+    
+    const ideaCategoryConfig = {
+      'Voice AI - Personal': { icon: '🎤', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+      'Voice AI - Business': { icon: '📞', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+      'Automation - Personal': { icon: '🤖', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+      'Automation - Business': { icon: '⚙️', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+      'Smart Home': { icon: '🏠', color: 'bg-teal-500/20 text-teal-400 border-teal-500/30' },
+      'Apps - Consumer': { icon: '📱', color: 'bg-pink-500/20 text-pink-400 border-pink-500/30' },
+      'Lumen App': { icon: '🔆', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' },
+      'Moonshots': { icon: '🚀', color: 'bg-red-500/20 text-red-400 border-red-500/30' }
+    };
+    
+    const ideaStatusConfig = {
+      'idea': { label: 'Idea', color: 'bg-zinc-500/20 text-zinc-400' },
+      'in-progress': { label: 'In Progress', color: 'bg-blue-500/20 text-blue-400' },
+      'scheduled': { label: 'Scheduled', color: 'bg-amber-500/20 text-amber-400' },
+      'completed': { label: 'Completed', color: 'bg-emerald-500/20 text-emerald-400' }
+    };
+    
+    async function loadIdeas() {
+      try {
+        let url = '/api/ideas?limit=100';
+        if (ideasFilter.category) url += `&category=${encodeURIComponent(ideasFilter.category)}`;
+        if (ideasFilter.type) url += `&type=${encodeURIComponent(ideasFilter.type)}`;
+        if (ideasFilter.status) url += `&status=${encodeURIComponent(ideasFilter.status)}`;
+        
+        const response = await fetch(url);
+        ideas = await response.json();
+        renderIdeasView();
+      } catch (err) {
+        console.error('Error loading ideas:', err);
+      }
+    }
+    
+    function filterIdeasBy(key, value) {
+      ideasFilter[key] = value === ideasFilter[key] ? null : value;
+      loadIdeas();
+    }
+    
+    function renderIdeasView() {
+      const container = document.getElementById('ideas-content');
+      
+      // Group ideas by category
+      const byCategory = {};
+      ideas.forEach(idea => {
+        if (!byCategory[idea.category]) byCategory[idea.category] = [];
+        byCategory[idea.category].push(idea);
+      });
+      
+      // Count by status
+      const statusCounts = { idea: 0, 'in-progress': 0, scheduled: 0, completed: 0 };
+      ideas.forEach(i => { if (statusCounts[i.status] !== undefined) statusCounts[i.status]++; });
+      
+      // Count by type
+      const typeCounts = {};
+      ideas.forEach(i => { typeCounts[i.type] = (typeCounts[i.type] || 0) + 1; });
+      
+      container.innerHTML = `
+        <div class="animate-fade-in space-y-6">
+          <!-- Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-zinc-100">AI Ideas</h2>
+              <p class="text-sm text-zinc-500 mt-1">${ideas.length} ideas ready to build</p>
+            </div>
+          </div>
+          
+          <!-- Stats -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div onclick="filterIdeasBy('status', null)" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/50 transition-colors ${!ideasFilter.status ? 'ring-2 ring-indigo-500' : ''}">
+              <div class="text-2xl font-bold text-zinc-100">${ideas.length}</div>
+              <div class="text-xs text-zinc-500 uppercase">All Ideas</div>
+            </div>
+            <div onclick="filterIdeasBy('status', 'idea')" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/50 transition-colors ${ideasFilter.status === 'idea' ? 'ring-2 ring-indigo-500' : ''}">
+              <div class="text-2xl font-bold text-zinc-400">${statusCounts.idea}</div>
+              <div class="text-xs text-zinc-500 uppercase">Backlog</div>
+            </div>
+            <div onclick="filterIdeasBy('status', 'scheduled')" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/50 transition-colors ${ideasFilter.status === 'scheduled' ? 'ring-2 ring-indigo-500' : ''}">
+              <div class="text-2xl font-bold text-amber-400">${statusCounts.scheduled}</div>
+              <div class="text-xs text-zinc-500 uppercase">Scheduled</div>
+            </div>
+            <div onclick="filterIdeasBy('status', 'in-progress')" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/50 transition-colors ${ideasFilter.status === 'in-progress' ? 'ring-2 ring-indigo-500' : ''}">
+              <div class="text-2xl font-bold text-blue-400">${statusCounts['in-progress']}</div>
+              <div class="text-xs text-zinc-500 uppercase">In Progress</div>
+            </div>
+          </div>
+          
+          <!-- Type Filters -->
+          <div class="flex flex-wrap gap-2">
+            ${Object.entries(typeCounts).map(([type, count]) => `
+              <button onclick="filterIdeasBy('type', '${type}')" class="px-3 py-1.5 text-xs rounded-lg border transition-colors ${ideasFilter.type === type ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300' : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'}">
+                ${type} (${count})
+              </button>
+            `).join('')}
+          </div>
+          
+          <!-- Ideas Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${ideas.map(idea => {
+              const catCfg = ideaCategoryConfig[idea.category] || { icon: '💡', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' };
+              const statusCfg = ideaStatusConfig[idea.status] || ideaStatusConfig.idea;
+              return `
+                <div class="expense-card p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600/50">
+                  <div class="flex items-start justify-between mb-3">
+                    <span class="text-2xl">${catCfg.icon}</span>
+                    <span class="badge px-2 py-0.5 rounded ${statusCfg.color}">${statusCfg.label}</span>
+                  </div>
+                  <h3 class="text-sm font-semibold text-zinc-100 mb-1">${escapeHtml(idea.name)}</h3>
+                  <p class="text-xs text-zinc-500 mb-3 line-clamp-2">${escapeHtml(idea.description || '')}</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] px-2 py-0.5 rounded ${catCfg.color}">${idea.category}</span>
+                    ${idea.notes ? `<span class="text-[10px] text-zinc-500">📝</span>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          
+          ${ideas.length === 0 ? `
+            <div class="text-center py-12">
+              <div class="text-4xl mb-3">💡</div>
+              <p class="text-sm text-zinc-500">No ideas match your filters</p>
+              <button onclick="ideasFilter = {}; loadIdeas();" class="mt-3 text-xs text-indigo-400 hover:text-indigo-300">Clear filters</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
     }
 
     // ============================================
