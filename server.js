@@ -145,6 +145,27 @@ async function initDatabase() {
       )
     `);
 
+    // Create AI ideas table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_ideas (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        type VARCHAR(100),
+        description TEXT,
+        revenue_potential VARCHAR(50),
+        build_time VARCHAR(50),
+        pricing_model VARCHAR(255),
+        tech_stack TEXT[],
+        status VARCHAR(50) DEFAULT 'idea',
+        priority INTEGER DEFAULT 0,
+        notes TEXT,
+        tags TEXT[],
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP
+      )
+    `);
+
     console.log('[DB] PostgreSQL tables initialized');
   } finally {
     client.release();
@@ -1242,6 +1263,235 @@ app.get('/manifest.json', (req, res) => {
   });
 });
 
+// ============================================
+// AI IDEAS API
+// ============================================
+
+// Get all ideas with optional filters
+app.get('/api/ideas', async (req, res) => {
+  try {
+    const { category, type, status, revenue_potential, build_time, search, tag } = req.query;
+    
+    let query = 'SELECT * FROM lumen_ideas WHERE 1=1';
+    const params = [];
+    let paramCount = 0;
+    
+    if (category) {
+      paramCount++;
+      query += ` AND category = $${paramCount}`;
+      params.push(category);
+    }
+    if (type) {
+      paramCount++;
+      query += ` AND type = $${paramCount}`;
+      params.push(type);
+    }
+    if (status) {
+      paramCount++;
+      query += ` AND status = $${paramCount}`;
+      params.push(status);
+    }
+    if (revenue_potential) {
+      paramCount++;
+      query += ` AND revenue_potential = $${paramCount}`;
+      params.push(revenue_potential);
+    }
+    if (build_time) {
+      paramCount++;
+      query += ` AND build_time = $${paramCount}`;
+      params.push(build_time);
+    }
+    if (search) {
+      paramCount++;
+      query += ` AND (name ILIKE $${paramCount} OR description ILIKE $${paramCount} OR notes ILIKE $${paramCount})`;
+      params.push(`%${search}%`);
+    }
+    if (tag) {
+      paramCount++;
+      query += ` AND $${paramCount} = ANY(tags)`;
+      params.push(tag);
+    }
+    
+    query += ' ORDER BY priority DESC, created_at DESC';
+    
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error getting ideas:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Get single idea
+app.get('/api/ideas/:id', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM lumen_ideas WHERE id = $1', [req.params.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Idea not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error getting idea:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Add new idea
+app.post('/api/ideas', async (req, res) => {
+  try {
+    const {
+      name, category, type, description, revenue_potential,
+      build_time, pricing_model, tech_stack, status, priority, notes, tags
+    } = req.body;
+    
+    if (!name || !category) {
+      return res.status(400).json({ error: 'Missing required fields: name, category' });
+    }
+    
+    const result = await pool.query(
+      `INSERT INTO lumen_ideas 
+       (name, category, type, description, revenue_potential, build_time, pricing_model, tech_stack, status, priority, notes, tags)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       RETURNING *`,
+      [
+        name,
+        category,
+        type || null,
+        description || null,
+        revenue_potential || null,
+        build_time || null,
+        pricing_model || null,
+        tech_stack || [],
+        status || 'idea',
+        priority || 0,
+        notes || null,
+        tags || []
+      ]
+    );
+    
+    res.json({ id: result.rows[0].id, message: 'Idea added successfully', idea: result.rows[0] });
+  } catch (err) {
+    console.error('Error adding idea:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Bulk add ideas
+app.post('/api/ideas/bulk', async (req, res) => {
+  try {
+    const { ideas } = req.body;
+    
+    if (!ideas || !Array.isArray(ideas)) {
+      return res.status(400).json({ error: 'Missing ideas array' });
+    }
+    
+    const inserted = [];
+    for (const idea of ideas) {
+      const result = await pool.query(
+        `INSERT INTO lumen_ideas 
+         (name, category, type, description, revenue_potential, build_time, pricing_model, tech_stack, status, priority, notes, tags)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         RETURNING *`,
+        [
+          idea.name,
+          idea.category,
+          idea.type || null,
+          idea.description || null,
+          idea.revenue_potential || null,
+          idea.build_time || null,
+          idea.pricing_model || null,
+          idea.tech_stack || [],
+          idea.status || 'idea',
+          idea.priority || 0,
+          idea.notes || null,
+          idea.tags || []
+        ]
+      );
+      inserted.push(result.rows[0]);
+    }
+    
+    res.json({ count: inserted.length, message: `${inserted.length} ideas added successfully`, ideas: inserted });
+  } catch (err) {
+    console.error('Error bulk adding ideas:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Update idea
+app.patch('/api/ideas/:id', async (req, res) => {
+  try {
+    const updates = [];
+    const params = [];
+    let paramCount = 0;
+    
+    const allowedFields = ['name', 'category', 'type', 'description', 'revenue_potential', 
+                           'build_time', 'pricing_model', 'tech_stack', 'status', 'priority', 'notes', 'tags'];
+    
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        paramCount++;
+        updates.push(`${field} = $${paramCount}`);
+        params.push(req.body[field]);
+      }
+    }
+    
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    paramCount++;
+    updates.push(`updated_at = NOW()`);
+    
+    const result = await pool.query(
+      `UPDATE lumen_ideas SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+      [...params, req.params.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Idea not found' });
+    }
+    
+    res.json({ message: 'Idea updated', idea: result.rows[0] });
+  } catch (err) {
+    console.error('Error updating idea:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Delete idea
+app.delete('/api/ideas/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM lumen_ideas WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Idea deleted' });
+  } catch (err) {
+    console.error('Error deleting idea:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Get idea categories/types for filters
+app.get('/api/ideas/meta/filters', async (req, res) => {
+  try {
+    const categories = await pool.query('SELECT DISTINCT category FROM lumen_ideas ORDER BY category');
+    const types = await pool.query('SELECT DISTINCT type FROM lumen_ideas WHERE type IS NOT NULL ORDER BY type');
+    const statuses = await pool.query('SELECT DISTINCT status FROM lumen_ideas ORDER BY status');
+    const revenues = await pool.query('SELECT DISTINCT revenue_potential FROM lumen_ideas WHERE revenue_potential IS NOT NULL ORDER BY revenue_potential');
+    const buildTimes = await pool.query('SELECT DISTINCT build_time FROM lumen_ideas WHERE build_time IS NOT NULL ORDER BY build_time');
+    
+    res.json({
+      categories: categories.rows.map(r => r.category),
+      types: types.rows.map(r => r.type),
+      statuses: statuses.rows.map(r => r.status),
+      revenue_potentials: revenues.rows.map(r => r.revenue_potential),
+      build_times: buildTimes.rows.map(r => r.build_time)
+    });
+  } catch (err) {
+    console.error('Error getting idea filters:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Catch-all for SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
