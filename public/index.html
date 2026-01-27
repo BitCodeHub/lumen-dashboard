@@ -1330,22 +1330,26 @@
     // ============================================
     // IDEAS - REDESIGNED
     // ============================================
-    async function loadIdeas() {
+    async function loadIdeas(forceRefresh = false) {
       try {
-        // Build query params
-        const params = new URLSearchParams();
-        if (ideasFilters.category) params.append('category', ideasFilters.category);
-        if (ideasFilters.type) params.append('type', ideasFilters.type);
-        if (ideasFilters.status) params.append('status', ideasFilters.status);
-        if (ideasFilters.search) params.append('search', ideasFilters.search);
+        // If we have cached data and not forcing refresh, use local filtering
+        if (allIdeasCache.length > 0 && !forceRefresh) {
+          filterIdeasLocally();
+          return;
+        }
         
-        const response = await fetch(`/api/ideas?${params}`);
-        ideas = await response.json();
+        // Fetch ALL ideas (no server-side filtering for better UX)
+        const response = await fetch('/api/ideas?limit=500');
+        allIdeasCache = await response.json();
         
         // Also fetch filter metadata
         const metaRes = await fetch('/api/ideas/meta/filters');
         ideasMeta = await metaRes.json();
         
+        // Apply local filters
+        filterIdeasLocally();
+        
+        // Render full view on initial load
         renderIdeasView();
       } catch (err) {
         console.error('Error loading ideas:', err);
@@ -1359,18 +1363,34 @@
       } else {
         ideasFilters[key] = value;
       }
-      loadIdeas();
+      // Use local filtering for instant response
+      if (allIdeasCache.length > 0) {
+        filterIdeasLocally();
+        renderIdeasView(); // Re-render to update filter UI
+      } else {
+        loadIdeas();
+      }
     }
 
     function clearIdeasFilters() {
       ideasFilters = { category: null, type: null, status: null, difficulty: null, search: '' };
-      document.getElementById('ideas-search-input')?.value && (document.getElementById('ideas-search-input').value = '');
-      loadIdeas();
+      const input = document.getElementById('ideas-search-input');
+      if (input) input.value = '';
+      if (allIdeasCache.length > 0) {
+        filterIdeasLocally();
+        renderIdeasView();
+      } else {
+        loadIdeas();
+      }
     }
 
     function searchIdeas(query) {
       ideasFilters.search = query;
-      loadIdeas();
+      if (allIdeasCache.length > 0) {
+        filterIdeasLocally();
+      } else {
+        loadIdeas();
+      }
     }
 
     function renderIdeasView() {
@@ -1414,7 +1434,7 @@
                 <span class="text-3xl animate-float">💡</span>
                 AI Ideas Lab
               </h2>
-              <p class="text-sm text-zinc-500 mt-1">${totalIdeas} ideas ready to build • $${(totalRevenue / 1000).toFixed(0)}k+ potential MRR</p>
+              <p class="text-sm text-zinc-500 mt-1"><span id="ideas-count">${totalIdeas} ideas</span> ready to build • $${(totalRevenue / 1000).toFixed(0)}k+ potential MRR</p>
             </div>
             
             <!-- Search -->
@@ -1534,17 +1554,15 @@
           </div>
           
           <!-- Ideas Grid -->
-          ${ideas.length > 0 ? `
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              ${ideas.map(idea => renderIdeaCard(idea)).join('')}
-            </div>
-          ` : `
-            <div class="text-center py-16">
-              <div class="text-6xl mb-4 opacity-50">🔍</div>
-              <p class="text-lg text-zinc-400 mb-2">No ideas match your filters</p>
-              <button onclick="clearIdeasFilters()" class="text-sm text-indigo-400 hover:text-indigo-300 underline">Clear all filters</button>
-            </div>
-          `}
+          <div id="ideas-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            ${ideas.length > 0 ? ideas.map(idea => renderIdeaCard(idea)).join('') : `
+              <div class="col-span-full text-center py-16">
+                <div class="text-6xl mb-4 opacity-50">🔍</div>
+                <p class="text-lg text-zinc-400 mb-2">No ideas match your filters</p>
+                <button onclick="clearIdeasFilters()" class="text-sm text-indigo-400 hover:text-indigo-300 underline">Clear all filters</button>
+              </div>
+            `}
+          </div>
         </div>
       `;
     }
@@ -1614,9 +1632,65 @@
     }
 
     let ideasSearchTimeout;
+    let allIdeasCache = []; // Cache for client-side filtering
+    
+    // Render only the ideas grid (for fast search updates)
+    function renderIdeasGrid() {
+      const gridContainer = document.getElementById('ideas-grid');
+      if (!gridContainer) return;
+      
+      if (ideas.length === 0) {
+        gridContainer.innerHTML = `
+          <div class="col-span-full text-center py-16">
+            <div class="text-6xl mb-4 opacity-50">🔍</div>
+            <p class="text-lg text-zinc-400 mb-2">No ideas match your search</p>
+            <button onclick="clearIdeasFilters()" class="text-sm text-indigo-400 hover:text-indigo-300 underline">Clear filters</button>
+          </div>
+        `;
+        return;
+      }
+      
+      gridContainer.innerHTML = ideas.map(idea => renderIdeaCard(idea)).join('');
+      
+      // Update count in header
+      const countEl = document.getElementById('ideas-count');
+      if (countEl) countEl.textContent = `${ideas.length} ideas`;
+    }
+    
     function debounceIdeasSearch(query) {
       clearTimeout(ideasSearchTimeout);
-      ideasSearchTimeout = setTimeout(() => searchIdeas(query), 300);
+      // Show searching indicator immediately
+      const input = document.getElementById('ideas-search-input');
+      if (input) input.style.opacity = '0.7';
+      
+      ideasSearchTimeout = setTimeout(() => {
+        if (input) input.style.opacity = '1';
+        ideasFilters.search = query;
+        // Use cached data for instant filtering
+        if (allIdeasCache.length > 0) {
+          filterIdeasLocally();
+        } else {
+          loadIdeas();
+        }
+      }, 400);
+    }
+    
+    function filterIdeasLocally() {
+      const search = (ideasFilters.search || '').toLowerCase();
+      const { category, type, status } = ideasFilters;
+      
+      ideas = allIdeasCache.filter(idea => {
+        if (category && idea.category !== category) return false;
+        if (type && idea.type !== type) return false;
+        if (status && idea.status !== status) return false;
+        if (search) {
+          const searchable = `${idea.name} ${idea.description || ''} ${idea.notes || ''}`.toLowerCase();
+          if (!searchable.includes(search)) return false;
+        }
+        return true;
+      });
+      
+      renderIdeasGrid(); // Only re-render the grid, not stats/filters
     }
 
     function clearIdeasSearch() {
