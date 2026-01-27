@@ -45,6 +45,7 @@
     @keyframes progressFill { from { width: 0%; } }
     @keyframes bounce-soft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
     @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); } 50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.5); } }
+    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-5px); } }
     
     .animate-fade-in { animation: fadeIn 0.2s ease-out; }
     .animate-slide-in { animation: slideIn 0.2s ease-out; }
@@ -55,6 +56,7 @@
     .animate-count-up { animation: countUp 0.4s ease-out; }
     .animate-bounce-soft { animation: bounce-soft 2s ease-in-out infinite; }
     .animate-glow { animation: glow 2s ease-in-out infinite; }
+    .animate-float { animation: float 3s ease-in-out infinite; }
     .skeleton { background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
     
     .prose { line-height: 1.7; }
@@ -100,6 +102,49 @@
     
     .trend-bar { transition: all 0.3s ease; }
     .trend-bar:hover { filter: brightness(1.2); }
+    
+    /* Ideas specific styles */
+    .idea-card { 
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+      transform-origin: center;
+    }
+    .idea-card:hover { 
+      transform: translateY(-4px) scale(1.02); 
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+    .idea-card:active { transform: scale(0.98); }
+    
+    .idea-card .idea-icon {
+      transition: all 0.3s ease;
+    }
+    .idea-card:hover .idea-icon {
+      transform: scale(1.1) rotate(-5deg);
+    }
+    
+    .filter-chip {
+      transition: all 0.2s ease;
+    }
+    .filter-chip:hover {
+      transform: translateY(-1px);
+    }
+    .filter-chip.active {
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+    }
+    
+    .revenue-bar {
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .difficulty-dot {
+      transition: all 0.2s ease;
+    }
+    
+    .search-input-ideas {
+      transition: all 0.2s ease;
+    }
+    .search-input-ideas:focus {
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
     
     /* Mobile sidebar overlay */
     .sidebar-overlay {
@@ -288,6 +333,20 @@
       background: rgba(99, 102, 241, 0.15);
       border-left: 3px solid #6366f1;
     }
+
+    /* Line clamp utility */
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body class="text-zinc-300 min-h-screen antialiased">
@@ -308,7 +367,7 @@
           </div>
           <div>
             <span class="font-semibold text-zinc-100 text-sm">Lumen</span>
-            <span class="text-zinc-500 text-xs ml-1">v2.0</span>
+            <span class="text-zinc-500 text-xs ml-1">v2.1</span>
           </div>
         </div>
         <!-- Close button for mobile -->
@@ -522,16 +581,16 @@
         </button>
       </div>
 
-      <!-- Ideas View -->
+      <!-- Ideas View - REDESIGNED -->
       <div id="ideas-view" class="flex-1 overflow-y-auto hidden">
-        <div id="ideas-content" class="p-4 md:p-6 max-w-6xl mx-auto">
+        <div id="ideas-content" class="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
           <!-- Loading state -->
           <div class="space-y-4">
             <div class="h-32 rounded-2xl skeleton"></div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div class="h-40 rounded-2xl skeleton"></div>
-              <div class="h-40 rounded-2xl skeleton"></div>
-              <div class="h-40 rounded-2xl skeleton"></div>
+              <div class="h-48 rounded-2xl skeleton"></div>
+              <div class="h-48 rounded-2xl skeleton"></div>
+              <div class="h-48 rounded-2xl skeleton"></div>
             </div>
           </div>
         </div>
@@ -786,7 +845,10 @@
           </div>
           
           <!-- Submit Button -->
-          <button onclick="submitExpense()" class="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/25">
+          <button onclick="submitExpense()" class="w-full h-14 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-lg font-semibold rounded-xl transition-all active:scale-98 flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
             Add Expense
           </button>
         </div>
@@ -794,14 +856,16 @@
     </div>
   </template>
 
-  <!-- Upload Excel Modal -->
+  <!-- Excel Upload Modal -->
   <template id="upload-excel-modal-template">
     <div class="modal-backdrop fixed inset-0 flex items-center justify-center p-4" onclick="closeModal(event)">
-      <div class="modal rounded-2xl shadow-2xl w-full max-w-lg animate-slide-in-up" onclick="event.stopPropagation()">
+      <div class="modal rounded-2xl shadow-2xl w-full max-w-md animate-slide-in-up" onclick="event.stopPropagation()">
         <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+              <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
             </div>
             <h2 class="text-lg font-semibold text-zinc-100">Upload Excel File</h2>
           </div>
@@ -811,24 +875,29 @@
         </div>
         <div class="p-5">
           <!-- Drop Zone -->
-          <div id="excel-drop-zone" class="mb-5 border-2 border-dashed border-zinc-700 rounded-xl p-8 text-center hover:border-emerald-500/50 transition-colors cursor-pointer" onclick="document.getElementById('excel-file-input').click()">
-            <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelFileSelect(event)">
+          <div id="excel-drop-zone" class="border-2 border-dashed border-zinc-700 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-500/50 transition-colors"
+               onclick="document.getElementById('excel-file-input').click()">
             <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-800/50 flex items-center justify-center">
-              <svg class="w-8 h-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+              <svg class="w-8 h-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
             </div>
-            <p class="text-sm text-zinc-400 mb-1">Click to upload or drag and drop</p>
-            <p class="text-xs text-zinc-600">.xlsx, .xls, or .csv files</p>
+            <p class="text-sm text-zinc-300 mb-1">Drop your Excel file here</p>
+            <p class="text-xs text-zinc-500">or click to browse</p>
           </div>
+          <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelFileSelect(event)">
           
-          <!-- Selected File Display -->
-          <div id="excel-selected-file" class="hidden mb-5 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p id="excel-filename-display" class="text-sm text-zinc-200 truncate"></p>
-                <p id="excel-filesize-display" class="text-xs text-zinc-500"></p>
+          <!-- Selected File Info -->
+          <div id="excel-selected-file" class="hidden mt-4 p-4 bg-zinc-800/50 rounded-xl">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+                <div>
+                  <p id="excel-filename-display" class="text-sm text-zinc-200 truncate max-w-[200px]">filename.xlsx</p>
+                  <p id="excel-filesize-display" class="text-xs text-zinc-500">0 KB</p>
+                </div>
               </div>
               <button onclick="clearExcelFile()" class="p-2 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-200">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -837,16 +906,39 @@
           </div>
           
           <!-- Instructions -->
-          <div class="mb-5">
-            <label class="block text-xs font-medium text-zinc-400 uppercase tracking-wide mb-2">Processing Instructions (optional)</label>
-            <textarea id="excel-instructions" rows="3" placeholder="e.g., Add a SUM formula to column D, format headers bold, sort by date..."
-                      class="w-full px-4 py-3 text-sm bg-zinc-800/50 border border-zinc-700 rounded-xl text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"></textarea>
+          <div class="mt-4">
+            <label class="block text-xs font-medium text-zinc-400 uppercase tracking-wide mb-2">Instructions (optional)</label>
+            <textarea id="excel-instructions" rows="3" placeholder="What should I do with this file?"
+                      class="w-full px-4 py-3 text-sm bg-zinc-800/50 border border-zinc-700 rounded-xl text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 resize-none"></textarea>
           </div>
           
-          <!-- Submit Button -->
-          <button id="excel-upload-btn" onclick="submitExcelUpload()" disabled class="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/25 disabled:shadow-none">
+          <!-- Upload Button -->
+          <button id="excel-upload-btn" onclick="submitExcelUpload()" disabled class="mt-4 w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all">
             Upload File
           </button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Idea Detail Modal -->
+  <template id="idea-detail-modal-template">
+    <div class="modal-backdrop fixed inset-0 flex items-center justify-center p-4" onclick="closeModal(event)">
+      <div class="modal rounded-2xl shadow-2xl w-full max-w-2xl animate-slide-in-up max-h-[90vh] overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+        <div class="p-5 border-b border-zinc-800 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-3">
+            <div id="idea-modal-icon" class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl">💡</div>
+            <div>
+              <h2 id="idea-modal-title" class="text-lg font-semibold text-zinc-100">Idea Title</h2>
+              <p id="idea-modal-category" class="text-xs text-zinc-500">Category</p>
+            </div>
+          </div>
+          <button onclick="closeModal()" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div class="p-5 overflow-y-auto" id="idea-modal-content">
+          <!-- Content rendered dynamically -->
         </div>
       </div>
     </div>
@@ -856,444 +948,231 @@
     // ============================================
     // STATE
     // ============================================
-    let currentView = 'briefings';
+    let briefings = [];
+    let selectedId = null;
+    let selectedIndex = -1;
     let currentFilter = null;
     let starredFilter = false;
     let archivedFilter = false;
     let tagFilter = null;
     let searchQuery = '';
-    let briefings = [];
-    let selectedId = null;
-    let selectedIndex = -1;
-    let isMobile = window.innerWidth < 768;
-    
-    // Expense state
-    let expenses = [];
-    let expenseSummary = {};
-    let selectedMonth = new Date().toISOString().slice(0, 7);
-    let selectedExpenseCategory = 'Food';
-    
-    // Excel state
+    let currentView = 'briefings';
     let excelFiles = [];
-    let selectedExcelFile = null;
-    let excelFileToUpload = null;
     let currentPreviewFileId = null;
-
-    // Category configuration
-    const categoryConfig = {
-      'Food': { icon: '🍔', color: 'bg-orange-500', bgColor: 'bg-orange-500/20', textColor: 'text-orange-400', borderColor: 'border-orange-500/30' },
-      'Transport': { icon: '🚗', color: 'bg-blue-500', bgColor: 'bg-blue-500/20', textColor: 'text-blue-400', borderColor: 'border-blue-500/30' },
-      'Shopping': { icon: '🛍️', color: 'bg-pink-500', bgColor: 'bg-pink-500/20', textColor: 'text-pink-400', borderColor: 'border-pink-500/30' },
-      'Entertainment': { icon: '🎬', color: 'bg-purple-500', bgColor: 'bg-purple-500/20', textColor: 'text-purple-400', borderColor: 'border-purple-500/30' },
-      'Bills': { icon: '📄', color: 'bg-red-500', bgColor: 'bg-red-500/20', textColor: 'text-red-400', borderColor: 'border-red-500/30' },
-      'Health': { icon: '💊', color: 'bg-green-500', bgColor: 'bg-green-500/20', textColor: 'text-green-400', borderColor: 'border-green-500/30' },
-      'Gas': { icon: '⛽', color: 'bg-yellow-500', bgColor: 'bg-yellow-500/20', textColor: 'text-yellow-400', borderColor: 'border-yellow-500/30' },
-      'Groceries': { icon: '🛒', color: 'bg-teal-500', bgColor: 'bg-teal-500/20', textColor: 'text-teal-400', borderColor: 'border-teal-500/30' },
-      'Other': { icon: '📦', color: 'bg-zinc-500', bgColor: 'bg-zinc-500/20', textColor: 'text-zinc-400', borderColor: 'border-zinc-500/30' }
-    };
-
+    let excelFileToUpload = null;
+    
+    // Ideas state
+    let ideas = [];
+    let ideasSearchQuery = '';
+    let ideasFilters = { category: null, type: null, status: null, difficulty: null, search: '' };
+    let ideasMeta = { categories: [], types: [], statuses: [], difficulties: [] };
+    
+    // Config
     const typeConfig = {
       'morning-briefing': { label: 'Morning', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-      'ai-opportunities': { label: 'AI Opportunity', color: 'bg-violet-500/20 text-violet-400 border-violet-500/30' },
+      'ai-opportunities': { label: 'AI Opps', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+      'ai-radar': { label: 'AI Radar', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+      'email': { label: 'Email', color: 'bg-pink-500/20 text-pink-400 border-pink-500/30' },
       'traffic': { label: 'Traffic', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-      'email': { label: 'Email', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-      'evening-wrap': { label: 'Evening', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' },
-      'ai-radar': { label: 'AI Radar', color: 'bg-pink-500/20 text-pink-400 border-pink-500/30' }
+      'evening-wrap': { label: 'Evening', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' }
+    };
+
+    const categoryConfig = {
+      'Food': { icon: '🍔', color: '#f59e0b', textColor: 'text-amber-400', bgColor: 'bg-amber-500/20', borderColor: 'border-amber-500' },
+      'Transport': { icon: '🚗', color: '#3b82f6', textColor: 'text-blue-400', bgColor: 'bg-blue-500/20', borderColor: 'border-blue-500' },
+      'Shopping': { icon: '🛍️', color: '#ec4899', textColor: 'text-pink-400', bgColor: 'bg-pink-500/20', borderColor: 'border-pink-500' },
+      'Entertainment': { icon: '🎬', color: '#8b5cf6', textColor: 'text-violet-400', bgColor: 'bg-violet-500/20', borderColor: 'border-violet-500' },
+      'Bills': { icon: '📄', color: '#ef4444', textColor: 'text-red-400', bgColor: 'bg-red-500/20', borderColor: 'border-red-500' },
+      'Health': { icon: '💊', color: '#10b981', textColor: 'text-emerald-400', bgColor: 'bg-emerald-500/20', borderColor: 'border-emerald-500' },
+      'Gas': { icon: '⛽', color: '#f97316', textColor: 'text-orange-400', bgColor: 'bg-orange-500/20', borderColor: 'border-orange-500' },
+      'Groceries': { icon: '🥬', color: '#22c55e', textColor: 'text-green-400', bgColor: 'bg-green-500/20', borderColor: 'border-green-500' },
+      'Other': { icon: '📦', color: '#6b7280', textColor: 'text-gray-400', bgColor: 'bg-gray-500/20', borderColor: 'border-gray-500' }
+    };
+    let selectedExpenseCategory = 'Food';
+
+    // Ideas category config
+    const ideaCategoryConfig = {
+      'Voice AI - Personal': { icon: '🎤', color: 'from-purple-500/20 to-violet-500/20', border: 'border-purple-500/30', text: 'text-purple-400', bg: 'bg-purple-500/10' },
+      'Voice AI - Business': { icon: '📞', color: 'from-blue-500/20 to-cyan-500/20', border: 'border-blue-500/30', text: 'text-blue-400', bg: 'bg-blue-500/10' },
+      'Automation - Personal': { icon: '🤖', color: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/30', text: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+      'Automation - Business': { icon: '⚙️', color: 'from-amber-500/20 to-orange-500/20', border: 'border-amber-500/30', text: 'text-amber-400', bg: 'bg-amber-500/10' },
+      'Smart Home': { icon: '🏠', color: 'from-teal-500/20 to-cyan-500/20', border: 'border-teal-500/30', text: 'text-teal-400', bg: 'bg-teal-500/10' },
+      'Apps - Consumer': { icon: '📱', color: 'from-pink-500/20 to-rose-500/20', border: 'border-pink-500/30', text: 'text-pink-400', bg: 'bg-pink-500/10' },
+      'Lumen App': { icon: '🔆', color: 'from-indigo-500/20 to-violet-500/20', border: 'border-indigo-500/30', text: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+      'Moonshots': { icon: '🚀', color: 'from-red-500/20 to-orange-500/20', border: 'border-red-500/30', text: 'text-red-400', bg: 'bg-red-500/10' }
+    };
+
+    const ideaStatusConfig = {
+      'idea': { label: 'Idea', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30', dot: 'bg-zinc-400' },
+      'in-progress': { label: 'Building', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', dot: 'bg-blue-400' },
+      'scheduled': { label: 'Scheduled', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', dot: 'bg-amber-400' },
+      'completed': { label: 'Done', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' }
+    };
+
+    const difficultyConfig = {
+      'Weekend': { label: 'Weekend', color: 'text-emerald-400', dots: 1 },
+      '1-2 weeks': { label: '1-2 weeks', color: 'text-amber-400', dots: 2 },
+      '1 month': { label: '1 month', color: 'text-orange-400', dots: 3 },
+      '2+ months': { label: '2+ months', color: 'text-red-400', dots: 4 }
     };
 
     // ============================================
-    // VIEW SWITCHING
-    // ============================================
-    function switchView(view) {
-      currentView = view;
-      const briefingsView = document.getElementById('briefings-view');
-      const expensesView = document.getElementById('expenses-view');
-      const excelView = document.getElementById('excel-view');
-      const ideasView = document.getElementById('ideas-view');
-      
-      // Hide all views first
-      briefingsView.classList.add('hidden');
-      expensesView.classList.add('hidden');
-      excelView.classList.add('hidden');
-      ideasView.classList.add('hidden');
-      
-      if (view === 'expenses') {
-        expensesView.classList.remove('hidden');
-        document.getElementById('current-filter').textContent = 'Expenses';
-        document.getElementById('briefing-count').textContent = '';
-        updateActiveFilter('expenses');
-        loadExpenses();
-      } else if (view === 'ideas') {
-        ideasView.classList.remove('hidden');
-        document.getElementById('current-filter').textContent = 'AI Ideas';
-        document.getElementById('briefing-count').textContent = '';
-        updateActiveFilter('ideas');
-        loadIdeas();
-      } else if (view === 'excel') {
-        excelView.classList.remove('hidden');
-        document.getElementById('current-filter').textContent = 'Excel Files';
-        document.getElementById('briefing-count').textContent = '';
-        updateActiveFilter('excel');
-        loadExcelFiles();
-      } else {
-        briefingsView.classList.remove('hidden');
-      }
-    }
-
-    // ============================================
-    // MOBILE FUNCTIONS
+    // SIDEBAR & VIEW SWITCHING
     // ============================================
     function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('sidebar-overlay');
-      sidebar.classList.toggle('open');
-      overlay.classList.toggle('active');
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebar-overlay').classList.toggle('active');
     }
-    
+
     function closeSidebarOnMobile() {
-      if (isMobile) {
+      if (window.innerWidth < 768) {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('sidebar-overlay').classList.remove('active');
       }
     }
-    
+
     function showDetailPanel() {
-      if (isMobile) {
-        document.getElementById('briefing-detail').classList.add('active');
-      }
+      document.getElementById('briefing-detail').classList.add('active');
     }
-    
+
     function hideDetailPanel() {
-      if (isMobile) {
-        document.getElementById('briefing-detail').classList.remove('active');
+      document.getElementById('briefing-detail').classList.remove('active');
+    }
+
+    function switchView(view) {
+      currentView = view;
+      
+      // Hide all views
+      document.getElementById('briefings-view').classList.add('hidden');
+      document.getElementById('expenses-view').classList.add('hidden');
+      document.getElementById('ideas-view').classList.add('hidden');
+      document.getElementById('excel-view').classList.add('hidden');
+      
+      // Update header
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.remove('active', 'text-zinc-200');
+        btn.classList.add('text-zinc-400');
+      });
+
+      // Show selected view
+      if (view === 'briefings') {
+        document.getElementById('briefings-view').classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'All Briefings';
+        document.querySelector('[data-filter="all"]').classList.add('active');
+        fetchBriefings();
+      } else if (view === 'expenses') {
+        document.getElementById('expenses-view').classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'Expenses';
+        document.getElementById('briefing-count').textContent = '';
+        document.querySelector('[data-filter="expenses"]').classList.add('active');
+        loadExpenses();
+      } else if (view === 'ideas') {
+        document.getElementById('ideas-view').classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'AI Ideas';
+        document.getElementById('briefing-count').textContent = '';
+        document.querySelector('[data-filter="ideas"]').classList.add('active');
+        loadIdeas();
+      } else if (view === 'excel') {
+        document.getElementById('excel-view').classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'Excel Files';
+        document.getElementById('briefing-count').textContent = '';
+        document.querySelector('[data-filter="excel"]').classList.add('active');
+        loadExcelFiles();
       }
     }
 
-    window.addEventListener('resize', () => {
-      isMobile = window.innerWidth < 768;
-      if (!isMobile) {
-        document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('sidebar-overlay').classList.remove('active');
-        document.getElementById('briefing-detail').classList.remove('active');
-      }
-    });
+    // ============================================
+    // EXPENSES
+    // ============================================
+    let selectedMonth = new Date().toISOString().slice(0, 7);
 
-    // ============================================
-    // EXPENSES API & RENDERING
-    // ============================================
-    let allVendors = [];
-    
     async function loadExpenses() {
       try {
-        const [expensesRes, summaryRes, vendorsRes] = await Promise.all([
-          fetch(`/api/expenses?month=${selectedMonth}`),
-          fetch(`/api/expenses/summary?month=${selectedMonth}`),
-          fetch('/api/expenses/vendors')
-        ]);
-        
-        expenses = await expensesRes.json();
-        expenseSummary = await summaryRes.json();
-        allVendors = await vendorsRes.json();
-        
-        renderExpensesView();
-        renderTopVendors();
-        initVendorSearch();
+        const response = await fetch(`/api/expenses/summary?month=${selectedMonth}`);
+        const data = await response.json();
+        renderExpensesView(data);
       } catch (err) {
         console.error('Error loading expenses:', err);
+        document.getElementById('expenses-content').innerHTML = '<div class="text-center text-red-400 py-8">Failed to load expenses</div>';
       }
-    }
-    
-    function renderTopVendors() {
-      const container = document.getElementById('topVendors');
-      if (!container) return;
-      
-      if (allVendors.length === 0) {
-        container.innerHTML = '<p class="text-sm text-zinc-500">No vendors tracked yet</p>';
-        return;
-      }
-      
-      container.innerHTML = allVendors.slice(0, 5).map(v => `
-        <div class="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg cursor-pointer hover:bg-zinc-700/50 transition-colors" onclick="showVendorAnalytics('${v.name.replace(/'/g, "\\'")}')">
-          <div>
-            <p class="text-sm font-medium text-zinc-200">${v.name}</p>
-            <p class="text-xs text-zinc-500">${v.count} transaction${v.count > 1 ? 's' : ''}</p>
-          </div>
-          <p class="text-sm font-semibold text-indigo-400">$${v.total.toFixed(2)}</p>
-        </div>
-      `).join('');
-    }
-    
-    function initVendorSearch() {
-      const input = document.getElementById('vendorSearch');
-      const suggestions = document.getElementById('vendorSuggestions');
-      if (!input || !suggestions) return;
-      
-      input.addEventListener('input', async (e) => {
-        const query = e.target.value.trim();
-        if (query.length < 1) {
-          suggestions.classList.add('hidden');
-          return;
-        }
-        
-        const matches = allVendors.filter(v => 
-          v.name.toLowerCase().includes(query.toLowerCase())
-        );
-        
-        if (matches.length > 0) {
-          suggestions.innerHTML = matches.slice(0, 8).map(v => `
-            <div class="px-4 py-3 hover:bg-zinc-700 cursor-pointer flex justify-between items-center" onclick="showVendorAnalytics('${v.name.replace(/'/g, "\\'")}')">
-              <span class="text-zinc-200">${v.name}</span>
-              <span class="text-sm text-zinc-400">$${v.total.toFixed(2)}</span>
-            </div>
-          `).join('');
-          suggestions.classList.remove('hidden');
-        } else {
-          suggestions.innerHTML = '<div class="px-4 py-3 text-zinc-500">No vendors found</div>';
-          suggestions.classList.remove('hidden');
-        }
-      });
-      
-      input.addEventListener('blur', () => {
-        setTimeout(() => suggestions.classList.add('hidden'), 200);
-      });
-      
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const query = e.target.value.trim();
-          if (query) showVendorAnalytics(query);
-        }
-      });
-    }
-    
-    async function showVendorAnalytics(vendorName) {
-      const container = document.getElementById('vendorAnalytics');
-      const vendorList = document.getElementById('vendorList');
-      const input = document.getElementById('vendorSearch');
-      const suggestions = document.getElementById('vendorSuggestions');
-      
-      if (input) input.value = vendorName;
-      if (suggestions) suggestions.classList.add('hidden');
-      
-      try {
-        const res = await fetch(`/api/expenses/vendors/${encodeURIComponent(vendorName)}`);
-        if (!res.ok) throw new Error('Vendor not found');
-        
-        const data = await res.json();
-        
-        container.innerHTML = `
-          <div class="space-y-4">
-            <div class="flex items-center justify-between">
-              <h4 class="text-lg font-semibold text-zinc-100">${data.vendor}</h4>
-              <button onclick="hideVendorAnalytics()" class="text-zinc-400 hover:text-zinc-200">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            
-            <div class="grid grid-cols-3 gap-3">
-              <div class="bg-zinc-900/50 rounded-lg p-3 text-center">
-                <p class="text-2xl font-bold text-indigo-400">$${data.total.toFixed(2)}</p>
-                <p class="text-xs text-zinc-500">Total Spent</p>
-              </div>
-              <div class="bg-zinc-900/50 rounded-lg p-3 text-center">
-                <p class="text-2xl font-bold text-emerald-400">${data.count}</p>
-                <p class="text-xs text-zinc-500">Visits</p>
-              </div>
-              <div class="bg-zinc-900/50 rounded-lg p-3 text-center">
-                <p class="text-2xl font-bold text-amber-400">$${data.average.toFixed(2)}</p>
-                <p class="text-xs text-zinc-500">Avg/Visit</p>
-              </div>
-            </div>
-            
-            <div class="text-xs text-zinc-500">
-              First visit: ${new Date(data.firstVisit).toLocaleDateString()} · 
-              Last visit: ${new Date(data.lastVisit).toLocaleDateString()}
-            </div>
-            
-            ${data.transactions.length > 0 ? `
-              <div class="border-t border-zinc-700 pt-3">
-                <p class="text-sm text-zinc-400 mb-2">Recent Transactions:</p>
-                <div class="space-y-2 max-h-40 overflow-y-auto">
-                  ${data.transactions.slice(0, 10).map(t => `
-                    <div class="flex justify-between text-sm">
-                      <span class="text-zinc-400">${new Date(t.date).toLocaleDateString()} - ${t.description || t.category}</span>
-                      <span class="text-zinc-200">$${t.amount.toFixed(2)}</span>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        `;
-        
-        container.classList.remove('hidden');
-        if (vendorList) vendorList.classList.add('hidden');
-      } catch (err) {
-        container.innerHTML = `<p class="text-red-400">Vendor "${vendorName}" not found</p>`;
-        container.classList.remove('hidden');
-      }
-    }
-    
-    function hideVendorAnalytics() {
-      const container = document.getElementById('vendorAnalytics');
-      const vendorList = document.getElementById('vendorList');
-      const input = document.getElementById('vendorSearch');
-      
-      if (container) container.classList.add('hidden');
-      if (vendorList) vendorList.classList.remove('hidden');
-      if (input) input.value = '';
     }
 
-    function renderExpensesView() {
+    function renderExpensesView(data) {
       const container = document.getElementById('expenses-content');
-      const budget = 3000; // Default monthly budget
-      const spent = expenseSummary.total || 0;
-      const remaining = budget - spent;
-      const progress = Math.min((spent / budget) * 100, 100);
-      const isOverBudget = spent > budget;
-      
-      // Calculate daily spending for trend chart
-      const dailySpending = {};
-      const today = new Date();
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const key = date.toISOString().slice(0, 10);
-        dailySpending[key] = 0;
-      }
-      expenses.forEach(e => {
-        const date = e.created_at.slice(0, 10);
-        if (dailySpending[date] !== undefined) {
-          dailySpending[date] += e.amount;
-        }
-      });
-      const maxDaily = Math.max(...Object.values(dailySpending), 1);
-      
-      // Category breakdown
-      const categoryTotals = expenseSummary.byCategory || {};
-      const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+      const categories = Object.entries(data.byCategory || {}).sort((a, b) => b[1] - a[1]);
+      const totalForDonut = categories.reduce((sum, [, val]) => sum + val, 0) || 1;
       
       container.innerHTML = `
-        <div class="animate-fade-in space-y-6">
-          <!-- Month Selector & Header -->
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 class="text-2xl font-bold text-zinc-100">Expense Tracker</h2>
-              <p class="text-sm text-zinc-500 mt-1">Track your spending habits</p>
-            </div>
-            <div class="flex items-center gap-3">
-              <button onclick="changeMonth(-1)" class="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-              </button>
-              <div class="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-200 font-medium min-w-[140px] text-center">
-                ${formatMonthYear(selectedMonth)}
-              </div>
-              <button onclick="changeMonth(1)" class="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-              </button>
-            </div>
+        <div class="animate-fade-in">
+          <!-- Month Header -->
+          <div class="flex items-center justify-between mb-6">
+            <button onclick="changeMonth(-1)" class="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+            </button>
+            <h2 class="text-xl font-semibold text-zinc-100">${formatMonthYear(selectedMonth)}</h2>
+            <button onclick="changeMonth(1)" class="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </button>
           </div>
           
-          <!-- Summary Card -->
-          <div class="expense-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-zinc-700/50 p-6">
-            <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-            <div class="relative">
-              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                <div>
-                  <p class="text-sm text-zinc-400 mb-1">Total Spent</p>
-                  <div class="flex items-baseline gap-2">
-                    <span class="text-4xl md:text-5xl font-bold text-zinc-100 animate-count-up">$${spent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                  <p class="text-sm mt-2 text-zinc-400">
-                    ${formatMonthYear(selectedMonth)}
-                  </p>
-                </div>
-                
-                <div class="flex-1 max-w-md">
-                  <!-- Quick Stats -->
-                  <div class="grid grid-cols-3 gap-3">
-                    <div class="text-center p-2 rounded-lg bg-zinc-800/50">
-                      <p class="text-lg font-semibold text-zinc-200">${expenses.length}</p>
-                      <p class="text-xs text-zinc-500">Transactions</p>
-                    </div>
-                    <div class="text-center p-2 rounded-lg bg-zinc-800/50">
-                      <p class="text-lg font-semibold text-zinc-200">$${expenses.length ? (spent / expenses.length).toFixed(0) : 0}</p>
-                      <p class="text-xs text-zinc-500">Avg/Transaction</p>
-                    </div>
-                    <div class="text-center p-2 rounded-lg bg-zinc-800/50">
-                      <p class="text-lg font-semibold text-zinc-200">${sortedCategories.length}</p>
-                      <p class="text-xs text-zinc-500">Categories</p>
-                    </div>
-                  </div>
-                </div>
+          <!-- Total Card -->
+          <div class="p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 mb-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-zinc-400 mb-1">Total Spent</p>
+                <p class="text-4xl font-bold text-zinc-100 animate-count-up">$${data.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm text-zinc-500">${data.count} expense${data.count !== 1 ? 's' : ''}</p>
+                <p class="text-xs text-zinc-600 mt-1">~$${(data.total / 30).toFixed(0)}/day</p>
               </div>
             </div>
           </div>
           
-          <!-- Charts Row -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Category Breakdown -->
-            <div class="expense-card rounded-2xl bg-zinc-800/50 border border-zinc-700/50 p-5">
-              <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">Spending by Category</h3>
-              ${sortedCategories.length > 0 ? `
-                <div class="flex flex-col md:flex-row items-center gap-6">
-                  <!-- Donut Chart -->
-                  <div class="relative w-40 h-40 shrink-0">
-                    <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
-                      ${renderDonutChart(sortedCategories, spent)}
-                    </svg>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                      <div class="text-center">
-                        <p class="text-2xl font-bold text-zinc-100">${sortedCategories.length}</p>
-                        <p class="text-xs text-zinc-500">Categories</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <!-- Legend -->
-                  <div class="flex-1 space-y-2 w-full">
-                    ${sortedCategories.map(([cat, amount]) => {
-                      const cfg = categoryConfig[cat] || categoryConfig['Other'];
-                      const pct = spent > 0 ? ((amount / spent) * 100).toFixed(1) : 0;
-                      return `
-                        <div class="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-700/30 transition-colors">
-                          <div class="flex items-center gap-3">
-                            <span class="text-xl">${cfg.icon}</span>
-                            <span class="text-sm text-zinc-300">${cat}</span>
-                          </div>
-                          <div class="text-right">
-                            <span class="text-sm font-medium text-zinc-200">$${amount.toFixed(2)}</span>
-                            <span class="text-xs text-zinc-500 ml-2">${pct}%</span>
-                          </div>
+          <!-- Charts -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Donut Chart -->
+            <div class="p-5 rounded-2xl bg-zinc-800/30 border border-zinc-700/50">
+              <h3 class="text-sm font-medium text-zinc-300 mb-4">By Category</h3>
+              <div class="flex items-center gap-6">
+                <div class="w-32 h-32 shrink-0">
+                  <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                    ${renderDonutChart(categories, totalForDonut)}
+                  </svg>
+                </div>
+                <div class="flex-1 space-y-2 max-h-32 overflow-y-auto">
+                  ${categories.map(([cat, amount]) => {
+                    const cfg = categoryConfig[cat] || categoryConfig.Other;
+                    const pct = ((amount / totalForDonut) * 100).toFixed(0);
+                    return `
+                      <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center gap-2">
+                          <span>${cfg.icon}</span>
+                          <span class="text-zinc-400">${cat}</span>
                         </div>
-                      `;
-                    }).join('')}
-                  </div>
+                        <span class="text-zinc-300 font-medium">$${amount.toFixed(0)}</span>
+                      </div>
+                    `;
+                  }).join('')}
                 </div>
-              ` : `
-                <div class="flex flex-col items-center justify-center py-12 text-center">
-                  <div class="text-4xl mb-3">📊</div>
-                  <p class="text-sm text-zinc-500">No expenses this month</p>
-                  <p class="text-xs text-zinc-600 mt-1">Add your first expense to see the breakdown</p>
-                </div>
-              `}
+              </div>
             </div>
             
-            <!-- Weekly Trend -->
-            <div class="expense-card rounded-2xl bg-zinc-800/50 border border-zinc-700/50 p-5">
-              <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">Last 7 Days</h3>
-              <div class="flex items-end justify-between gap-2 h-32">
-                ${Object.entries(dailySpending).map(([date, amount]) => {
-                  const height = maxDaily > 0 ? (amount / maxDaily) * 100 : 0;
-                  const dayName = new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
-                  const isToday = date === today.toISOString().slice(0, 10);
+            <!-- Bar Chart -->
+            <div class="p-5 rounded-2xl bg-zinc-800/30 border border-zinc-700/50">
+              <h3 class="text-sm font-medium text-zinc-300 mb-4">Breakdown</h3>
+              <div class="space-y-3">
+                ${categories.slice(0, 5).map(([cat, amount]) => {
+                  const cfg = categoryConfig[cat] || categoryConfig.Other;
+                  const pct = (amount / totalForDonut) * 100;
                   return `
-                    <div class="flex-1 flex flex-col items-center gap-2">
-                      <div class="w-full flex items-end justify-center h-20">
-                        <div class="trend-bar w-full max-w-[32px] rounded-t-lg ${isToday ? 'bg-gradient-to-t from-indigo-600 to-indigo-400' : 'bg-gradient-to-t from-zinc-600 to-zinc-500'}" style="height: ${Math.max(height, 4)}%"></div>
+                    <div>
+                      <div class="flex items-center justify-between text-xs mb-1">
+                        <span class="text-zinc-400">${cfg.icon} ${cat}</span>
+                        <span class="text-zinc-500">${pct.toFixed(0)}%</span>
                       </div>
-                      <div class="text-center">
-                        <p class="text-xs font-medium ${isToday ? 'text-indigo-400' : 'text-zinc-400'}">${dayName}</p>
-                        <p class="text-[10px] text-zinc-500">$${amount.toFixed(0)}</p>
+                      <div class="h-2 bg-zinc-700 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full progress-bar" style="width: ${pct}%; background: ${cfg.color}"></div>
                       </div>
                     </div>
                   `;
@@ -1302,66 +1181,30 @@
             </div>
           </div>
           
-          <!-- Vendor Search -->
-          <div class="expense-card rounded-2xl bg-zinc-800/50 border border-zinc-700/50 overflow-hidden mb-6">
-            <div class="p-5 border-b border-zinc-700/50">
-              <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">🔍 Vendor Analytics</h3>
-              <div class="relative">
-                <input type="text" id="vendorSearch" placeholder="Search vendor/store name..." 
-                  class="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-700 rounded-xl text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                <div id="vendorSuggestions" class="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-lg hidden max-h-60 overflow-y-auto"></div>
-              </div>
+          <!-- Recent Expenses -->
+          <div class="rounded-2xl bg-zinc-800/30 border border-zinc-700/50 overflow-hidden">
+            <div class="p-4 border-b border-zinc-700/50">
+              <h3 class="text-sm font-medium text-zinc-300">Recent Expenses</h3>
             </div>
-            <div id="vendorAnalytics" class="p-5 hidden">
-              <!-- Vendor analytics will be inserted here -->
-            </div>
-            <div id="vendorList" class="p-5">
-              <p class="text-sm text-zinc-400 mb-3">Top Vendors:</p>
-              <div id="topVendors" class="space-y-2">
-                <!-- Top vendors will be listed here -->
-              </div>
-            </div>
-          </div>
-
-          <!-- Recent Transactions -->
-          <div class="expense-card rounded-2xl bg-zinc-800/50 border border-zinc-700/50 overflow-hidden">
-            <div class="p-5 border-b border-zinc-700/50 flex items-center justify-between">
-              <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wide">Recent Transactions</h3>
-              <span class="text-xs text-zinc-500">${expenses.length} total</span>
-            </div>
-            <div class="divide-y divide-zinc-700/30 max-h-[400px] overflow-y-auto">
-              ${expenses.length > 0 ? expenses.slice(0, 20).map(expense => {
-                const cfg = categoryConfig[expense.category] || categoryConfig['Other'];
-                const date = new Date(expense.created_at);
-                const timeStr = date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            <div class="divide-y divide-zinc-700/30">
+              ${data.recentExpenses && data.recentExpenses.length > 0 ? data.recentExpenses.map(exp => {
+                const cfg = categoryConfig[exp.category] || categoryConfig.Other;
+                const date = new Date(exp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 return `
-                  <div class="expense-item flex items-center justify-between p-4 group">
-                    <div class="flex items-center gap-4">
-                      <div class="w-12 h-12 rounded-xl ${cfg.bgColor} ${cfg.borderColor} border flex items-center justify-center text-2xl category-icon">
-                        ${cfg.icon}
+                  <div class="expense-item p-4 flex items-center justify-between cursor-pointer" onclick="deleteExpense(${exp.id})">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-xl ${cfg.bgColor} flex items-center justify-center category-icon">
+                        <span class="text-lg">${cfg.icon}</span>
                       </div>
                       <div>
-                        <p class="text-sm font-medium text-zinc-200">${expense.description || expense.category}</p>
-                        <p class="text-xs text-zinc-500">${timeStr}</p>
+                        <p class="text-sm text-zinc-200">${escapeHtml(exp.description || exp.category)}</p>
+                        <p class="text-xs text-zinc-500">${date}${exp.vendor ? ' · ' + escapeHtml(exp.vendor) : ''}</p>
                       </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                      <span class="text-lg font-semibold ${cfg.textColor}">-$${expense.amount.toFixed(2)}</span>
-                      <button onclick="deleteExpense(${expense.id})" class="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
-                    </div>
+                    <span class="text-sm font-semibold ${cfg.textColor}">-$${exp.amount.toFixed(2)}</span>
                   </div>
                 `;
-              }).join('') : `
-                <div class="flex flex-col items-center justify-center py-16 text-center">
-                  <div class="w-16 h-16 rounded-2xl bg-zinc-700/30 flex items-center justify-center mb-4">
-                    <svg class="w-8 h-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" /></svg>
-                  </div>
-                  <p class="text-sm font-medium text-zinc-400 mb-1">No transactions yet</p>
-                  <p class="text-xs text-zinc-600">Tap the + button to add your first expense</p>
-                </div>
-              `}
+              }).join('') : '<div class="p-8 text-center text-zinc-500 text-sm">No expenses this month</div>'}
             </div>
           </div>
         </div>
@@ -1369,34 +1212,19 @@
     }
 
     function renderDonutChart(categories, total) {
-      if (categories.length === 0) return '';
-      
-      const colors = {
-        'Food': '#f97316',
-        'Transport': '#3b82f6',
-        'Shopping': '#ec4899',
-        'Entertainment': '#a855f7',
-        'Bills': '#ef4444',
-        'Health': '#22c55e',
-        'Gas': '#eab308',
-        'Groceries': '#14b8a6',
-        'Other': '#71717a'
-      };
-      
+      const colors = categories.map(([cat]) => (categoryConfig[cat] || categoryConfig.Other).color);
+      const circumference = 2 * Math.PI * 15.9155;
       let offset = 0;
-      const radius = 15.915;
-      const circumference = 2 * Math.PI * radius;
       
-      return categories.map(([cat, amount]) => {
-        const pct = total > 0 ? (amount / total) * 100 : 0;
-        const dashLength = (pct / 100) * circumference;
-        const color = colors[cat] || colors['Other'];
+      return categories.map(([cat, amount], i) => {
+        const pct = amount / total;
+        const dashLength = pct * circumference;
         const segment = `
-          <circle
+          <circle 
             class="donut-segment"
-            cx="18" cy="18" r="${radius}"
+            cx="18" cy="18" r="15.9155"
             fill="none"
-            stroke="${color}"
+            stroke="${colors[i]}"
             stroke-width="3"
             stroke-dasharray="${dashLength} ${circumference - dashLength}"
             stroke-dashoffset="${-offset}"
@@ -1425,7 +1253,6 @@
       showModal('add-expense-modal-template');
       selectedExpenseCategory = 'Food';
       
-      // Render category grid
       const grid = document.getElementById('category-grid');
       grid.innerHTML = Object.entries(categoryConfig).map(([cat, cfg]) => `
         <button onclick="selectCategory('${cat}')" 
@@ -1501,6 +1328,407 @@
     }
 
     // ============================================
+    // IDEAS - REDESIGNED
+    // ============================================
+    async function loadIdeas() {
+      try {
+        // Build query params
+        const params = new URLSearchParams();
+        if (ideasFilters.category) params.append('category', ideasFilters.category);
+        if (ideasFilters.type) params.append('type', ideasFilters.type);
+        if (ideasFilters.status) params.append('status', ideasFilters.status);
+        if (ideasFilters.search) params.append('search', ideasFilters.search);
+        
+        const response = await fetch(`/api/ideas?${params}`);
+        ideas = await response.json();
+        
+        // Also fetch filter metadata
+        const metaRes = await fetch('/api/ideas/meta/filters');
+        ideasMeta = await metaRes.json();
+        
+        renderIdeasView();
+      } catch (err) {
+        console.error('Error loading ideas:', err);
+        document.getElementById('ideas-content').innerHTML = '<div class="text-center text-red-400 py-8">Failed to load ideas</div>';
+      }
+    }
+
+    function setIdeasFilter(key, value) {
+      if (ideasFilters[key] === value) {
+        ideasFilters[key] = null; // Toggle off
+      } else {
+        ideasFilters[key] = value;
+      }
+      loadIdeas();
+    }
+
+    function clearIdeasFilters() {
+      ideasFilters = { category: null, type: null, status: null, difficulty: null, search: '' };
+      document.getElementById('ideas-search-input')?.value && (document.getElementById('ideas-search-input').value = '');
+      loadIdeas();
+    }
+
+    function searchIdeas(query) {
+      ideasFilters.search = query;
+      loadIdeas();
+    }
+
+    function renderIdeasView() {
+      const container = document.getElementById('ideas-content');
+      
+      // Calculate stats
+      const totalIdeas = ideas.length;
+      const statusCounts = { idea: 0, 'in-progress': 0, scheduled: 0, completed: 0 };
+      const categoryCounts = {};
+      const typeCounts = {};
+      const difficultyCounts = {};
+      let totalRevenue = 0;
+      
+      ideas.forEach(idea => {
+        if (statusCounts[idea.status] !== undefined) statusCounts[idea.status]++;
+        categoryCounts[idea.category] = (categoryCounts[idea.category] || 0) + 1;
+        if (idea.type) typeCounts[idea.type] = (typeCounts[idea.type] || 0) + 1;
+        if (idea.build_time) difficultyCounts[idea.build_time] = (difficultyCounts[idea.build_time] || 0) + 1;
+        
+        // Parse revenue
+        const rev = parseFloat(idea.revenue_potential) || 0;
+        totalRevenue += rev;
+      });
+
+      // Group by category for display
+      const byCategory = {};
+      ideas.forEach(idea => {
+        if (!byCategory[idea.category]) byCategory[idea.category] = [];
+        byCategory[idea.category].push(idea);
+      });
+
+      // Filter tags
+      const activeFiltersCount = [ideasFilters.category, ideasFilters.type, ideasFilters.status, ideasFilters.search].filter(Boolean).length;
+
+      container.innerHTML = `
+        <div class="animate-fade-in space-y-6">
+          <!-- Header with search -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl md:text-3xl font-bold text-zinc-100 flex items-center gap-3">
+                <span class="text-3xl animate-float">💡</span>
+                AI Ideas Lab
+              </h2>
+              <p class="text-sm text-zinc-500 mt-1">${totalIdeas} ideas ready to build • $${(totalRevenue / 1000).toFixed(0)}k+ potential MRR</p>
+            </div>
+            
+            <!-- Search -->
+            <div class="relative w-full lg:w-80">
+              <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input type="text" id="ideas-search-input" placeholder="Search ideas..." 
+                     value="${escapeHtml(ideasFilters.search || '')}"
+                     oninput="debounceIdeasSearch(this.value)"
+                     class="search-input-ideas w-full h-12 pl-12 pr-4 text-sm bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500">
+              ${ideasFilters.search ? `
+                <button onclick="clearIdeasSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-zinc-700 rounded text-zinc-500 hover:text-zinc-300">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+          
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div onclick="setIdeasFilter('status', null)" class="cursor-pointer p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border ${!ideasFilters.status ? 'border-indigo-500/50 ring-2 ring-indigo-500/30' : 'border-indigo-500/20'} hover:border-indigo-500/40 transition-all">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-2xl">💡</span>
+                <span class="text-xs text-indigo-400 font-medium">ALL</span>
+              </div>
+              <div class="text-2xl font-bold text-zinc-100">${totalIdeas}</div>
+              <div class="text-xs text-zinc-500">Total Ideas</div>
+            </div>
+            
+            <div onclick="setIdeasFilter('status', 'idea')" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border ${ideasFilters.status === 'idea' ? 'border-zinc-400/50 ring-2 ring-zinc-400/30' : 'border-zinc-700/50'} hover:border-zinc-600/50 transition-all">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-2xl">📝</span>
+                <span class="text-xs text-zinc-400 font-medium">BACKLOG</span>
+              </div>
+              <div class="text-2xl font-bold text-zinc-400">${statusCounts.idea}</div>
+              <div class="text-xs text-zinc-500">To Explore</div>
+            </div>
+            
+            <div onclick="setIdeasFilter('status', 'in-progress')" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border ${ideasFilters.status === 'in-progress' ? 'border-blue-500/50 ring-2 ring-blue-500/30' : 'border-zinc-700/50'} hover:border-blue-500/30 transition-all">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-2xl">🔨</span>
+                <span class="text-xs text-blue-400 font-medium">BUILDING</span>
+              </div>
+              <div class="text-2xl font-bold text-blue-400">${statusCounts['in-progress']}</div>
+              <div class="text-xs text-zinc-500">In Progress</div>
+            </div>
+            
+            <div onclick="setIdeasFilter('status', 'completed')" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border ${ideasFilters.status === 'completed' ? 'border-emerald-500/50 ring-2 ring-emerald-500/30' : 'border-zinc-700/50'} hover:border-emerald-500/30 transition-all">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-2xl">✅</span>
+                <span class="text-xs text-emerald-400 font-medium">SHIPPED</span>
+              </div>
+              <div class="text-2xl font-bold text-emerald-400">${statusCounts.completed}</div>
+              <div class="text-xs text-zinc-500">Completed</div>
+            </div>
+          </div>
+          
+          <!-- Filters -->
+          <div class="flex flex-wrap items-center gap-2">
+            ${activeFiltersCount > 0 ? `
+              <button onclick="clearIdeasFilters()" class="filter-chip px-3 py-1.5 text-xs rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                Clear ${activeFiltersCount} filter${activeFiltersCount > 1 ? 's' : ''}
+              </button>
+            ` : ''}
+            
+            <!-- Category filters -->
+            ${Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([cat, count]) => {
+              const cfg = ideaCategoryConfig[cat] || { icon: '💡', text: 'text-zinc-400', border: 'border-zinc-500/30', bg: 'bg-zinc-500/10' };
+              const isActive = ideasFilters.category === cat;
+              return `
+                <button onclick="setIdeasFilter('category', '${cat}')" class="filter-chip ${isActive ? 'active' : ''} px-3 py-1.5 text-xs rounded-lg ${isActive ? cfg.bg + ' ' + cfg.border + ' ' + cfg.text : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400'} border hover:bg-zinc-700/50 transition-all flex items-center gap-1.5">
+                  <span>${cfg.icon}</span>
+                  <span>${cat.split(' - ')[0]}</span>
+                  <span class="opacity-60">${count}</span>
+                </button>
+              `;
+            }).join('')}
+            
+            <!-- Type filters dropdown -->
+            ${Object.keys(typeCounts).length > 0 ? `
+              <div class="relative group">
+                <button class="filter-chip px-3 py-1.5 text-xs rounded-lg bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-700/50 transition-all flex items-center gap-1">
+                  <span>Type</span>
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                <div class="absolute top-full left-0 mt-1 py-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[140px]">
+                  ${Object.entries(typeCounts).map(([type, count]) => `
+                    <button onclick="setIdeasFilter('type', '${type}')" class="w-full px-3 py-1.5 text-xs text-left ${ideasFilters.type === type ? 'text-indigo-400 bg-indigo-500/10' : 'text-zinc-400'} hover:bg-zinc-700">
+                      ${type} (${count})
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+            
+            <!-- Difficulty filter -->
+            ${Object.keys(difficultyCounts).length > 0 ? `
+              <div class="relative group">
+                <button class="filter-chip px-3 py-1.5 text-xs rounded-lg bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-700/50 transition-all flex items-center gap-1">
+                  <span>Difficulty</span>
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                <div class="absolute top-full left-0 mt-1 py-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[140px]">
+                  ${Object.entries(difficultyCounts).map(([diff, count]) => {
+                    const dcfg = difficultyConfig[diff] || { label: diff, color: 'text-zinc-400' };
+                    return `
+                      <button onclick="setIdeasFilter('difficulty', '${diff}')" class="w-full px-3 py-1.5 text-xs text-left ${ideasFilters.difficulty === diff ? 'bg-zinc-700' : ''} ${dcfg.color} hover:bg-zinc-700">
+                        ${dcfg.label} (${count})
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+          
+          <!-- Ideas Grid -->
+          ${ideas.length > 0 ? `
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              ${ideas.map(idea => renderIdeaCard(idea)).join('')}
+            </div>
+          ` : `
+            <div class="text-center py-16">
+              <div class="text-6xl mb-4 opacity-50">🔍</div>
+              <p class="text-lg text-zinc-400 mb-2">No ideas match your filters</p>
+              <button onclick="clearIdeasFilters()" class="text-sm text-indigo-400 hover:text-indigo-300 underline">Clear all filters</button>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function renderIdeaCard(idea) {
+      const catCfg = ideaCategoryConfig[idea.category] || { icon: '💡', color: 'from-zinc-500/20 to-zinc-600/20', border: 'border-zinc-500/30', text: 'text-zinc-400', bg: 'bg-zinc-500/10' };
+      const statusCfg = ideaStatusConfig[idea.status] || ideaStatusConfig.idea;
+      const diffCfg = difficultyConfig[idea.build_time] || { label: idea.build_time || '—', color: 'text-zinc-400', dots: 0 };
+      
+      // Parse revenue
+      const revenue = parseFloat(idea.revenue_potential) || 0;
+      const revenueDisplay = revenue >= 1000 ? `$${(revenue / 1000).toFixed(0)}k` : revenue > 0 ? `$${revenue}` : '—';
+      
+      // Highlight search matches
+      let name = escapeHtml(idea.name);
+      let description = escapeHtml(idea.description || '');
+      if (ideasFilters.search) {
+        const regex = new RegExp(`(${escapeRegex(ideasFilters.search)})`, 'gi');
+        name = name.replace(regex, '<mark class="bg-indigo-500/30 text-indigo-200 rounded px-0.5">$1</mark>');
+        description = description.replace(regex, '<mark class="bg-indigo-500/30 text-indigo-200 rounded px-0.5">$1</mark>');
+      }
+
+      return `
+        <div class="idea-card p-5 rounded-2xl bg-gradient-to-br ${catCfg.color} border ${catCfg.border} cursor-pointer group" onclick="showIdeaDetail(${idea.id})">
+          <!-- Header -->
+          <div class="flex items-start justify-between mb-3">
+            <div class="idea-icon w-12 h-12 rounded-xl ${catCfg.bg} flex items-center justify-center text-2xl">
+              ${catCfg.icon}
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="badge px-2 py-0.5 rounded-full text-[10px] border ${statusCfg.color}">${statusCfg.label}</span>
+            </div>
+          </div>
+          
+          <!-- Content -->
+          <h3 class="text-base font-semibold text-zinc-100 mb-1 group-hover:text-white transition-colors line-clamp-2">${name}</h3>
+          <p class="text-xs text-zinc-400 mb-4 line-clamp-2">${description}</p>
+          
+          <!-- Meta -->
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-3">
+              <!-- Revenue -->
+              <div class="flex items-center gap-1" title="Monthly Revenue Potential">
+                <span class="text-emerald-400">💰</span>
+                <span class="text-zinc-300 font-medium">${revenueDisplay}</span>
+              </div>
+              
+              <!-- Difficulty -->
+              <div class="flex items-center gap-1" title="Build Time">
+                <div class="flex gap-0.5">
+                  ${[1,2,3,4].map(i => `<div class="w-1.5 h-1.5 rounded-full ${i <= diffCfg.dots ? diffCfg.color.replace('text-', 'bg-') : 'bg-zinc-700'}"></div>`).join('')}
+                </div>
+                <span class="text-zinc-500 text-[10px]">${diffCfg.label}</span>
+              </div>
+            </div>
+            
+            <!-- Type -->
+            ${idea.type ? `<span class="text-zinc-500">${idea.type}</span>` : ''}
+          </div>
+          
+          <!-- Hover indicator -->
+          <div class="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <svg class="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+          </div>
+        </div>
+      `;
+    }
+
+    let ideasSearchTimeout;
+    function debounceIdeasSearch(query) {
+      clearTimeout(ideasSearchTimeout);
+      ideasSearchTimeout = setTimeout(() => searchIdeas(query), 300);
+    }
+
+    function clearIdeasSearch() {
+      ideasFilters.search = '';
+      document.getElementById('ideas-search-input').value = '';
+      loadIdeas();
+    }
+
+    function showIdeaDetail(id) {
+      const idea = ideas.find(i => i.id === id);
+      if (!idea) return;
+
+      showModal('idea-detail-modal-template');
+      
+      const catCfg = ideaCategoryConfig[idea.category] || { icon: '💡', bg: 'bg-zinc-500/10' };
+      const statusCfg = ideaStatusConfig[idea.status] || ideaStatusConfig.idea;
+      const diffCfg = difficultyConfig[idea.build_time] || { label: idea.build_time || '—', color: 'text-zinc-400', dots: 0 };
+      const revenue = parseFloat(idea.revenue_potential) || 0;
+      const revenueDisplay = revenue >= 1000 ? `$${(revenue / 1000).toFixed(0)}k/mo` : revenue > 0 ? `$${revenue}/mo` : 'Free';
+      
+      document.getElementById('idea-modal-icon').className = `w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${catCfg.bg}`;
+      document.getElementById('idea-modal-icon').textContent = catCfg.icon;
+      document.getElementById('idea-modal-title').textContent = idea.name;
+      document.getElementById('idea-modal-category').textContent = idea.category;
+      
+      document.getElementById('idea-modal-content').innerHTML = `
+        <div class="space-y-6">
+          <!-- Status & Meta -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="badge px-3 py-1 rounded-full text-xs border ${statusCfg.color}">${statusCfg.label}</span>
+            ${idea.type ? `<span class="badge px-3 py-1 rounded-full text-xs bg-zinc-800 border border-zinc-700 text-zinc-400">${idea.type}</span>` : ''}
+            ${idea.build_time ? `<span class="badge px-3 py-1 rounded-full text-xs bg-zinc-800 border border-zinc-700 ${diffCfg.color}">⏱️ ${diffCfg.label}</span>` : ''}
+          </div>
+          
+          <!-- Description -->
+          ${idea.description ? `
+            <div>
+              <h4 class="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">Description</h4>
+              <p class="text-sm text-zinc-300 leading-relaxed">${escapeHtml(idea.description)}</p>
+            </div>
+          ` : ''}
+          
+          <!-- Key Metrics -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
+              <div class="text-2xl mb-1">💰</div>
+              <div class="text-lg font-bold text-emerald-400">${revenueDisplay}</div>
+              <div class="text-xs text-zinc-500">Revenue Potential</div>
+            </div>
+            <div class="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
+              <div class="text-2xl mb-1">⚡</div>
+              <div class="flex gap-1 mb-1">
+                ${[1,2,3,4].map(i => `<div class="w-3 h-3 rounded-full ${i <= diffCfg.dots ? diffCfg.color.replace('text-', 'bg-') : 'bg-zinc-700'}"></div>`).join('')}
+              </div>
+              <div class="text-xs text-zinc-500">${idea.build_time || 'Unknown'} Build Time</div>
+            </div>
+          </div>
+          
+          <!-- Pricing Model -->
+          ${idea.pricing_model ? `
+            <div>
+              <h4 class="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">Pricing Model</h4>
+              <p class="text-sm text-zinc-300">${escapeHtml(idea.pricing_model)}</p>
+            </div>
+          ` : ''}
+          
+          <!-- Notes -->
+          ${idea.notes ? `
+            <div>
+              <h4 class="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">Notes</h4>
+              <p class="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap">${escapeHtml(idea.notes)}</p>
+            </div>
+          ` : ''}
+          
+          <!-- Tech Stack -->
+          ${idea.tech_stack && idea.tech_stack.length > 0 ? `
+            <div>
+              <h4 class="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">Tech Stack</h4>
+              <div class="flex flex-wrap gap-2">
+                ${idea.tech_stack.map(tech => `<span class="px-2 py-1 text-xs bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg">${escapeHtml(tech)}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+          
+          <!-- Actions -->
+          <div class="flex gap-3 pt-2">
+            <button onclick="updateIdeaStatus(${idea.id}, 'in-progress'); closeModal();" class="flex-1 h-12 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" /></svg>
+              Start Building
+            </button>
+            <button onclick="closeModal();" class="h-12 px-6 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl transition-colors">
+              Close
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    async function updateIdeaStatus(id, status) {
+      try {
+        await fetch(`/api/ideas/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        loadIdeas();
+      } catch (err) {
+        console.error('Error updating idea:', err);
+      }
+    }
+
+    // ============================================
     // BRIEFINGS API
     // ============================================
     async function fetchBriefings() {
@@ -1557,7 +1785,6 @@
       `).join('');
     }
 
-    // Render Functions
     function renderBriefingList() {
       const list = document.getElementById('briefing-list');
       
@@ -1621,7 +1848,6 @@
 
       document.getElementById('briefing-detail').innerHTML = `
         <div class="animate-fade-in max-w-3xl mx-auto p-4 md:p-8">
-          <!-- Mobile back button -->
           <button onclick="hideDetailPanel()" class="md:hidden flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200 mb-4 -ml-1">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
             Back to list
@@ -1655,28 +1881,6 @@
           
           ${b.summary ? `<div class="mb-6 p-4 rounded-lg bg-zinc-800/30 border border-zinc-700/50"><div class="flex items-center gap-2 mb-2"><svg class="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776" /></svg><span class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Summary</span></div><p class="text-sm text-zinc-300 leading-relaxed">${escapeHtml(b.summary)}</p></div>` : ''}
           
-          ${b.type === 'ai-opportunities' ? `
-          <div class="mb-6 p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-500/20">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
-                <span class="text-sm font-medium text-violet-300">Quick Actions</span>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button onclick="showOpportunityAction('analyze')" class="flex items-center justify-center gap-2 px-4 py-3 bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 rounded-lg transition-colors active:scale-98">
-                <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" /></svg>
-                <span class="text-sm text-zinc-200">Analyze Opportunity</span>
-              </button>
-              <button onclick="showOpportunityAction('build')" class="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-lg transition-colors active:scale-98">
-                <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" /></svg>
-                <span class="text-sm text-zinc-200">Build This App</span>
-              </button>
-            </div>
-            <p class="mt-3 text-xs text-zinc-500">Enter opportunity number (1-20) to analyze or start building</p>
-          </div>
-          ` : ''}
-          
           <div class="prose text-zinc-300 text-sm leading-relaxed">${formatContent(b.content)}</div>
         </div>`;
       
@@ -1684,7 +1888,6 @@
       fetchStats();
     }
 
-    // Actions
     async function toggleStar(id) { await fetch(`/api/briefings/${id}/star`, { method: 'PATCH' }); viewBriefing(id); }
     
     async function archiveBriefing(id) {
@@ -1707,7 +1910,6 @@
     function exportBriefing(id) { window.open(`/api/briefings/${id}/export?format=markdown`, '_blank'); }
     function exportAll() { window.open('/api/export?format=json', '_blank'); }
 
-    // Filters
     function filterBy(type) {
       currentFilter = type; starredFilter = false; archivedFilter = false; tagFilter = null;
       updateActiveFilter(type || 'all');
@@ -1755,314 +1957,17 @@
     function refreshBriefings() { 
       if (currentView === 'expenses') {
         loadExpenses();
+      } else if (currentView === 'ideas') {
+        loadIdeas();
+      } else if (currentView === 'excel') {
+        loadExcelFiles();
       } else {
         fetchBriefings(); fetchStats(); fetchTags(); 
       }
     }
 
     // ============================================
-    // MODALS
-    // ============================================
-    function showModal(templateId) {
-      const template = document.getElementById(templateId);
-      const container = document.getElementById('modal-container');
-      container.innerHTML = template.innerHTML;
-      container.classList.remove('hidden');
-    }
-
-    function closeModal(event) {
-      if (event && event.target !== event.currentTarget) return;
-      document.getElementById('modal-container').classList.add('hidden');
-    }
-
-    function showShortcuts() { showModal('shortcuts-modal-template'); }
-
-    async function showAnalytics() {
-      showModal('analytics-modal-template');
-      const res = await fetch('/api/analytics');
-      const data = await res.json();
-      
-      const maxByDay = Math.max(...Object.values(data.byDay), 1);
-      const days = Object.entries(data.byDay).slice(-14);
-      
-      document.getElementById('analytics-content').innerHTML = `
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-          <div class="p-3 md:p-4 rounded-lg bg-zinc-800/50"><div class="text-xl md:text-2xl font-semibold text-zinc-100">${data.total}</div><div class="text-xs text-zinc-500 uppercase tracking-wide">Total</div></div>
-          <div class="p-3 md:p-4 rounded-lg bg-zinc-800/50"><div class="text-xl md:text-2xl font-semibold text-indigo-400">${data.unread}</div><div class="text-xs text-zinc-500 uppercase tracking-wide">Unread</div></div>
-          <div class="p-3 md:p-4 rounded-lg bg-zinc-800/50"><div class="text-xl md:text-2xl font-semibold text-amber-400">${data.starred}</div><div class="text-xs text-zinc-500 uppercase tracking-wide">Starred</div></div>
-          <div class="p-3 md:p-4 rounded-lg bg-zinc-800/50"><div class="text-xl md:text-2xl font-semibold text-emerald-400">${data.readRate}%</div><div class="text-xs text-zinc-500 uppercase tracking-wide">Read Rate</div></div>
-        </div>
-        <div class="mb-6 md:mb-8">
-          <h3 class="text-sm font-medium text-zinc-300 mb-4">Last 14 Days</h3>
-          <div class="flex items-end gap-1 h-20 md:h-24">
-            ${days.map(([date, count]) => `<div class="flex-1 flex flex-col items-center"><div class="chart-bar w-full bg-indigo-500/50 rounded-t" style="height:${(count/maxByDay)*100}%"></div><div class="text-[8px] md:text-[9px] text-zinc-600 mt-1">${new Date(date).getDate()}</div></div>`).join('')}
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 class="text-sm font-medium text-zinc-300 mb-3">By Type</h3>
-            <div class="space-y-2">
-              ${Object.entries(data.byType).sort((a,b) => b[1]-a[1]).map(([type, count]) => {
-                const cfg = typeConfig[type] || { label: type, color: 'bg-zinc-500/20 text-zinc-400' };
-                return `<div class="flex items-center justify-between text-sm"><span class="badge px-2 py-0.5 rounded ${cfg.color}">${cfg.label}</span><span class="text-zinc-400">${count}</span></div>`;
-              }).join('')}
-            </div>
-          </div>
-          <div>
-            <h3 class="text-sm font-medium text-zinc-300 mb-3">Top Tags</h3>
-            <div class="space-y-2">
-              ${data.topTags.length ? data.topTags.map(t => `<div class="flex items-center justify-between text-sm"><span class="tag">${escapeHtml(t.name)}</span><span class="text-zinc-400">${t.count}</span></div>`).join('') : '<div class="text-sm text-zinc-600">No tags yet</div>'}
-            </div>
-          </div>
-        </div>`;
-    }
-
-    async function showShareModal(id) {
-      showModal('share-modal-template');
-      document.getElementById('share-content').innerHTML = '<div class="flex justify-center py-4"><div class="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>';
-      
-      const res = await fetch(`/api/briefings/${id}/share`, { method: 'POST' });
-      const data = await res.json();
-      
-      document.getElementById('share-content').innerHTML = `
-        <p class="text-sm text-zinc-400 mb-3">Anyone with this link can view this briefing:</p>
-        <div class="flex gap-2">
-          <input type="text" readonly value="${data.shareUrl}" class="flex-1 h-10 px-3 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 text-ellipsis" id="share-url-input">
-          <button onclick="copyShareUrl()" class="px-4 h-10 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg shrink-0">Copy</button>
-        </div>
-        <button onclick="revokeShare(${id})" class="mt-3 text-xs text-red-400 hover:text-red-300">Revoke link</button>`;
-    }
-
-    // Opportunity Actions
-    let currentOpportunityAction = null;
-    
-    function showOpportunityAction(action) {
-      currentOpportunityAction = action;
-      showModal('opportunity-modal-template');
-      
-      const isAnalyze = action === 'analyze';
-      document.getElementById('opportunity-modal-title').textContent = isAnalyze ? '🔍 Analyze Opportunity' : '🔧 Build This App';
-      
-      document.getElementById('opportunity-modal-content').innerHTML = `
-        <p class="text-sm text-zinc-400 mb-4">${isAnalyze 
-          ? 'Enter the opportunity number (1-20) for deep analysis including market size, competition, technical feasibility, and build recommendation.' 
-          : 'Enter the opportunity number (1-20) to start building. I\'ll confirm your selection and ask for preferences (mobile/web).'}</p>
-        <div class="flex gap-2 mb-4">
-          <input type="number" id="opportunity-number" min="1" max="20" placeholder="#" 
-                 class="w-20 h-12 px-3 text-lg text-center bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 focus:outline-none focus:border-indigo-500"
-                 onkeydown="if(event.key==='Enter')submitOpportunityAction()">
-          <button onclick="submitOpportunityAction()" class="flex-1 h-12 ${isAnalyze ? 'bg-blue-600 hover:bg-blue-500 active:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700'} text-white text-sm font-medium rounded-lg transition-colors">
-            ${isAnalyze ? 'Analyze This' : 'Build This'}
-          </button>
-        </div>
-        <div class="border-t border-zinc-800 pt-4">
-          <p class="text-xs text-zinc-500 mb-2">Quick select:</p>
-          <div class="grid grid-cols-5 gap-2">
-            ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n => 
-              `<button onclick="selectOpportunity(${n})" class="h-9 text-sm bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 border border-zinc-700 rounded-lg text-zinc-300 transition-colors">${n}</button>`
-            ).join('')}
-          </div>
-        </div>
-        <div class="mt-4 p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
-          <p class="text-xs text-zinc-400">💡 You can also just text me <span class="text-indigo-400">"${isAnalyze ? 'Analyze #X' : 'Build #X'}"</span> on WhatsApp or iMessage!</p>
-        </div>
-      `;
-      
-      setTimeout(() => document.getElementById('opportunity-number')?.focus(), 100);
-    }
-    
-    function selectOpportunity(num) {
-      document.getElementById('opportunity-number').value = num;
-      submitOpportunityAction();
-    }
-    
-    function submitOpportunityAction() {
-      const num = document.getElementById('opportunity-number').value;
-      if (!num || num < 1 || num > 20) {
-        alert('Please enter a number between 1 and 20');
-        return;
-      }
-      
-      const action = currentOpportunityAction;
-      const message = action === 'analyze' 
-        ? `Analyze opportunity #${num} from the AI opportunities report. Give me deep analysis: market size, competition, technical feasibility, revenue potential, risks, and your BUILD or SKIP recommendation.`
-        : `Build opportunity #${num} from the AI opportunities report.`;
-      
-      const waUrl = `https://wa.me/19495422279?text=${encodeURIComponent(message)}`;
-      window.open(waUrl, '_blank');
-      
-      closeModal();
-    }
-
-    function copyShareUrl() {
-      const input = document.getElementById('share-url-input');
-      input.select();
-      navigator.clipboard?.writeText(input.value) || document.execCommand('copy');
-    }
-
-    async function revokeShare(id) {
-      await fetch(`/api/briefings/${id}/share`, { method: 'DELETE' });
-      closeModal();
-    }
-
-    function showTagModal(id) {
-      showModal('tag-modal-template');
-      document.getElementById('new-tag-input').dataset.briefingId = id;
-      setTimeout(() => document.getElementById('new-tag-input')?.focus(), 100);
-    }
-
-    async function addTagFromInput() {
-      const input = document.getElementById('new-tag-input');
-      const tag = input.value.trim();
-      const id = input.dataset.briefingId;
-      if (!tag) return;
-      
-      await fetch(`/api/briefings/${id}/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tag })
-      });
-      closeModal();
-      viewBriefing(parseInt(id));
-      fetchTags();
-    }
-
-    // ============================================
-    // IDEAS API
-    // ============================================
-    let ideas = [];
-    let ideasFilter = { category: null, type: null, status: null };
-    
-    const ideaCategoryConfig = {
-      'Voice AI - Personal': { icon: '🎤', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
-      'Voice AI - Business': { icon: '📞', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-      'Automation - Personal': { icon: '🤖', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-      'Automation - Business': { icon: '⚙️', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-      'Smart Home': { icon: '🏠', color: 'bg-teal-500/20 text-teal-400 border-teal-500/30' },
-      'Apps - Consumer': { icon: '📱', color: 'bg-pink-500/20 text-pink-400 border-pink-500/30' },
-      'Lumen App': { icon: '🔆', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' },
-      'Moonshots': { icon: '🚀', color: 'bg-red-500/20 text-red-400 border-red-500/30' }
-    };
-    
-    const ideaStatusConfig = {
-      'idea': { label: 'Idea', color: 'bg-zinc-500/20 text-zinc-400' },
-      'in-progress': { label: 'In Progress', color: 'bg-blue-500/20 text-blue-400' },
-      'scheduled': { label: 'Scheduled', color: 'bg-amber-500/20 text-amber-400' },
-      'completed': { label: 'Completed', color: 'bg-emerald-500/20 text-emerald-400' }
-    };
-    
-    async function loadIdeas() {
-      try {
-        let url = '/api/ideas?limit=100';
-        if (ideasFilter.category) url += `&category=${encodeURIComponent(ideasFilter.category)}`;
-        if (ideasFilter.type) url += `&type=${encodeURIComponent(ideasFilter.type)}`;
-        if (ideasFilter.status) url += `&status=${encodeURIComponent(ideasFilter.status)}`;
-        
-        const response = await fetch(url);
-        ideas = await response.json();
-        renderIdeasView();
-      } catch (err) {
-        console.error('Error loading ideas:', err);
-      }
-    }
-    
-    function filterIdeasBy(key, value) {
-      ideasFilter[key] = value === ideasFilter[key] ? null : value;
-      loadIdeas();
-    }
-    
-    function renderIdeasView() {
-      const container = document.getElementById('ideas-content');
-      
-      // Group ideas by category
-      const byCategory = {};
-      ideas.forEach(idea => {
-        if (!byCategory[idea.category]) byCategory[idea.category] = [];
-        byCategory[idea.category].push(idea);
-      });
-      
-      // Count by status
-      const statusCounts = { idea: 0, 'in-progress': 0, scheduled: 0, completed: 0 };
-      ideas.forEach(i => { if (statusCounts[i.status] !== undefined) statusCounts[i.status]++; });
-      
-      // Count by type
-      const typeCounts = {};
-      ideas.forEach(i => { typeCounts[i.type] = (typeCounts[i.type] || 0) + 1; });
-      
-      container.innerHTML = `
-        <div class="animate-fade-in space-y-6">
-          <!-- Header -->
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 class="text-2xl font-bold text-zinc-100">AI Ideas</h2>
-              <p class="text-sm text-zinc-500 mt-1">${ideas.length} ideas ready to build</p>
-            </div>
-          </div>
-          
-          <!-- Stats -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div onclick="filterIdeasBy('status', null)" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/50 transition-colors ${!ideasFilter.status ? 'ring-2 ring-indigo-500' : ''}">
-              <div class="text-2xl font-bold text-zinc-100">${ideas.length}</div>
-              <div class="text-xs text-zinc-500 uppercase">All Ideas</div>
-            </div>
-            <div onclick="filterIdeasBy('status', 'idea')" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/50 transition-colors ${ideasFilter.status === 'idea' ? 'ring-2 ring-indigo-500' : ''}">
-              <div class="text-2xl font-bold text-zinc-400">${statusCounts.idea}</div>
-              <div class="text-xs text-zinc-500 uppercase">Backlog</div>
-            </div>
-            <div onclick="filterIdeasBy('status', 'scheduled')" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/50 transition-colors ${ideasFilter.status === 'scheduled' ? 'ring-2 ring-indigo-500' : ''}">
-              <div class="text-2xl font-bold text-amber-400">${statusCounts.scheduled}</div>
-              <div class="text-xs text-zinc-500 uppercase">Scheduled</div>
-            </div>
-            <div onclick="filterIdeasBy('status', 'in-progress')" class="cursor-pointer p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-700/50 transition-colors ${ideasFilter.status === 'in-progress' ? 'ring-2 ring-indigo-500' : ''}">
-              <div class="text-2xl font-bold text-blue-400">${statusCounts['in-progress']}</div>
-              <div class="text-xs text-zinc-500 uppercase">In Progress</div>
-            </div>
-          </div>
-          
-          <!-- Type Filters -->
-          <div class="flex flex-wrap gap-2">
-            ${Object.entries(typeCounts).map(([type, count]) => `
-              <button onclick="filterIdeasBy('type', '${type}')" class="px-3 py-1.5 text-xs rounded-lg border transition-colors ${ideasFilter.type === type ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300' : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'}">
-                ${type} (${count})
-              </button>
-            `).join('')}
-          </div>
-          
-          <!-- Ideas Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            ${ideas.map(idea => {
-              const catCfg = ideaCategoryConfig[idea.category] || { icon: '💡', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' };
-              const statusCfg = ideaStatusConfig[idea.status] || ideaStatusConfig.idea;
-              return `
-                <div class="expense-card p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600/50">
-                  <div class="flex items-start justify-between mb-3">
-                    <span class="text-2xl">${catCfg.icon}</span>
-                    <span class="badge px-2 py-0.5 rounded ${statusCfg.color}">${statusCfg.label}</span>
-                  </div>
-                  <h3 class="text-sm font-semibold text-zinc-100 mb-1">${escapeHtml(idea.name)}</h3>
-                  <p class="text-xs text-zinc-500 mb-3 line-clamp-2">${escapeHtml(idea.description || '')}</p>
-                  <div class="flex items-center justify-between">
-                    <span class="text-[10px] px-2 py-0.5 rounded ${catCfg.color}">${idea.category}</span>
-                    ${idea.notes ? `<span class="text-[10px] text-zinc-500">📝</span>` : ''}
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-          
-          ${ideas.length === 0 ? `
-            <div class="text-center py-12">
-              <div class="text-4xl mb-3">💡</div>
-              <p class="text-sm text-zinc-500">No ideas match your filters</p>
-              <button onclick="ideasFilter = {}; loadIdeas();" class="mt-3 text-xs text-indigo-400 hover:text-indigo-300">Clear filters</button>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }
-
-    // ============================================
-    // EXCEL API & SPREADSHEET EDITOR
+    // EXCEL
     // ============================================
     let currentExcelData = [];
     let excelHasChanges = false;
@@ -2096,14 +2001,7 @@
       const container = document.getElementById('excel-files-list');
       
       if (excelFiles.length === 0) {
-        container.innerHTML = `
-          <div class="p-4 text-center text-zinc-500">
-            <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-zinc-800/50 flex items-center justify-center">
-              <svg class="w-6 h-6 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-            </div>
-            <p class="text-xs">No files yet</p>
-          </div>
-        `;
+        container.innerHTML = `<div class="p-4 text-center text-zinc-500"><div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-zinc-800/50 flex items-center justify-center"><svg class="w-6 h-6 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg></div><p class="text-xs">No files yet</p></div>`;
         return;
       }
 
@@ -2111,20 +2009,7 @@
         const statusIcons = { 'pending': '⏳', 'processing': '⚙️', 'completed': '✅', 'error': '❌' };
         const isActive = currentPreviewFileId === file.id;
         
-        return `
-          <div class="excel-file-item p-3 cursor-pointer ${isActive ? 'active' : ''}" onclick="openExcelFile(${file.id})">
-            <div class="flex items-center gap-3">
-              <span class="text-lg">${statusIcons[file.status] || '📄'}</span>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm text-zinc-200 truncate">${escapeHtml(file.original_filename)}</p>
-                <p class="text-xs text-zinc-500">${formatFileSize(file.size)} · ${formatRelativeTime(file.created_at)}</p>
-              </div>
-              <button onclick="event.stopPropagation(); deleteExcelFile(${file.id})" class="p-1.5 hover:bg-zinc-700 rounded text-zinc-500 hover:text-red-400">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-          </div>
-        `;
+        return `<div class="excel-file-item p-3 cursor-pointer ${isActive ? 'active' : ''}" onclick="openExcelFile(${file.id})"><div class="flex items-center gap-3"><span class="text-lg">${statusIcons[file.status] || '📄'}</span><div class="flex-1 min-w-0"><p class="text-sm text-zinc-200 truncate">${escapeHtml(file.original_filename)}</p><p class="text-xs text-zinc-500">${formatFileSize(file.size)} · ${formatRelativeTime(file.created_at)}</p></div><button onclick="event.stopPropagation(); deleteExcelFile(${file.id})" class="p-1.5 hover:bg-zinc-700 rounded text-zinc-500 hover:text-red-400"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button></div></div>`;
       }).join('') + '</div>';
     }
 
@@ -2134,25 +2019,20 @@
       return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
-    // Open file in spreadsheet editor
     async function openExcelFile(id) {
       currentPreviewFileId = id;
-      renderExcelFiles(); // Update active state
+      renderExcelFiles();
       
       try {
         const response = await fetch(`/api/excel/${id}`);
         const file = await response.json();
         
-        // Show spreadsheet, hide empty state
         document.getElementById('excel-empty-state').classList.add('hidden');
         document.getElementById('excel-spreadsheet').classList.remove('hidden');
-        
-        // Update toolbar
         document.getElementById('excel-editor-filename').textContent = file.original_filename;
         const statusText = { 'pending': 'Pending processing', 'processing': 'Processing...', 'completed': 'Ready', 'error': 'Error' };
         document.getElementById('excel-editor-status').textContent = statusText[file.status] || 'Ready';
         
-        // Show/hide download button
         const downloadBtn = document.getElementById('excel-download-processed-btn');
         if (file.status === 'completed' && file.processed_filename) {
           downloadBtn.disabled = false;
@@ -2162,22 +2042,15 @@
           downloadBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
         
-        // Load data into spreadsheet
         if (file.preview_data && Array.isArray(file.preview_data) && file.preview_data.length > 0) {
-          currentExcelData = JSON.parse(JSON.stringify(file.preview_data)); // Deep copy
+          currentExcelData = JSON.parse(JSON.stringify(file.preview_data));
           renderSpreadsheet();
         } else {
-          document.getElementById('excel-grid').innerHTML = `
-            <tr><td class="p-8 text-center text-zinc-500">
-              <p class="mb-2">No data available</p>
-              <p class="text-xs text-zinc-600">${file.status === 'pending' ? 'File is awaiting processing' : 'Upload a new file or wait for processing'}</p>
-            </td></tr>
-          `;
+          document.getElementById('excel-grid').innerHTML = `<tr><td class="p-8 text-center text-zinc-500"><p class="mb-2">No data available</p><p class="text-xs text-zinc-600">${file.status === 'pending' ? 'File is awaiting processing' : 'Upload a new file or wait for processing'}</p></td></tr>`;
         }
         
         excelHasChanges = false;
         updateSaveButton();
-        
       } catch (e) {
         console.error('Error opening file:', e);
       }
@@ -2185,67 +2058,24 @@
 
     function renderSpreadsheet() {
       if (!currentExcelData || currentExcelData.length === 0) return;
-      
       const headers = currentExcelData[0];
       const rows = currentExcelData.slice(1);
       const grid = document.getElementById('excel-grid');
-      
-      // Column letters
       const colLetters = headers.map((_, i) => String.fromCharCode(65 + i));
       
-      let html = `
-        <thead>
-          <tr>
-            <th class="corner"></th>
-            ${colLetters.map(letter => `<th>${letter}</th>`).join('')}
-          </tr>
-          <tr>
-            <th class="row-header">1</th>
-            ${headers.map((h, ci) => `
-              <td>
-                <div class="excel-cell" data-row="0" data-col="${ci}" onclick="selectExcelCell(this)" ondblclick="editExcelCell(this)">
-                  ${escapeHtml(String(h || ''))}
-                </div>
-              </td>
-            `).join('')}
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map((row, ri) => `
-            <tr>
-              <td class="row-header">${ri + 2}</td>
-              ${row.map((cell, ci) => {
-                const isNumber = typeof cell === 'number' || (!isNaN(cell) && cell !== '');
-                const isFormula = String(cell).startsWith('=');
-                return `
-                  <td>
-                    <div class="excel-cell ${isNumber ? 'number' : ''} ${isFormula ? 'formula' : ''}" data-row="${ri + 1}" data-col="${ci}" onclick="selectExcelCell(this)" ondblclick="editExcelCell(this)">
-                      ${escapeHtml(String(cell || ''))}
-                    </div>
-                  </td>
-                `;
-              }).join('')}
-            </tr>
-          `).join('')}
-        </tbody>
-      `;
+      let html = `<thead><tr><th class="corner"></th>${colLetters.map(letter => `<th>${letter}</th>`).join('')}</tr><tr><th class="row-header">1</th>${headers.map((h, ci) => `<td><div class="excel-cell" data-row="0" data-col="${ci}" onclick="selectExcelCell(this)" ondblclick="editExcelCell(this)">${escapeHtml(String(h || ''))}</div></td>`).join('')}</tr></thead><tbody>${rows.map((row, ri) => `<tr><td class="row-header">${ri + 2}</td>${row.map((cell, ci) => {const isNumber = typeof cell === 'number' || (!isNaN(cell) && cell !== '');const isFormula = String(cell).startsWith('=');return `<td><div class="excel-cell ${isNumber ? 'number' : ''} ${isFormula ? 'formula' : ''}" data-row="${ri + 1}" data-col="${ci}" onclick="selectExcelCell(this)" ondblclick="editExcelCell(this)">${escapeHtml(String(cell || ''))}</div></td>`;}).join('')}</tr>`).join('')}</tbody>`;
       
       grid.innerHTML = html;
       document.getElementById('excel-row-count').textContent = `${rows.length + 1} rows`;
     }
 
     function selectExcelCell(cell) {
-      // Remove previous selection
       document.querySelectorAll('.excel-cell.selected').forEach(c => c.classList.remove('selected'));
-      
-      // Select new cell
       cell.classList.add('selected');
       selectedCell = cell;
-      
       const row = parseInt(cell.dataset.row);
       const col = parseInt(cell.dataset.col);
       const colLetter = String.fromCharCode(65 + col);
-      
       document.getElementById('excel-cell-ref').textContent = `${colLetter}${row + 1}`;
       document.getElementById('excel-formula-bar').value = currentExcelData[row][col] || '';
       document.getElementById('excel-selection-info').textContent = `Cell ${colLetter}${row + 1}`;
@@ -2256,7 +2086,6 @@
       const row = parseInt(cell.dataset.row);
       const col = parseInt(cell.dataset.col);
       const value = currentExcelData[row][col] || '';
-      
       cell.innerHTML = `<input type="text" class="excel-cell-input" value="${escapeHtml(String(value))}" onblur="finishEditCell(this, ${row}, ${col})" onkeydown="handleCellKeydown(event, this, ${row}, ${col})">`;
       cell.querySelector('input').focus();
       cell.querySelector('input').select();
@@ -2265,20 +2094,17 @@
     function finishEditCell(input, row, col) {
       const newValue = input.value;
       const oldValue = currentExcelData[row][col];
-      
       if (newValue !== String(oldValue || '')) {
         currentExcelData[row][col] = newValue;
         excelHasChanges = true;
         updateSaveButton();
       }
-      
       const cell = input.parentElement;
       cell.classList.remove('editing');
       const isNumber = !isNaN(newValue) && newValue !== '';
       const isFormula = newValue.startsWith('=');
       cell.className = `excel-cell selected ${isNumber ? 'number' : ''} ${isFormula ? 'formula' : ''}`;
       cell.innerHTML = escapeHtml(newValue || '');
-      
       document.getElementById('excel-formula-bar').value = newValue;
     }
 
@@ -2286,13 +2112,11 @@
       if (event.key === 'Enter') {
         event.preventDefault();
         finishEditCell(input, row, col);
-        // Move to next row
         const nextCell = document.querySelector(`.excel-cell[data-row="${row + 1}"][data-col="${col}"]`);
         if (nextCell) selectExcelCell(nextCell);
       } else if (event.key === 'Tab') {
         event.preventDefault();
         finishEditCell(input, row, col);
-        // Move to next column
         const nextCell = document.querySelector(`.excel-cell[data-row="${row}"][data-col="${col + 1}"]`);
         if (nextCell) selectExcelCell(nextCell);
       } else if (event.key === 'Escape') {
@@ -2308,12 +2132,10 @@
       const row = parseInt(selectedCell.dataset.row);
       const col = parseInt(selectedCell.dataset.col);
       const newValue = document.getElementById('excel-formula-bar').value;
-      
       if (newValue !== String(currentExcelData[row][col] || '')) {
         currentExcelData[row][col] = newValue;
         excelHasChanges = true;
         updateSaveButton();
-        
         const isNumber = !isNaN(newValue) && newValue !== '';
         const isFormula = newValue.startsWith('=');
         selectedCell.className = `excel-cell selected ${isNumber ? 'number' : ''} ${isFormula ? 'formula' : ''}`;
@@ -2335,30 +2157,19 @@
 
     async function saveExcelChanges() {
       if (!currentPreviewFileId || !excelHasChanges) return;
-      
       const saveBtn = document.getElementById('excel-save-btn');
       saveBtn.disabled = true;
       saveBtn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...';
-      
       try {
-        // Update preview data on server
         await fetch(`/api/excel/${currentPreviewFileId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            preview_data: currentExcelData,
-            status: 'completed',
-            status_message: 'Edited and saved'
-          })
+          body: JSON.stringify({ preview_data: currentExcelData, status: 'completed', status_message: 'Edited and saved' })
         });
-        
         excelHasChanges = false;
         updateSaveButton();
         document.getElementById('excel-editor-status').textContent = 'Saved';
-        
-        // Reload file list
         loadExcelFiles();
-        
       } catch (e) {
         console.error('Error saving:', e);
         alert('Failed to save changes');
@@ -2381,46 +2192,24 @@
       renderExcelFiles();
     }
 
-    // Excel Upload Modal
     function showUploadExcelModal() {
       showModal('upload-excel-modal-template');
       excelFileToUpload = null;
-      
       setTimeout(() => {
         const dropZone = document.getElementById('excel-drop-zone');
         if (!dropZone) return;
-        
-        dropZone.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          dropZone.classList.add('border-emerald-500', 'bg-emerald-500/5');
-        });
-        dropZone.addEventListener('dragleave', (e) => {
-          e.preventDefault();
-          dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/5');
-        });
-        dropZone.addEventListener('drop', (e) => {
-          e.preventDefault();
-          dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/5');
-          const file = e.dataTransfer.files[0];
-          if (file) handleExcelFile(file);
-        });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-emerald-500', 'bg-emerald-500/5'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/5'); });
+        dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/5'); const file = e.dataTransfer.files[0]; if (file) handleExcelFile(file); });
       }, 100);
     }
 
-    function handleExcelFileSelect(event) {
-      const file = event.target.files[0];
-      if (file) handleExcelFile(file);
-    }
+    function handleExcelFileSelect(event) { const file = event.target.files[0]; if (file) handleExcelFile(file); }
 
     function handleExcelFile(file) {
       const validExtensions = ['.xlsx', '.xls', '.csv'];
       const ext = '.' + file.name.split('.').pop().toLowerCase();
-      
-      if (!validExtensions.includes(ext)) {
-        alert('Please upload an Excel file (.xlsx, .xls, or .csv)');
-        return;
-      }
-      
+      if (!validExtensions.includes(ext)) { alert('Please upload an Excel file (.xlsx, .xls, or .csv)'); return; }
       excelFileToUpload = file;
       document.getElementById('excel-drop-zone').classList.add('hidden');
       document.getElementById('excel-selected-file').classList.remove('hidden');
@@ -2439,34 +2228,22 @@
 
     async function submitExcelUpload() {
       if (!excelFileToUpload) return;
-      
       const btn = document.getElementById('excel-upload-btn');
       btn.disabled = true;
       btn.textContent = 'Uploading...';
-      
       try {
         const content = await readFileAsBase64(excelFileToUpload);
         const instructions = document.getElementById('excel-instructions').value.trim();
-        
         const response = await fetch('/api/excel/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename: excelFileToUpload.name,
-            content,
-            instructions: instructions || null
-          })
+          body: JSON.stringify({ filename: excelFileToUpload.name, content, instructions: instructions || null })
         });
-        
         const result = await response.json();
-        
         if (response.ok) {
           closeModal();
           loadExcelFiles();
-          // Open the newly uploaded file
-          if (result.id) {
-            setTimeout(() => openExcelFile(result.id), 500);
-          }
+          if (result.id) setTimeout(() => openExcelFile(result.id), 500);
         } else {
           alert('Upload failed: ' + (result.error || 'Unknown error'));
         }
@@ -2490,12 +2267,9 @@
 
     async function deleteExcelFile(id) {
       if (!confirm('Delete this file?')) return;
-      
       try {
         await fetch(`/api/excel/${id}`, { method: 'DELETE' });
-        if (currentPreviewFileId === id) {
-          backToExcelList();
-        }
+        if (currentPreviewFileId === id) backToExcelList();
         loadExcelFiles();
       } catch (e) {
         console.error('Error deleting file:', e);
@@ -2504,8 +2278,67 @@
     }
 
     // ============================================
-    // UTILITIES
+    // MODALS & UTILITIES
     // ============================================
+    function showModal(templateId) {
+      const template = document.getElementById(templateId);
+      const container = document.getElementById('modal-container');
+      container.innerHTML = template.innerHTML;
+      container.classList.remove('hidden');
+    }
+
+    function closeModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('modal-container').classList.add('hidden');
+    }
+
+    function showShortcuts() { showModal('shortcuts-modal-template'); }
+
+    async function showAnalytics() {
+      showModal('analytics-modal-template');
+      const res = await fetch('/api/analytics');
+      const data = await res.json();
+      const maxByDay = Math.max(...Object.values(data.byDay), 1);
+      const days = Object.entries(data.byDay).slice(-14);
+      document.getElementById('analytics-content').innerHTML = `<div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8"><div class="p-3 md:p-4 rounded-lg bg-zinc-800/50"><div class="text-xl md:text-2xl font-semibold text-zinc-100">${data.total}</div><div class="text-xs text-zinc-500 uppercase tracking-wide">Total</div></div><div class="p-3 md:p-4 rounded-lg bg-zinc-800/50"><div class="text-xl md:text-2xl font-semibold text-indigo-400">${data.unread}</div><div class="text-xs text-zinc-500 uppercase tracking-wide">Unread</div></div><div class="p-3 md:p-4 rounded-lg bg-zinc-800/50"><div class="text-xl md:text-2xl font-semibold text-amber-400">${data.starred}</div><div class="text-xs text-zinc-500 uppercase tracking-wide">Starred</div></div><div class="p-3 md:p-4 rounded-lg bg-zinc-800/50"><div class="text-xl md:text-2xl font-semibold text-emerald-400">${data.readRate}%</div><div class="text-xs text-zinc-500 uppercase tracking-wide">Read Rate</div></div></div><div class="mb-6 md:mb-8"><h3 class="text-sm font-medium text-zinc-300 mb-4">Last 14 Days</h3><div class="flex items-end gap-1 h-20 md:h-24">${days.map(([date, count]) => `<div class="flex-1 flex flex-col items-center"><div class="chart-bar w-full bg-indigo-500/50 rounded-t" style="height:${(count/maxByDay)*100}%"></div><div class="text-[8px] md:text-[9px] text-zinc-600 mt-1">${new Date(date).getDate()}</div></div>`).join('')}</div></div>`;
+    }
+
+    async function showShareModal(id) {
+      showModal('share-modal-template');
+      document.getElementById('share-content').innerHTML = '<div class="flex justify-center py-4"><div class="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>';
+      const res = await fetch(`/api/briefings/${id}/share`, { method: 'POST' });
+      const data = await res.json();
+      document.getElementById('share-content').innerHTML = `<p class="text-sm text-zinc-400 mb-3">Anyone with this link can view this briefing:</p><div class="flex gap-2"><input type="text" readonly value="${data.shareUrl}" class="flex-1 h-10 px-3 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 text-ellipsis" id="share-url-input"><button onclick="copyShareUrl()" class="px-4 h-10 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg shrink-0">Copy</button></div><button onclick="revokeShare(${id})" class="mt-3 text-xs text-red-400 hover:text-red-300">Revoke link</button>`;
+    }
+
+    function copyShareUrl() {
+      const input = document.getElementById('share-url-input');
+      input.select();
+      navigator.clipboard?.writeText(input.value) || document.execCommand('copy');
+    }
+
+    async function revokeShare(id) {
+      await fetch(`/api/briefings/${id}/share`, { method: 'DELETE' });
+      closeModal();
+    }
+
+    function showTagModal(id) {
+      showModal('tag-modal-template');
+      document.getElementById('new-tag-input').dataset.briefingId = id;
+      setTimeout(() => document.getElementById('new-tag-input')?.focus(), 100);
+    }
+
+    async function addTagFromInput() {
+      const input = document.getElementById('new-tag-input');
+      const tag = input.value.trim();
+      const id = input.dataset.briefingId;
+      if (!tag) return;
+      await fetch(`/api/briefings/${id}/tags`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tag }) });
+      closeModal();
+      viewBriefing(parseInt(id));
+      fetchTags();
+    }
+
     function formatContent(content) {
       return escapeHtml(content)
         .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 break-all">$1</a>')
@@ -2540,7 +2373,6 @@
         if (e.key === 'Escape') e.target.blur();
         return;
       }
-      
       if (e.key === '/' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); document.getElementById('search-input').focus(); }
       else if (e.key === '?' && e.shiftKey) { e.preventDefault(); showShortcuts(); }
       else if (e.key === 'Escape') { closeModal(); hideDetailPanel(); }
@@ -2562,7 +2394,6 @@
       document.querySelector(`[data-index="${selectedIndex}"]`)?.scrollIntoView({ block: 'nearest' });
     }
 
-    // Search
     let searchTimeout;
     document.getElementById('search-input').addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
@@ -2588,7 +2419,6 @@
     fetchTags();
     setInterval(refreshBriefings, 5 * 60 * 1000);
 
-    // PWA
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
