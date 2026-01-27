@@ -166,6 +166,48 @@ async function initDatabase() {
       )
     `);
 
+    // Create resources table (for links, files, documents)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_resources (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(50) NOT NULL DEFAULT 'link',
+        title VARCHAR(255) NOT NULL,
+        url TEXT,
+        description TEXT,
+        category VARCHAR(100),
+        tags TEXT[] DEFAULT '{}',
+        starred BOOLEAN DEFAULT FALSE,
+        archived BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP
+      )
+    `);
+
+    // Create jobs table (for job postings)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_jobs (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        company VARCHAR(255) NOT NULL,
+        location VARCHAR(255),
+        salary_min INTEGER,
+        salary_max INTEGER,
+        salary_text VARCHAR(100),
+        job_type VARCHAR(50),
+        url TEXT,
+        description TEXT,
+        fit_notes TEXT,
+        status VARCHAR(50) DEFAULT 'new',
+        starred BOOLEAN DEFAULT FALSE,
+        archived BOOLEAN DEFAULT FALSE,
+        applied_at TIMESTAMP,
+        tags TEXT[] DEFAULT '{}',
+        source VARCHAR(100),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP
+      )
+    `);
+
     console.log('[DB] PostgreSQL tables initialized');
   } finally {
     client.release();
@@ -1487,6 +1529,288 @@ app.get('/api/ideas/meta/filters', async (req, res) => {
     });
   } catch (err) {
     console.error('Error getting idea filters:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// ============================================
+// RESOURCES API (links, files, documents)
+// ============================================
+
+// Get all resources
+app.get('/api/resources', async (req, res) => {
+  try {
+    const { type, category, limit = 100, starred, archived, q } = req.query;
+    
+    let query = 'SELECT * FROM lumen_resources WHERE 1=1';
+    const params = [];
+    let paramCount = 0;
+
+    if (archived !== 'true') {
+      query += ' AND (archived = FALSE OR archived IS NULL)';
+    }
+
+    if (type) {
+      paramCount++;
+      query += ` AND type = $${paramCount}`;
+      params.push(type);
+    }
+
+    if (category) {
+      paramCount++;
+      query += ` AND category = $${paramCount}`;
+      params.push(category);
+    }
+
+    if (starred === 'true') {
+      query += ' AND starred = TRUE';
+    }
+
+    if (q) {
+      paramCount++;
+      const searchParam = `%${q.toLowerCase()}%`;
+      query += ` AND (LOWER(title) LIKE $${paramCount} OR LOWER(description) LIKE $${paramCount} OR LOWER(url) LIKE $${paramCount})`;
+      params.push(searchParam);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    params.push(parseInt(limit));
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error getting resources:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Add new resource
+app.post('/api/resources', async (req, res) => {
+  try {
+    const { type = 'link', title, url, description, category, tags } = req.body;
+    
+    if (!title) {
+      return res.status(400).json({ error: 'Missing required field: title' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO lumen_resources (type, title, url, description, category, tags) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [type, title, url || null, description || null, category || null, tags || []]
+    );
+
+    res.json({ id: result.rows[0].id, message: 'Resource added successfully' });
+  } catch (err) {
+    console.error('Error adding resource:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Toggle resource starred
+app.patch('/api/resources/:id/star', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE lumen_resources SET starred = NOT starred WHERE id = $1 RETURNING starred',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+    res.json({ starred: result.rows[0].starred });
+  } catch (err) {
+    console.error('Error toggling star:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Archive resource
+app.patch('/api/resources/:id/archive', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE lumen_resources SET archived = NOT archived, updated_at = NOW() WHERE id = $1 RETURNING archived',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+    res.json({ archived: result.rows[0].archived });
+  } catch (err) {
+    console.error('Error archiving resource:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Delete resource
+app.delete('/api/resources/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM lumen_resources WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Resource deleted' });
+  } catch (err) {
+    console.error('Error deleting resource:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// ============================================
+// JOBS API (job postings)
+// ============================================
+
+// Get all jobs
+app.get('/api/jobs', async (req, res) => {
+  try {
+    const { status, limit = 100, starred, archived, q } = req.query;
+    
+    let query = 'SELECT * FROM lumen_jobs WHERE 1=1';
+    const params = [];
+    let paramCount = 0;
+
+    if (archived !== 'true') {
+      query += ' AND (archived = FALSE OR archived IS NULL)';
+    }
+
+    if (status) {
+      paramCount++;
+      query += ` AND status = $${paramCount}`;
+      params.push(status);
+    }
+
+    if (starred === 'true') {
+      query += ' AND starred = TRUE';
+    }
+
+    if (q) {
+      paramCount++;
+      const searchParam = `%${q.toLowerCase()}%`;
+      query += ` AND (LOWER(title) LIKE $${paramCount} OR LOWER(company) LIKE $${paramCount} OR LOWER(location) LIKE $${paramCount})`;
+      params.push(searchParam);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    params.push(parseInt(limit));
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error getting jobs:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Add new job
+app.post('/api/jobs', async (req, res) => {
+  try {
+    const { title, company, location, salary_min, salary_max, salary_text, job_type, url, description, fit_notes, tags, source } = req.body;
+    
+    if (!title || !company) {
+      return res.status(400).json({ error: 'Missing required fields: title, company' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO lumen_jobs (title, company, location, salary_min, salary_max, salary_text, job_type, url, description, fit_notes, tags, source) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+      [title, company, location || null, salary_min || null, salary_max || null, salary_text || null, 
+       job_type || null, url || null, description || null, fit_notes || null, tags || [], source || null]
+    );
+
+    res.json({ id: result.rows[0].id, message: 'Job added successfully' });
+  } catch (err) {
+    console.error('Error adding job:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Update job status
+app.patch('/api/jobs/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['new', 'interested', 'applied', 'interviewing', 'rejected', 'offer', 'archived'];
+    
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const appliedAt = status === 'applied' ? 'NOW()' : 'applied_at';
+    const result = await pool.query(
+      `UPDATE lumen_jobs SET status = $1, applied_at = ${status === 'applied' ? 'NOW()' : 'applied_at'}, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      [status, req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating job status:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Toggle job starred
+app.patch('/api/jobs/:id/star', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE lumen_jobs SET starred = NOT starred WHERE id = $1 RETURNING starred',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    res.json({ starred: result.rows[0].starred });
+  } catch (err) {
+    console.error('Error toggling star:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Archive job
+app.patch('/api/jobs/:id/archive', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE lumen_jobs SET archived = NOT archived, updated_at = NOW() WHERE id = $1 RETURNING archived',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    res.json({ archived: result.rows[0].archived });
+  } catch (err) {
+    console.error('Error archiving job:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Delete job
+app.delete('/api/jobs/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM lumen_jobs WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Job deleted' });
+  } catch (err) {
+    console.error('Error deleting job:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Get job stats
+app.get('/api/jobs/stats', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE status = 'new') as new,
+        COUNT(*) FILTER (WHERE status = 'interested') as interested,
+        COUNT(*) FILTER (WHERE status = 'applied') as applied,
+        COUNT(*) FILTER (WHERE status = 'interviewing') as interviewing,
+        COUNT(*) FILTER (WHERE starred = TRUE AND (archived = FALSE OR archived IS NULL)) as starred,
+        COUNT(*) as total
+      FROM lumen_jobs
+      WHERE archived = FALSE OR archived IS NULL
+    `);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error getting job stats:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
