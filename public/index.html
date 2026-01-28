@@ -2861,7 +2861,8 @@
       renderLumenToolsView();
       await Promise.all([
         loadAitmplTemplates(),
-        loadCustomSkills()
+        loadCustomSkills(),
+        loadSyncStatus()
       ]);
     }
 
@@ -2892,6 +2893,101 @@
       }
     }
 
+    // Sync status management
+    let syncStatusInterval = null;
+    
+    async function loadSyncStatus() {
+      try {
+        const response = await fetch('/api/lumen-tools/sync-status');
+        const status = await response.json();
+        updateSyncStatusUI(status);
+        return status;
+      } catch (err) {
+        console.error('Error loading sync status:', err);
+        return null;
+      }
+    }
+    
+    function updateSyncStatusUI(status) {
+      const dot = document.getElementById('sync-status-dot');
+      const text = document.getElementById('sync-status-text');
+      const btn = document.getElementById('sync-now-btn');
+      const icon = document.getElementById('sync-icon');
+      
+      if (!dot || !text) return;
+      
+      if (status.isRunning) {
+        dot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+        text.textContent = `Syncing ${status.progress?.type || ''}...`;
+        text.className = 'text-amber-400';
+        if (btn) btn.disabled = true;
+        if (icon) icon.classList.add('animate-spin');
+      } else if (status.lastSyncAt) {
+        const lastSync = new Date(status.lastSyncAt);
+        const minutesAgo = Math.floor((Date.now() - lastSync) / 60000);
+        let timeText;
+        if (minutesAgo < 1) timeText = 'just now';
+        else if (minutesAgo < 60) timeText = `${minutesAgo}m ago`;
+        else if (minutesAgo < 1440) timeText = `${Math.floor(minutesAgo / 60)}h ago`;
+        else timeText = `${Math.floor(minutesAgo / 1440)}d ago`;
+        
+        dot.className = status.lastSyncSuccess 
+          ? 'w-2 h-2 rounded-full bg-emerald-500'
+          : 'w-2 h-2 rounded-full bg-red-500';
+        text.textContent = `Synced ${timeText} · ${status.itemCount} items`;
+        text.className = 'text-zinc-400';
+        if (btn) btn.disabled = false;
+        if (icon) icon.classList.remove('animate-spin');
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-zinc-500';
+        text.textContent = 'Never synced';
+        text.className = 'text-zinc-500';
+        if (btn) btn.disabled = false;
+        if (icon) icon.classList.remove('animate-spin');
+      }
+    }
+    
+    async function triggerManualSync() {
+      const btn = document.getElementById('sync-now-btn');
+      if (btn) btn.disabled = true;
+      
+      try {
+        const response = await fetch('/api/lumen-tools/sync', { method: 'POST' });
+        const result = await response.json();
+        
+        if (result.success) {
+          // Start polling for status
+          startSyncStatusPolling();
+        } else {
+          alert(result.message || 'Sync failed to start');
+          if (btn) btn.disabled = false;
+        }
+      } catch (err) {
+        console.error('Error triggering sync:', err);
+        alert('Failed to trigger sync');
+        if (btn) btn.disabled = false;
+      }
+    }
+    
+    function startSyncStatusPolling() {
+      if (syncStatusInterval) clearInterval(syncStatusInterval);
+      
+      syncStatusInterval = setInterval(async () => {
+        const status = await loadSyncStatus();
+        if (status && !status.isRunning) {
+          clearInterval(syncStatusInterval);
+          syncStatusInterval = null;
+          // Reload templates after sync completes
+          loadAitmplTemplates();
+        }
+      }, 2000);
+    }
+    
+    // Load sync status when Lumen Tools tab is active
+    function initSyncStatusOnTabSwitch() {
+      loadSyncStatus();
+    }
+
     function renderLumenToolsView() {
       const container = document.getElementById('lumen-tools-content');
       const tabs = [
@@ -2913,7 +3009,16 @@
                 <p class="text-sm text-zinc-500">Supercharge Your AI Development with Anthropic Claude</p>
               </div>
             </div>
-            <div class="flex gap-2">
+            <div class="flex items-center gap-2">
+              <!-- Sync Status Indicator -->
+              <div id="sync-status-indicator" class="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span id="sync-status-text" class="text-zinc-400">Loading...</span>
+              </div>
+              <button onclick="triggerManualSync()" id="sync-now-btn" class="px-3 py-1.5 text-xs bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-lg hover:bg-indigo-600/30 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg id="sync-icon" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Sync</span>
+              </button>
               <a href="https://www.npmjs.com/package/claude-code-templates" target="_blank" class="px-3 py-1.5 text-xs bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30">npm</a>
               <a href="https://github.com/davila7/claude-code-templates" target="_blank" class="px-3 py-1.5 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700">GitHub</a>
             </div>

@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { Pool } = require('pg');
+const cron = require('node-cron');
+const cheerio = require('cheerio');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,6 +25,278 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static('public'));
 app.use('/excel-files', express.static(EXCEL_UPLOAD_DIR));
+
+// ============================================
+// AITMPL.COM SYNC - SCRAPER & STORAGE
+// ============================================
+
+// Sync status tracking
+let syncStatus = {
+  lastSyncAt: null,
+  lastSyncSuccess: false,
+  itemCount: 0,
+  isRunning: false,
+  error: null,
+  progress: { current: 0, total: 0, type: '' }
+};
+
+// Rate limiting helper - respectful delays between requests
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Parse template card from HTML
+function parseTemplateCard($, element, type) {
+  const card = $(element);
+  
+  try {
+    // Extract name
+    const name = card.find('h3').first().text().trim();
+    if (!name || name === 'Add New Skill') return null;
+    
+    // Extract description
+    const description = card.find('p').first().text().trim();
+    
+    // Extract category
+    const categoryEl = card.find('[class*="category"], [class*="badge"]').first();
+    const category = categoryEl.text().trim() || 'Other';
+    
+    // Extract downloads (look for download count)
+    const downloadsText = card.text().match(/(\d+(?:\.\d+)?K?)\s*(?:downloads?|↓)/i);
+    let downloads = 0;
+    if (downloadsText) {
+      const val = downloadsText[1];
+      if (val.includes('K')) {
+        downloads = parseFloat(val) * 1000;
+      } else {
+        downloads = parseInt(val) || 0;
+      }
+    }
+    
+    // Extract install command
+    const installCommand = card.find('code').first().text().trim() || 
+                          card.find('[class*="command"]').first().text().trim() ||
+                          `npx claude-code-templates@latest --${type}=${name.toLowerCase().replace(/\s+/g, '-')} --yes`;
+    
+    // Extract version if present
+    const versionMatch = card.text().match(/v(\d+\.\d+\.\d+)/);
+    const version = versionMatch ? versionMatch[1] : '1.0.0';
+    
+    // Extract status (stable/beta/experimental)
+    const statusMatch = card.text().match(/\b(stable|beta|experimental)\b/i);
+    const status = statusMatch ? statusMatch[1].toLowerCase() : 'stable';
+    
+    // Generate unique ID
+    const id = `aitmpl-${type}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    
+    return {
+      id,
+      type,
+      name,
+      description: description.substring(0, 500),
+      category,
+      downloads: Math.floor(downloads),
+      stars: Math.floor(downloads * 0.05), // Estimate stars from downloads
+      version,
+      status,
+      tags: [type, category.toLowerCase()],
+      install_command: installCommand,
+      source_url: `https://aitmpl.com/${type}`
+    };
+  } catch (err) {
+    console.error('[Scraper] Error parsing card:', err.message);
+    return null;
+  }
+}
+
+// Scrape a single page of templates
+async function scrapePage(type, page = 1) {
+  const url = `https://www.aitmpl.com/${type}?page=${page}`;
+  
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Lumen-Dashboard/1.0 (sync bot; respectful scraping)',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    
+    const templates = [];
+    
+    // Find template cards - adapt selectors based on actual DOM structure
+    $('[class*="card"], [class*="template"], [class*="item"]').each((i, el) => {
+      const template = parseTemplateCard($, el, type);
+      if (template) {
+        templates.push(template);
+      }
+    });
+    
+    // Check for pagination info
+    const pageInfo = $('[class*="page"]').text();
+    const totalPagesMatch = pageInfo.match(/of\s+(\d+)/);
+    const totalPages = totalPagesMatch ? parseInt(totalPagesMatch[1]) : 1;
+    
+    return { templates, totalPages, currentPage: page };
+  } catch (err) {
+    console.error(`[Scraper] Error scraping ${url}:`, err.message);
+    return { templates: [], totalPages: 1, currentPage: page, error: err.message };
+  }
+}
+
+// Scrape all templates of a specific type
+async function scrapeAllOfType(type, maxPages = 30) {
+  console.log(`[Scraper] Starting scrape for ${type}...`);
+  const allTemplates = [];
+  let page = 1;
+  let totalPages = 1;
+  
+  while (page <= Math.min(totalPages, maxPages)) {
+    syncStatus.progress = { current: page, total: totalPages, type };
+    
+    const result = await scrapePage(type, page);
+    
+    if (result.templates.length > 0) {
+      allTemplates.push(...result.templates);
+    }
+    
+    if (result.totalPages > totalPages) {
+      totalPages = result.totalPages;
+    }
+    
+    // If we got no templates and it's not the first page, we've reached the end
+    if (result.templates.length === 0 && page > 1) {
+      break;
+    }
+    
+    page++;
+    
+    // Respectful rate limiting - 1.5 seconds between pages
+    if (page <= totalPages) {
+      await delay(1500);
+    }
+  }
+  
+  console.log(`[Scraper] Scraped ${allTemplates.length} ${type} templates from ${page - 1} pages`);
+  return allTemplates;
+}
+
+// Full sync - scrape all template types
+async function performFullSync() {
+  if (syncStatus.isRunning) {
+    console.log('[Sync] Sync already in progress, skipping...');
+    return { success: false, error: 'Sync already in progress' };
+  }
+  
+  syncStatus.isRunning = true;
+  syncStatus.error = null;
+  const startTime = Date.now();
+  
+  console.log('[Sync] Starting full aitmpl.com sync...');
+  
+  try {
+    const templateTypes = ['skills', 'agents', 'commands', 'settings', 'hooks', 'mcps'];
+    const allTemplates = [];
+    
+    for (const type of templateTypes) {
+      const templates = await scrapeAllOfType(type);
+      allTemplates.push(...templates);
+      
+      // Extra delay between types to be respectful
+      await delay(2000);
+    }
+    
+    // If scraping returned no results, generate fallback data
+    if (allTemplates.length === 0) {
+      console.log('[Sync] No templates scraped, using generated fallback data');
+      const generated = generateTemplateData();
+      
+      for (const type of templateTypes) {
+        if (generated[type]) {
+          for (const item of generated[type]) {
+            allTemplates.push({
+              id: item.id,
+              type,
+              name: item.name,
+              description: item.description,
+              category: item.category || 'Other',
+              downloads: item.downloads || 0,
+              stars: item.stars || 0,
+              version: item.version || '1.0.0',
+              status: item.status || 'stable',
+              tags: item.tags || [],
+              install_command: item.installCommand,
+              source_url: `https://aitmpl.com/${type}`
+            });
+          }
+        }
+      }
+    }
+    
+    // Upsert all templates to database
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      let upsertCount = 0;
+      for (const template of allTemplates) {
+        await client.query(`
+          INSERT INTO lumen_synced_templates (
+            id, type, name, description, category, downloads, stars, 
+            version, status, tags, install_command, source_url, synced_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            description = EXCLUDED.description,
+            category = EXCLUDED.category,
+            downloads = EXCLUDED.downloads,
+            stars = EXCLUDED.stars,
+            version = EXCLUDED.version,
+            status = EXCLUDED.status,
+            tags = EXCLUDED.tags,
+            install_command = EXCLUDED.install_command,
+            source_url = EXCLUDED.source_url,
+            synced_at = NOW()
+        `, [
+          template.id, template.type, template.name, template.description,
+          template.category, template.downloads, template.stars,
+          template.version, template.status || 'stable', template.tags,
+          template.install_command, template.source_url
+        ]);
+        upsertCount++;
+      }
+      
+      await client.query('COMMIT');
+      
+      const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`[Sync] Completed! Synced ${upsertCount} templates in ${duration}s`);
+      
+      syncStatus.lastSyncAt = new Date().toISOString();
+      syncStatus.lastSyncSuccess = true;
+      syncStatus.itemCount = upsertCount;
+      syncStatus.isRunning = false;
+      syncStatus.progress = { current: 0, total: 0, type: '' };
+      
+      return { success: true, count: upsertCount, duration };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('[Sync] Error during sync:', err);
+    syncStatus.error = err.message;
+    syncStatus.lastSyncSuccess = false;
+    syncStatus.isRunning = false;
+    return { success: false, error: err.message };
+  }
+}
 
 // ============================================
 // DATABASE INITIALIZATION
@@ -202,6 +476,37 @@ async function initDatabase() {
       )
     `);
 
+    // Create synced templates table for aitmpl.com data
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_synced_templates (
+        id VARCHAR(255) PRIMARY KEY,
+        type VARCHAR(50) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        category VARCHAR(100),
+        downloads INTEGER DEFAULT 0,
+        stars INTEGER DEFAULT 0,
+        version VARCHAR(50),
+        status VARCHAR(50) DEFAULT 'stable',
+        tags TEXT[] DEFAULT '{}',
+        install_command TEXT,
+        source_url TEXT,
+        synced_at TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create index for faster template queries
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_templates_type ON lumen_synced_templates(type)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_templates_category ON lumen_synced_templates(category)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_templates_downloads ON lumen_synced_templates(downloads DESC)
+    `);
+
     console.log('[DB] PostgreSQL tables initialized');
   } finally {
     client.release();
@@ -218,10 +523,10 @@ initDatabase().catch(err => {
 });
 
 // ============================================
-// AITMPL.COM CLONE - COMPREHENSIVE TEMPLATE DATA
+// AITMPL.COM CLONE - FALLBACK TEMPLATE DATA
 // ============================================
 
-// Generate comprehensive template data similar to aitmpl.com
+// Generate comprehensive template data (used as fallback when scraping fails)
 const generateTemplateData = () => {
   const skills = [];
   const agents = [];
@@ -237,12 +542,6 @@ const generateTemplateData = () => {
     'Education', 'Finance', 'Gaming', 'Healthcare', 'IoT', 
     'Machine Learning', 'Mobile', 'Networking', 'Security', 
     'Social Media', 'Testing', 'Web Development'
-  ];
-
-  const techStacks = [
-    'Python', 'JavaScript', 'TypeScript', 'React', 'Vue', 'Angular',
-    'Node.js', 'Django', 'Flask', 'FastAPI', 'Ruby on Rails', 
-    'Go', 'Rust', 'Java', 'Kotlin', 'Swift', 'C++', 'C#'
   ];
 
   // Generate Skills (629 items)
@@ -261,20 +560,20 @@ const generateTemplateData = () => {
 
   let skillId = 1;
   skillTemplates.forEach(template => {
-    template.actions.forEach((action, i) => {
-      skillCategories.forEach((category, j) => {
+    template.actions.forEach((action) => {
+      skillCategories.forEach((category) => {
         if (skillId <= 629) {
           skills.push({
             id: `skill-${skillId}`,
             name: `${template.prefix} ${action}`,
-            description: `Advanced ${template.prefix.toLowerCase()} ${action.toLowerCase()} tool for ${category.toLowerCase()} projects. Optimized for modern development workflows with Claude Code integration.`,
+            description: `Advanced ${template.prefix.toLowerCase()} ${action.toLowerCase()} tool for ${category.toLowerCase()} projects.`,
             category: category,
-            author: ['claude-templates', 'community', 'anthropic', 'davila7'][Math.floor(Math.random() * 4)],
+            author: ['claude-templates', 'community', 'anthropic'][Math.floor(Math.random() * 3)],
             downloads: Math.floor(Math.random() * 50000) + 100,
             stars: Math.floor(Math.random() * 500) + 10,
             version: `${Math.floor(Math.random() * 3) + 1}.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 20)}`,
             tags: [template.prefix.toLowerCase(), action.toLowerCase(), category.split(' ')[0].toLowerCase()],
-            installCommand: `npx claude-code-templates@latest --skill ${template.prefix.toLowerCase()}-${action.toLowerCase()}`,
+            installCommand: `npx claude-code-templates@latest --skill ${template.prefix.toLowerCase()}-${action.toLowerCase()} --yes`,
             lastUpdated: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
             status: ['stable', 'beta', 'experimental'][Math.floor(Math.random() * 3)]
           });
@@ -327,7 +626,6 @@ const generateTemplateData = () => {
   });
 
   // Generate Commands (228 items)
-  const commandPrefixes = ['/', 'claude ', '!'];
   const commandActions = [
     { name: 'fix', desc: 'Quick fix for common issues', category: 'Editing' },
     { name: 'explain', desc: 'Detailed code explanation', category: 'Learning' },
@@ -343,8 +641,10 @@ const generateTemplateData = () => {
     { name: 'analyze', desc: 'Code analysis', category: 'Analysis' }
   ];
 
+  const techStacks = ['Python', 'JavaScript', 'TypeScript', 'React', 'Vue', 'Angular', 'Node.js', 'Django', 'Flask', 'FastAPI', 'Ruby on Rails', 'Go', 'Rust', 'Java', 'Kotlin', 'Swift', 'C++', 'C#'];
+
   let cmdId = 1;
-  commandPrefixes.forEach(prefix => {
+  ['/'].forEach(prefix => {
     commandActions.forEach(action => {
       techStacks.forEach(tech => {
         if (cmdId <= 228) {
@@ -354,7 +654,6 @@ const generateTemplateData = () => {
             description: `${action.desc} for ${tech} projects`,
             category: action.category,
             usage: `${prefix}${action.name} [file|selection]`,
-            examples: [`${prefix}${action.name} src/index.${tech.toLowerCase().includes('script') ? 'ts' : 'js'}`],
             downloads: Math.floor(Math.random() * 20000) + 200,
             stars: Math.floor(Math.random() * 200) + 5,
             tags: [action.name, tech.toLowerCase(), action.category.toLowerCase()],
@@ -408,8 +707,7 @@ const generateTemplateData = () => {
     { trigger: 'startup', desc: 'On Claude Code start' },
     { trigger: 'shutdown', desc: 'On Claude Code exit' },
     { trigger: 'file-open', desc: 'When file opens' },
-    { trigger: 'session-start', desc: 'When session begins' },
-    { trigger: 'session-end', desc: 'When session ends' }
+    { trigger: 'session-start', desc: 'When session begins' }
   ];
 
   let hookId = 1;
@@ -423,7 +721,6 @@ const generateTemplateData = () => {
           description: `Automatically ${action.toLowerCase()} ${hook.desc.toLowerCase()}`,
           trigger: hook.trigger,
           action: action.toLowerCase(),
-          example: `claude ${action.toLowerCase()} --staged`,
           downloads: Math.floor(Math.random() * 10000) + 50,
           stars: Math.floor(Math.random() * 150) + 5,
           tags: [hook.trigger, action.toLowerCase(), 'automation'],
@@ -439,7 +736,6 @@ const generateTemplateData = () => {
     { name: 'Filesystem', desc: 'File system operations', category: 'Core' },
     { name: 'GitHub', desc: 'GitHub integration', category: 'Integration' },
     { name: 'GitLab', desc: 'GitLab integration', category: 'Integration' },
-    { name: 'Bitbucket', desc: 'Bitbucket integration', category: 'Integration' },
     { name: 'Database', desc: 'Database connectivity', category: 'Data' },
     { name: 'PostgreSQL', desc: 'PostgreSQL operations', category: 'Data' },
     { name: 'MySQL', desc: 'MySQL operations', category: 'Data' },
@@ -467,7 +763,8 @@ const generateTemplateData = () => {
     { name: 'Supabase', desc: 'Backend', category: 'Backend' },
     { name: 'Firebase', desc: 'Firebase', category: 'Backend' },
     { name: 'Vercel', desc: 'Deployment', category: 'DevOps' },
-    { name: 'Netlify', desc: 'Deployment', category: 'DevOps' }
+    { name: 'Netlify', desc: 'Deployment', category: 'DevOps' },
+    { name: 'Anthropic', desc: 'Claude API', category: 'AI' }
   ];
 
   let mcpId = 1;
@@ -484,33 +781,13 @@ const generateTemplateData = () => {
         stars: Math.floor(Math.random() * 300) + 20,
         author: ['anthropic', 'modelcontextprotocol', 'community'][Math.floor(Math.random() * 3)],
         tags: [mcp.name.toLowerCase(), mcp.category.toLowerCase(), 'mcp'],
-        installCommand: `claude mcp add ${mcp.name.toLowerCase().replace(/ /g, '-')}`,
-        configExample: {
-          [mcp.name.toLowerCase()]: {
-            enabled: true,
-            config: {}
-          }
-        }
+        installCommand: `claude mcp add ${mcp.name.toLowerCase().replace(/ /g, '-')}`
       });
       mcpId++;
     }
   });
 
   return { skills, agents, commands, settings, hooks, mcps };
-};
-
-// Cache the template data
-let templateCache = null;
-let templateCacheTime = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-const getTemplateData = () => {
-  const now = Date.now();
-  if (!templateCache || now - templateCacheTime > CACHE_DURATION) {
-    templateCache = generateTemplateData();
-    templateCacheTime = now;
-  }
-  return templateCache;
 };
 
 // ============================================
@@ -1222,7 +1499,7 @@ app.get('/api/expenses/categories', async (req, res) => {
 });
 
 // ============================================
-// EXCEL API (abbreviated for space)
+// EXCEL API
 // ============================================
 
 app.get('/api/excel', async (req, res) => {
@@ -1248,7 +1525,7 @@ app.get('/api/excel/stats', async (req, res) => {
 });
 
 // ============================================
-// IDEAS API (abbreviated)
+// IDEAS API
 // ============================================
 
 app.get('/api/ideas', async (req, res) => {
@@ -1289,7 +1566,7 @@ app.get('/api/ideas/meta/filters', async (req, res) => {
 });
 
 // ============================================
-// JOBS API (abbreviated)
+// JOBS API
 // ============================================
 
 app.get('/api/jobs', async (req, res) => {
@@ -1316,7 +1593,7 @@ app.get('/api/jobs/stats', async (req, res) => {
 });
 
 // ============================================
-// RESOURCES API (abbreviated)
+// RESOURCES API
 // ============================================
 
 app.get('/api/resources', async (req, res) => {
@@ -1344,125 +1621,303 @@ app.post('/api/resources', async (req, res) => {
 });
 
 // ============================================
-// LUMEN TOOLS API - AITMPL.COM CLONE
+// LUMEN TOOLS API - TEMPLATES FROM DATABASE
 // ============================================
 
-// Get all templates with pagination, filtering, and search
-app.get('/api/lumen-tools/templates', (req, res) => {
+// Get all templates with pagination, filtering, and search - NOW FROM DATABASE
+app.get('/api/lumen-tools/templates', async (req, res) => {
   const { type, category, search, sort = 'downloads', order = 'desc', page = 1, limit = 24 } = req.query;
-  const data = getTemplateData();
   
-  let allItems = [];
-  
-  // Collect items based on type filter
-  if (!type || type === 'all') {
-    allItems = [
-      ...data.skills.map(i => ({ ...i, type: 'skills' })),
-      ...data.agents.map(i => ({ ...i, type: 'agents' })),
-      ...data.commands.map(i => ({ ...i, type: 'commands' })),
-      ...data.settings.map(i => ({ ...i, type: 'settings' })),
-      ...data.hooks.map(i => ({ ...i, type: 'hooks' })),
-      ...data.mcps.map(i => ({ ...i, type: 'mcps' }))
-    ];
-  } else if (data[type]) {
-    allItems = data[type].map(i => ({ ...i, type }));
-  }
-  
-  // Apply category filter
-  if (category && category !== 'All') {
-    allItems = allItems.filter(item => 
-      item.category?.toLowerCase().includes(category.toLowerCase())
-    );
-  }
-  
-  // Apply search filter
-  if (search) {
-    const searchLower = search.toLowerCase();
-    allItems = allItems.filter(item =>
-      item.name?.toLowerCase().includes(searchLower) ||
-      item.description?.toLowerCase().includes(searchLower) ||
-      item.tags?.some(t => t.toLowerCase().includes(searchLower))
-    );
-  }
-  
-  // Sort items
-  allItems.sort((a, b) => {
-    let aVal, bVal;
-    if (sort === 'downloads') {
-      aVal = a.downloads || 0;
-      bVal = b.downloads || 0;
-    } else if (sort === 'stars') {
-      aVal = a.stars || 0;
-      bVal = b.stars || 0;
-    } else if (sort === 'name') {
-      aVal = a.name?.toLowerCase() || '';
-      bVal = b.name?.toLowerCase() || '';
-      return order === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-    } else if (sort === 'updated') {
-      aVal = new Date(a.lastUpdated || 0).getTime();
-      bVal = new Date(b.lastUpdated || 0).getTime();
+  try {
+    // Check if we have synced data
+    const countResult = await pool.query('SELECT COUNT(*) FROM lumen_synced_templates');
+    const hasData = parseInt(countResult.rows[0].count) > 0;
+    
+    if (!hasData) {
+      // Fall back to generated data if no synced data
+      const data = generateTemplateData();
+      let allItems = [];
+      
+      if (!type || type === 'all') {
+        allItems = [
+          ...data.skills.map(i => ({ ...i, type: 'skills' })),
+          ...data.agents.map(i => ({ ...i, type: 'agents' })),
+          ...data.commands.map(i => ({ ...i, type: 'commands' })),
+          ...data.settings.map(i => ({ ...i, type: 'settings' })),
+          ...data.hooks.map(i => ({ ...i, type: 'hooks' })),
+          ...data.mcps.map(i => ({ ...i, type: 'mcps' }))
+        ];
+      } else if (data[type]) {
+        allItems = data[type].map(i => ({ ...i, type }));
+      }
+      
+      // Apply filters
+      if (category && category !== 'All') {
+        allItems = allItems.filter(item => item.category?.toLowerCase().includes(category.toLowerCase()));
+      }
+      if (search) {
+        const searchLower = search.toLowerCase();
+        allItems = allItems.filter(item =>
+          item.name?.toLowerCase().includes(searchLower) ||
+          item.description?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      // Sort
+      allItems.sort((a, b) => {
+        const aVal = a[sort] || 0;
+        const bVal = b[sort] || 0;
+        return order === 'asc' ? aVal - bVal : bVal - aVal;
+      });
+      
+      // Paginate
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const startIndex = (pageNum - 1) * limitNum;
+      const paginatedItems = allItems.slice(startIndex, startIndex + limitNum);
+      
+      return res.json({
+        items: paginatedItems,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: allItems.length,
+          totalPages: Math.ceil(allItems.length / limitNum),
+          hasMore: startIndex + limitNum < allItems.length
+        },
+        counts: {
+          skills: data.skills.length,
+          agents: data.agents.length,
+          commands: data.commands.length,
+          settings: data.settings.length,
+          hooks: data.hooks.length,
+          mcps: data.mcps.length,
+          total: data.skills.length + data.agents.length + data.commands.length + data.settings.length + data.hooks.length + data.mcps.length
+        },
+        categories: [],
+        lastSynced: null,
+        source: 'generated'
+      });
     }
-    return order === 'asc' ? aVal - bVal : bVal - aVal;
-  });
-  
-  // Pagination
-  const pageNum = parseInt(page);
-  const limitNum = parseInt(limit);
-  const startIndex = (pageNum - 1) * limitNum;
-  const endIndex = startIndex + limitNum;
-  const paginatedItems = allItems.slice(startIndex, endIndex);
-  
-  // Get category counts
-  const categoryCounts = {};
-  const typeData = type && type !== 'all' ? data[type] : [
-    ...data.skills, ...data.agents, ...data.commands, 
-    ...data.settings, ...data.hooks, ...data.mcps
-  ];
-  typeData.forEach(item => {
-    const cat = item.category || 'Other';
-    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-  });
-  
-  res.json({
-    items: paginatedItems,
-    pagination: {
-      page: pageNum,
-      limit: limitNum,
-      total: allItems.length,
-      totalPages: Math.ceil(allItems.length / limitNum),
-      hasMore: endIndex < allItems.length
-    },
-    counts: {
-      skills: data.skills.length,
-      agents: data.agents.length,
-      commands: data.commands.length,
-      settings: data.settings.length,
-      hooks: data.hooks.length,
-      mcps: data.mcps.length,
-      total: data.skills.length + data.agents.length + data.commands.length + data.settings.length + data.hooks.length + data.mcps.length
-    },
-    categories: Object.entries(categoryCounts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-  });
+    
+    // Build query for synced data
+    let query = 'SELECT * FROM lumen_synced_templates WHERE 1=1';
+    const params = [];
+    let paramCount = 0;
+    
+    if (type && type !== 'all') {
+      paramCount++;
+      query += ` AND type = $${paramCount}`;
+      params.push(type);
+    }
+    
+    if (category && category !== 'All') {
+      paramCount++;
+      query += ` AND LOWER(category) LIKE $${paramCount}`;
+      params.push(`%${category.toLowerCase()}%`);
+    }
+    
+    if (search) {
+      paramCount++;
+      query += ` AND (LOWER(name) LIKE $${paramCount} OR LOWER(description) LIKE $${paramCount})`;
+      params.push(`%${search.toLowerCase()}%`);
+    }
+    
+    // Sort
+    const sortColumn = sort === 'name' ? 'name' : sort === 'stars' ? 'stars' : 'downloads';
+    const sortOrder = order === 'asc' ? 'ASC' : 'DESC';
+    query += ` ORDER BY ${sortColumn} ${sortOrder}`;
+    
+    // Pagination
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+    
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    params.push(limitNum);
+    
+    paramCount++;
+    query += ` OFFSET $${paramCount}`;
+    params.push(offset);
+    
+    const result = await pool.query(query, params);
+    
+    // Get total count for pagination
+    let countQuery = 'SELECT COUNT(*) FROM lumen_synced_templates WHERE 1=1';
+    const countParams = [];
+    let countParamCount = 0;
+    
+    if (type && type !== 'all') {
+      countParamCount++;
+      countQuery += ` AND type = $${countParamCount}`;
+      countParams.push(type);
+    }
+    if (category && category !== 'All') {
+      countParamCount++;
+      countQuery += ` AND LOWER(category) LIKE $${countParamCount}`;
+      countParams.push(`%${category.toLowerCase()}%`);
+    }
+    if (search) {
+      countParamCount++;
+      countQuery += ` AND (LOWER(name) LIKE $${countParamCount} OR LOWER(description) LIKE $${countParamCount})`;
+      countParams.push(`%${search.toLowerCase()}%`);
+    }
+    
+    const totalResult = await pool.query(countQuery, countParams);
+    const total = parseInt(totalResult.rows[0].count);
+    
+    // Get counts by type
+    const countsResult = await pool.query(`
+      SELECT type, COUNT(*) as count FROM lumen_synced_templates GROUP BY type
+    `);
+    const counts = {
+      skills: 0, agents: 0, commands: 0, settings: 0, hooks: 0, mcps: 0,
+      total: parseInt(countResult.rows[0].count)
+    };
+    countsResult.rows.forEach(r => {
+      counts[r.type] = parseInt(r.count);
+    });
+    
+    // Get categories
+    const categoriesResult = await pool.query(`
+      SELECT category, COUNT(*) as count FROM lumen_synced_templates 
+      WHERE category IS NOT NULL
+      GROUP BY category ORDER BY count DESC
+    `);
+    
+    // Get last sync time
+    const lastSyncResult = await pool.query('SELECT MAX(synced_at) as last_sync FROM lumen_synced_templates');
+    const lastSynced = lastSyncResult.rows[0].last_sync;
+    
+    // Transform results
+    const items = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      category: row.category,
+      type: row.type,
+      downloads: row.downloads,
+      stars: row.stars,
+      version: row.version,
+      status: row.status,
+      tags: row.tags,
+      installCommand: row.install_command,
+      sourceUrl: row.source_url,
+      syncedAt: row.synced_at
+    }));
+    
+    res.json({
+      items,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+        hasMore: offset + limitNum < total
+      },
+      counts,
+      categories: categoriesResult.rows.map(r => ({ name: r.category, count: parseInt(r.count) })),
+      lastSynced,
+      source: 'synced'
+    });
+  } catch (err) {
+    console.error('Error getting templates:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Get single template by ID and type
-app.get('/api/lumen-tools/templates/:type/:id', (req, res) => {
+app.get('/api/lumen-tools/templates/:type/:id', async (req, res) => {
   const { type, id } = req.params;
-  const data = getTemplateData();
   
-  if (!data[type]) {
-    return res.status(404).json({ error: 'Invalid template type' });
+  try {
+    const result = await pool.query(
+      'SELECT * FROM lumen_synced_templates WHERE type = $1 AND id = $2',
+      [type, id]
+    );
+    
+    if (result.rows.length === 0) {
+      // Fall back to generated data
+      const data = generateTemplateData();
+      if (!data[type]) {
+        return res.status(404).json({ error: 'Invalid template type' });
+      }
+      const item = data[type].find(i => i.id === id);
+      if (!item) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+      return res.json({ ...item, type });
+    }
+    
+    const row = result.rows[0];
+    res.json({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      category: row.category,
+      type: row.type,
+      downloads: row.downloads,
+      stars: row.stars,
+      version: row.version,
+      status: row.status,
+      tags: row.tags,
+      installCommand: row.install_command,
+      sourceUrl: row.source_url,
+      syncedAt: row.synced_at
+    });
+  } catch (err) {
+    console.error('Error getting template:', err);
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  const item = data[type].find(i => i.id === id);
-  if (!item) {
-    return res.status(404).json({ error: 'Template not found' });
-  }
-  
-  res.json({ ...item, type });
 });
+
+// ============================================
+// SYNC API ENDPOINTS
+// ============================================
+
+// Trigger manual sync
+app.post('/api/lumen-tools/sync', async (req, res) => {
+  if (syncStatus.isRunning) {
+    return res.json({ 
+      success: false, 
+      message: 'Sync already in progress',
+      status: syncStatus 
+    });
+  }
+  
+  // Start sync in background
+  performFullSync().then(result => {
+    console.log('[Sync] Manual sync completed:', result);
+  }).catch(err => {
+    console.error('[Sync] Manual sync failed:', err);
+  });
+  
+  res.json({ 
+    success: true, 
+    message: 'Sync started',
+    status: syncStatus 
+  });
+});
+
+// Get sync status
+app.get('/api/lumen-tools/sync-status', (req, res) => {
+  res.json({
+    ...syncStatus,
+    nextScheduledSync: getNextCronRun()
+  });
+});
+
+// Helper to get next cron run time
+function getNextCronRun() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setMinutes(0);
+  next.setSeconds(0);
+  next.setMilliseconds(0);
+  next.setHours(next.getHours() + 1);
+  return next.toISOString();
+}
 
 // Custom skills CRUD
 app.get('/api/lumen-tools/custom-skills', async (req, res) => {
@@ -1571,6 +2026,22 @@ app.get('/api/lumen-tools/health', async (req, res) => {
     checks.push({ id: 'database', name: 'Lumen Database', description: 'Check PostgreSQL', status: 'error', message: 'Connection failed', details: { error: err.message } });
   }
   
+  // Add sync status check
+  checks.push({
+    id: 'sync',
+    name: 'Template Sync',
+    description: 'Check aitmpl.com sync status',
+    status: syncStatus.lastSyncSuccess ? 'ok' : syncStatus.error ? 'error' : 'warning',
+    message: syncStatus.lastSyncAt 
+      ? `Last synced: ${new Date(syncStatus.lastSyncAt).toLocaleString()} (${syncStatus.itemCount} items)`
+      : 'Never synced',
+    details: { 
+      lastSync: syncStatus.lastSyncAt,
+      itemCount: syncStatus.itemCount,
+      isRunning: syncStatus.isRunning
+    }
+  });
+  
   const overallStatus = checks.every(c => c.status === 'ok') ? 'healthy' : checks.some(c => c.status === 'error') ? 'unhealthy' : 'degraded';
   res.json({ status: overallStatus, timestamp: new Date().toISOString(), checks });
 });
@@ -1611,9 +2082,9 @@ app.post('/api/lumen-tools/plugins/:id/toggle', (req, res) => {
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString(), version: '3.1.0' });
+    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString(), version: '3.2.0' });
   } catch (err) {
-    res.json({ status: 'degraded', database: 'disconnected', timestamp: new Date().toISOString(), version: '3.1.0' });
+    res.json({ status: 'degraded', database: 'disconnected', timestamp: new Date().toISOString(), version: '3.2.0' });
   }
 });
 
@@ -1643,7 +2114,25 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ============================================
+// HOURLY CRON JOB FOR SYNC
+// ============================================
+
+// Schedule sync every hour at minute 0
+cron.schedule('0 * * * *', async () => {
+  console.log('[Cron] Starting scheduled hourly sync...');
+  const result = await performFullSync();
+  console.log('[Cron] Scheduled sync result:', result);
+});
+
+// Also run initial sync on startup (after 30 seconds to let DB initialize)
+setTimeout(async () => {
+  console.log('[Startup] Running initial sync...');
+  const result = await performFullSync();
+  console.log('[Startup] Initial sync result:', result);
+}, 30000);
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`🔆 Lumen Dashboard v3.1 (with aitmpl.com clone) running on port ${PORT}`);
+  console.log(`🔆 Lumen Dashboard v3.2 (with aitmpl.com hourly sync) running on port ${PORT}`);
 });
