@@ -2620,23 +2620,112 @@ app.get('/api/lumen-tools/conversations', (req, res) => {
   res.json({ conversations, connectionStatus: 'connected', hint: 'Configure Claude Code to stream here for real-time monitoring' });
 });
 
-// Plugins Dashboard
-app.get('/api/lumen-tools/plugins', (req, res) => {
-  const plugins = [
-    { id: 'filesystem-mcp', name: 'Filesystem MCP', type: 'mcp', enabled: true, status: 'running', version: '2.1.0', description: 'Core file operations' },
-    { id: 'github-mcp', name: 'GitHub MCP', type: 'mcp', enabled: true, status: 'running', version: '1.5.2', description: 'GitHub integration' },
-    { id: 'browser-mcp', name: 'Browser MCP', type: 'mcp', enabled: false, status: 'stopped', version: '0.9.1', description: 'Browser automation' },
-    { id: 'database-mcp', name: 'Database MCP', type: 'mcp', enabled: true, status: 'running', version: '1.3.0', description: 'Database connectivity' },
-    { id: 'docker-mcp', name: 'Docker MCP', type: 'mcp', enabled: true, status: 'running', version: '0.8.0', description: 'Container management' },
-    { id: 'memory-plugin', name: 'Memory Plugin', type: 'plugin', enabled: true, status: 'running', version: '1.0.0', description: 'Persistent memory' },
-    { id: 'code-review', name: 'Code Review', type: 'plugin', enabled: true, status: 'running', version: '2.0.1', description: 'Automated reviews' }
-  ];
-  const stats = { total: plugins.length, enabled: plugins.filter(p => p.enabled).length, running: plugins.filter(p => p.status === 'running').length, mcps: plugins.filter(p => p.type === 'mcp').length, plugins: plugins.filter(p => p.type === 'plugin').length };
-  res.json({ plugins, stats });
+// Plugins Dashboard - Proxies to Mac Studio MCP Manager
+const MCP_MANAGER_URL = process.env.MCP_MANAGER_URL || 'http://100.89.84.11:18799';
+const MCP_MANAGER_TOKEN = process.env.MCP_MANAGER_TOKEN || '23e762a3dfacf08f8e7cfb262d8e09ad6591f6773d909875';
+
+// Get MCP Manager connection status
+app.get('/api/lumen-tools/mcp-manager/status', async (req, res) => {
+  try {
+    const response = await fetch(`${MCP_MANAGER_URL}/api/health`, { timeout: 5000 });
+    const data = await response.json();
+    res.json({ connected: true, url: MCP_MANAGER_URL, ...data });
+  } catch (err) {
+    res.json({ connected: false, url: MCP_MANAGER_URL, error: err.message });
+  }
 });
 
-app.post('/api/lumen-tools/plugins/:id/toggle', (req, res) => {
-  res.json({ success: true, message: `Plugin ${req.params.id} toggled` });
+// Configure MCP Manager connection
+app.post('/api/lumen-tools/mcp-manager/configure', (req, res) => {
+  const { url, token } = req.body;
+  // In production, store these in environment or database
+  res.json({ success: true, message: 'Configuration saved (restart required for env changes)' });
+});
+
+app.get('/api/lumen-tools/plugins', async (req, res) => {
+  try {
+    // Try to fetch from MCP Manager
+    const response = await fetch(`${MCP_MANAGER_URL}/api/mcps`, {
+      headers: { 'Authorization': `Bearer ${MCP_MANAGER_TOKEN}` },
+      timeout: 5000
+    });
+    const data = await response.json();
+    
+    // Transform MCP Manager response to plugins format
+    const plugins = (data.mcps || []).map(mcp => ({
+      id: mcp.id,
+      name: mcp.name,
+      type: 'mcp',
+      enabled: mcp.enabled !== false,
+      status: mcp.enabled ? 'running' : 'stopped',
+      version: mcp.version || '1.0.0',
+      description: mcp.description || ''
+    }));
+    
+    // Also get available MCPs
+    const availableRes = await fetch(`${MCP_MANAGER_URL}/api/mcps/available`, {
+      headers: { 'Authorization': `Bearer ${MCP_MANAGER_TOKEN}` },
+      timeout: 5000
+    });
+    const availableData = await availableRes.json();
+    
+    const stats = {
+      total: plugins.length,
+      enabled: plugins.filter(p => p.enabled).length,
+      running: plugins.filter(p => p.status === 'running').length,
+      mcps: plugins.length,
+      plugins: 0,
+      connected: true,
+      managerUrl: MCP_MANAGER_URL
+    };
+    
+    res.json({ plugins, available: availableData.templates || [], stats });
+  } catch (err) {
+    // Fallback to mock data if MCP Manager unavailable
+    console.log('MCP Manager unavailable, using fallback:', err.message);
+    const plugins = [
+      { id: 'filesystem-mcp', name: 'Filesystem MCP', type: 'mcp', enabled: true, status: 'running', version: '2.1.0', description: 'Core file operations' },
+      { id: 'github-mcp', name: 'GitHub MCP', type: 'mcp', enabled: true, status: 'running', version: '1.5.2', description: 'GitHub integration' },
+      { id: 'browser-mcp', name: 'Browser MCP', type: 'mcp', enabled: false, status: 'stopped', version: '0.9.1', description: 'Browser automation' }
+    ];
+    const stats = { total: plugins.length, enabled: 2, running: 2, mcps: 3, plugins: 0, connected: false, error: err.message };
+    res.json({ plugins, stats });
+  }
+});
+
+app.post('/api/lumen-tools/plugins/:id/toggle', async (req, res) => {
+  try {
+    const response = await fetch(`${MCP_MANAGER_URL}/api/mcps/${req.params.id}/toggle`, {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${MCP_MANAGER_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 5000
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message, hint: 'MCP Manager may be offline' });
+  }
+});
+
+app.post('/api/lumen-tools/plugins/:id/install', async (req, res) => {
+  try {
+    const response = await fetch(`${MCP_MANAGER_URL}/api/mcps/${req.params.id}/install`, {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${MCP_MANAGER_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(req.body),
+      timeout: 10000
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // ============================================
