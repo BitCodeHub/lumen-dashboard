@@ -2621,7 +2621,7 @@ app.get('/api/lumen-tools/conversations', (req, res) => {
 });
 
 // Plugins Dashboard - Proxies to Mac Studio MCP Manager
-const MCP_MANAGER_URL = process.env.MCP_MANAGER_URL || 'http://100.89.84.11:18799';
+const MCP_MANAGER_URL = process.env.MCP_MANAGER_URL || 'https://topics-resolutions-handmade-humor.trycloudflare.com';
 const MCP_MANAGER_TOKEN = process.env.MCP_MANAGER_TOKEN || '23e762a3dfacf08f8e7cfb262d8e09ad6591f6773d909875';
 
 // Get MCP Manager connection status
