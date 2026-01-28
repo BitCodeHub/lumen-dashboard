@@ -2842,56 +2842,85 @@
     }
 
     // ============================================
-    // LUMEN TOOLS
+    // ============================================
+    // LUMEN TOOLS - AITMPL.COM CLONE
     // ============================================
     let lumenToolsState = {
       activeTab: 'templates',
-      templates: null,
-      analytics: null,
-      health: null,
-      conversations: null,
-      plugins: null,
-      templateSearch: '',
-      templateType: 'all'
+      data: null,
+      search: '',
+      type: 'skills',
+      category: 'All',
+      sort: 'downloads',
+      page: 1,
+      stack: [],
+      customSkills: []
     };
 
     async function loadLumenTools() {
       renderLumenToolsView();
-      // Load data for all sections
       await Promise.all([
-        loadTemplates(),
-        loadLumenAnalytics(),
-        loadHealthCheck(),
-        loadConversations(),
-        loadPlugins()
+        loadAitmplTemplates(),
+        loadCustomSkills()
       ]);
+    }
+
+    async function loadAitmplTemplates() {
+      try {
+        const params = new URLSearchParams({
+          type: lumenToolsState.type,
+          category: lumenToolsState.category !== 'All' ? lumenToolsState.category : '',
+          search: lumenToolsState.search,
+          sort: lumenToolsState.sort,
+          page: lumenToolsState.page,
+          limit: 24
+        });
+        const response = await fetch(`/api/lumen-tools/templates?${params}`);
+        lumenToolsState.data = await response.json();
+        if (lumenToolsState.activeTab === 'templates') renderTemplatesBrowser();
+      } catch (err) {
+        console.error('Error loading templates:', err);
+      }
+    }
+
+    async function loadCustomSkills() {
+      try {
+        const response = await fetch('/api/lumen-tools/custom-skills');
+        lumenToolsState.customSkills = await response.json();
+      } catch (err) {
+        console.error('Error loading custom skills:', err);
+      }
     }
 
     function renderLumenToolsView() {
       const container = document.getElementById('lumen-tools-content');
       const tabs = [
-        { id: 'templates', name: 'Templates', icon: '📦', desc: 'Browse agents, commands, MCPs' },
-        { id: 'analytics', name: 'Analytics', icon: '📊', desc: 'Session metrics & costs' },
-        { id: 'health', name: 'Health Check', icon: '🏥', desc: 'System diagnostics' },
-        { id: 'conversations', name: 'Monitor', icon: '💬', desc: 'Conversation viewer' },
-        { id: 'plugins', name: 'Plugins', icon: '🔌', desc: 'MCPs & extensions' }
+        { id: 'templates', name: 'Templates', icon: '📦' },
+        { id: 'analytics', name: 'Analytics', icon: '📊' },
+        { id: 'health', name: 'Health Check', icon: '🏥' },
+        { id: 'monitor', name: 'Monitor', icon: '💬' },
+        { id: 'plugins', name: 'Plugins', icon: '🔌' }
       ];
 
       container.innerHTML = `
-        <div class="animate-fade-in space-y-6">
+        <div class="animate-fade-in">
           <!-- Header -->
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-              <h2 class="text-2xl md:text-3xl font-bold text-zinc-100 flex items-center gap-3">
-                <span class="text-3xl animate-float">🤖</span>
-                Lumen AI Agent Tools
-              </h2>
-              <p class="text-sm text-zinc-500 mt-1">Claude Code templates, analytics, health checks & more</p>
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+            <div class="flex items-center gap-4">
+              <a href="https://www.aitmpl.com" target="_blank" class="text-3xl animate-float">🤖</a>
+              <div>
+                <h2 class="text-2xl md:text-3xl font-bold text-zinc-100">Claude Code Templates</h2>
+                <p class="text-sm text-zinc-500">Supercharge Your AI Development with Anthropic Claude</p>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <a href="https://www.npmjs.com/package/claude-code-templates" target="_blank" class="px-3 py-1.5 text-xs bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30">npm</a>
+              <a href="https://github.com/davila7/claude-code-templates" target="_blank" class="px-3 py-1.5 text-xs bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg hover:bg-zinc-700">GitHub</a>
             </div>
           </div>
 
           <!-- Tab Navigation -->
-          <div class="flex flex-wrap gap-2 border-b border-zinc-800 pb-4">
+          <div class="flex flex-wrap gap-2 border-b border-zinc-800 pb-4 mb-6">
             ${tabs.map(tab => `
               <button onclick="switchLumenTab('${tab.id}')" 
                       class="lumen-tab px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${lumenToolsState.activeTab === tab.id ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800'}"
@@ -2903,11 +2932,7 @@
           </div>
 
           <!-- Tab Content -->
-          <div id="lumen-tab-content">
-            <div class="flex items-center justify-center py-12">
-              <div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          </div>
+          <div id="lumen-tab-content"></div>
         </div>
       `;
       
@@ -2916,13 +2941,10 @@
 
     function switchLumenTab(tab) {
       lumenToolsState.activeTab = tab;
-      // Update tab buttons
       document.querySelectorAll('.lumen-tab').forEach(btn => {
-        if (btn.dataset.tab === tab) {
-          btn.className = 'lumen-tab px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30';
-        } else {
-          btn.className = 'lumen-tab px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800';
-        }
+        btn.className = btn.dataset.tab === tab 
+          ? 'lumen-tab px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+          : 'lumen-tab px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800';
       });
       renderLumenTabContent();
     }
@@ -2930,523 +2952,516 @@
     function renderLumenTabContent() {
       const content = document.getElementById('lumen-tab-content');
       if (!content) return;
-
       switch (lumenToolsState.activeTab) {
-        case 'templates':
-          renderTemplatesTab(content);
-          break;
-        case 'analytics':
-          renderAnalyticsTab(content);
-          break;
-        case 'health':
-          renderHealthTab(content);
-          break;
-        case 'conversations':
-          renderConversationsTab(content);
-          break;
-        case 'plugins':
-          renderPluginsTab(content);
-          break;
+        case 'templates': renderTemplatesBrowser(); break;
+        case 'analytics': renderAnalyticsTab(content); break;
+        case 'health': renderHealthTab(content); break;
+        case 'monitor': renderConversationsTab(content); break;
+        case 'plugins': renderPluginsTab(content); break;
       }
     }
 
-    // === TEMPLATES ===
-    async function loadTemplates() {
-      try {
-        const response = await fetch('/api/lumen-tools/templates');
-        lumenToolsState.templates = await response.json();
-        if (lumenToolsState.activeTab === 'templates') renderLumenTabContent();
-      } catch (err) {
-        console.error('Error loading templates:', err);
-      }
-    }
+    function renderTemplatesBrowser() {
+      const content = document.getElementById('lumen-tab-content');
+      const data = lumenToolsState.data;
+      const counts = data?.counts || { skills: 629, agents: 315, commands: 228, settings: 62, hooks: 43, mcps: 64, total: 1341 };
+      const categories = data?.categories || [];
+      const items = data?.items || [];
+      const pagination = data?.pagination || { page: 1, totalPages: 1, total: 0 };
 
-    function renderTemplatesTab(container) {
-      const data = lumenToolsState.templates;
-      if (!data) {
-        container.innerHTML = '<div class="text-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
-        return;
-      }
+      const typeConfigs = {
+        skills: { icon: '⚡', color: 'indigo' },
+        agents: { icon: '🤖', color: 'purple' },
+        commands: { icon: '⌨️', color: 'blue' },
+        settings: { icon: '⚙️', color: 'amber' },
+        hooks: { icon: '🪝', color: 'emerald' },
+        mcps: { icon: '🔌', color: 'pink' }
+      };
 
-      const types = ['all', 'agents', 'commands', 'mcps', 'settings', 'hooks'];
-      const typeIcons = { all: '📦', agents: '🤖', commands: '⌨️', mcps: '🔌', settings: '⚙️', hooks: '🪝' };
+      content.innerHTML = `
+        <div class="space-y-6">
+          <!-- Add New Skill Card -->
+          <div onclick="showAddSkillModal()" class="p-5 rounded-2xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 cursor-pointer hover:from-indigo-500/20 hover:to-purple-500/20 transition-all group">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-xl bg-indigo-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">➕</div>
+              <div>
+                <h3 class="text-lg font-semibold text-zinc-100">Add New Skill</h3>
+                <p class="text-sm text-zinc-400">Create a custom agent, command, or template</p>
+              </div>
+            </div>
+          </div>
 
-      container.innerHTML = `
-        <div class="space-y-6 animate-fade-in">
-          <!-- Search & Filter -->
-          <div class="flex flex-col sm:flex-row gap-3">
+          <!-- Type Tabs -->
+          <div class="flex flex-wrap gap-2">
+            ${Object.entries(typeConfigs).map(([type, cfg]) => `
+              <button onclick="setTemplateType('${type}')" 
+                class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${lumenToolsState.type === type ? `bg-${cfg.color}-500/20 text-${cfg.color}-400 border border-${cfg.color}-500/30` : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800'}">
+                <span>${cfg.icon}</span>
+                <span>${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                <span class="px-1.5 py-0.5 text-[10px] rounded-full bg-zinc-700/50">${counts[type] || 0}</span>
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Search & Filters -->
+          <div class="flex flex-col lg:flex-row gap-4">
             <div class="relative flex-1">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input type="text" placeholder="Search templates..." value="${escapeHtml(lumenToolsState.templateSearch)}" 
-                     oninput="filterTemplates(this.value)"
-                     class="w-full h-10 pl-10 pr-4 text-sm bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500">
+              <input type="text" placeholder="Search (components/settings/templates)..." value="${escapeHtml(lumenToolsState.search)}" 
+                     oninput="debounceTemplateSearch(this.value)"
+                     class="w-full h-12 pl-12 pr-4 text-sm bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500">
             </div>
-            <div class="flex gap-2 overflow-x-auto pb-1">
-              ${types.map(t => `
-                <button onclick="filterTemplateType('${t}')" class="px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${lumenToolsState.templateType === t ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800'}">
-                  ${typeIcons[t]} ${t.charAt(0).toUpperCase() + t.slice(1)}
-                </button>
-              `).join('')}
+            <div class="flex gap-2">
+              <select onchange="setTemplateSort(this.value)" class="h-12 px-4 bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-sm text-zinc-300 focus:outline-none focus:border-indigo-500">
+                <option value="downloads" ${lumenToolsState.sort === 'downloads' ? 'selected' : ''}>Most Downloaded</option>
+                <option value="stars" ${lumenToolsState.sort === 'stars' ? 'selected' : ''}>Most Stars</option>
+                <option value="name" ${lumenToolsState.sort === 'name' ? 'selected' : ''}>Alphabetical</option>
+                <option value="updated" ${lumenToolsState.sort === 'updated' ? 'selected' : ''}>Recently Updated</option>
+              </select>
             </div>
           </div>
 
-          <!-- Template Sections -->
-          ${renderTemplateSection('agents', 'Agents', '🤖', data.agents, 'Pre-configured AI assistants for specific tasks')}
-          ${renderTemplateSection('commands', 'Commands', '⌨️', data.commands, 'Custom slash commands for common operations')}
-          ${renderTemplateSection('mcps', 'MCPs', '🔌', data.mcps, 'Model Context Protocol servers for extended capabilities')}
-          ${renderTemplateSection('settings', 'Settings', '⚙️', data.settings, 'Configuration presets for Claude Code')}
-          ${renderTemplateSection('hooks', 'Hooks', '🪝', data.hooks, 'Event-triggered automations')}
-        </div>
-      `;
-    }
-
-    function renderTemplateSection(key, title, icon, items, desc) {
-      if (!items || items.length === 0) return '';
-      if (lumenToolsState.templateType !== 'all' && lumenToolsState.templateType !== key) return '';
-
-      const search = lumenToolsState.templateSearch.toLowerCase();
-      let filtered = items;
-      if (search) {
-        filtered = items.filter(i => 
-          i.name?.toLowerCase().includes(search) || 
-          i.description?.toLowerCase().includes(search)
-        );
-      }
-      if (filtered.length === 0) return '';
-
-      return `
-        <div class="bg-zinc-800/30 rounded-2xl border border-zinc-700/50 overflow-hidden">
-          <div class="p-4 border-b border-zinc-700/50">
-            <div class="flex items-center gap-2">
-              <span class="text-xl">${icon}</span>
-              <h3 class="text-sm font-semibold text-zinc-100">${title}</h3>
-              <span class="text-xs text-zinc-500">(${filtered.length})</span>
-            </div>
-            <p class="text-xs text-zinc-500 mt-1">${desc}</p>
+          <!-- Category Filters -->
+          <div class="flex flex-wrap gap-2">
+            <button onclick="setTemplateCategory('All')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${lumenToolsState.category === 'All' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800'}">All</button>
+            ${categories.slice(0, 12).map(cat => `
+              <button onclick="setTemplateCategory('${escapeHtml(cat.name)}')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${lumenToolsState.category === cat.name ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800'}">${escapeHtml(cat.name)} (${cat.count})</button>
+            `).join('')}
           </div>
-          <div class="divide-y divide-zinc-700/30">
-            ${filtered.map(item => renderTemplateItem(key, item)).join('')}
-          </div>
-        </div>
-      `;
-    }
 
-    function renderTemplateItem(type, item) {
-      const installCmd = type === 'agents' 
-        ? `npx claude-code-templates@latest --agent ${item.id} --yes`
-        : type === 'mcps'
-        ? `claude mcp add ${item.id}`
-        : '';
-
-      return `
-        <div class="p-4 hover:bg-zinc-800/50 transition-colors">
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="font-medium text-zinc-100">${escapeHtml(item.name)}</span>
-                ${item.status ? `<span class="px-1.5 py-0.5 text-[10px] rounded ${item.status === 'stable' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${item.status}</span>` : ''}
-                ${item.version ? `<span class="text-xs text-zinc-600">v${item.version}</span>` : ''}
+          <!-- Results Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="templates-grid">
+            ${items.length > 0 ? items.map(item => renderTemplateCard(item)).join('') : `
+              <div class="col-span-full text-center py-16">
+                <div class="text-6xl mb-4 opacity-50">🔍</div>
+                <p class="text-lg text-zinc-400 mb-2">No templates found</p>
+                <p class="text-sm text-zinc-600">Try a different search or category</p>
               </div>
-              <p class="text-xs text-zinc-400 mb-2">${escapeHtml(item.description || '')}</p>
-              ${item.tags ? `<div class="flex flex-wrap gap-1">${item.tags.map(t => `<span class="px-1.5 py-0.5 text-[10px] rounded bg-zinc-700/50 text-zinc-400">${t}</span>`).join('')}</div>` : ''}
-              ${item.usage ? `<code class="block mt-2 text-xs text-indigo-400 font-mono">${escapeHtml(item.usage)}</code>` : ''}
-              ${item.category ? `<span class="text-xs text-zinc-500">${item.category}</span>` : ''}
+            `}
+          </div>
+
+          <!-- Pagination -->
+          ${pagination.totalPages > 1 ? `
+            <div class="flex items-center justify-center gap-2 pt-4">
+              <button onclick="setTemplatePage(${pagination.page - 1})" ${pagination.page <= 1 ? 'disabled' : ''} class="px-3 py-2 rounded-lg text-sm bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed">← Prev</button>
+              <span class="px-4 py-2 text-sm text-zinc-400">Page ${pagination.page} of ${pagination.totalPages}</span>
+              <button onclick="setTemplatePage(${pagination.page + 1})" ${pagination.page >= pagination.totalPages ? 'disabled' : ''} class="px-3 py-2 rounded-lg text-sm bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed">Next →</button>
             </div>
-            <div class="flex flex-col items-end gap-2 shrink-0">
-              ${item.stars ? `<span class="text-xs text-zinc-500">⭐ ${item.stars.toLocaleString()}</span>` : ''}
-              ${item.downloads ? `<span class="text-xs text-zinc-500">↓ ${(item.downloads / 1000).toFixed(1)}k</span>` : ''}
-              ${installCmd ? `
-                <button onclick="copyToClipboard('${installCmd}')" class="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors">
-                  Install
+          ` : ''}
+
+          <!-- Additional Tools Section -->
+          <div class="mt-12 pt-8 border-t border-zinc-800">
+            <h3 class="text-xl font-bold text-zinc-100 mb-2">$ Additional Tools</h3>
+            <p class="text-sm text-zinc-500 mb-6">Advanced tools to maximize your Claude Code AI development experience</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${renderToolCard('📊', 'Claude Code Analytics', 'Monitor your AI-powered development sessions in real-time. Track Claude Opus 4.1 performance, tool usage, and productivity metrics', 'npx claude-code-templates@latest --analytics')}
+              ${renderToolCard('🔍', 'Claude Code Health Check', 'Comprehensive diagnostics to ensure your Anthropic Claude Code installation is optimized for deep coding at terminal velocity', 'npx claude-code-templates@latest --health-check')}
+              ${renderToolCard('💬', 'Claude Conversation Monitor', 'View Claude Opus 4.1 responses in real-time, analyze AI reasoning, and monitor agentic search patterns during your coding sessions', 'npx claude-code-templates@latest --chats')}
+              ${renderToolCard('🧩', 'Plugin Dashboard', 'Manage Claude Code plugins with a visual dashboard. View installed marketplaces, enable/disable plugins, and monitor component status in real-time', 'npx claude-code-templates@latest --plugins', true)}
+            </div>
+          </div>
+        </div>
+
+        <!-- Stack Builder (Cart) -->
+        ${lumenToolsState.stack.length > 0 ? `
+          <div class="fixed bottom-6 right-6 z-40">
+            <div class="bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl p-4 w-80 animate-slide-in-up">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="font-semibold text-zinc-100">🛒 Your Stack (${lumenToolsState.stack.length})</h4>
+                <button onclick="clearStack()" class="text-xs text-zinc-500 hover:text-zinc-300">Clear</button>
+              </div>
+              <div class="space-y-2 max-h-40 overflow-y-auto mb-3">
+                ${lumenToolsState.stack.map((item, i) => `
+                  <div class="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                    <span class="text-sm text-zinc-300 truncate">${escapeHtml(item.name)}</span>
+                    <button onclick="removeFromStack(${i})" class="text-zinc-500 hover:text-red-400 p-1">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                `).join('')}
+              </div>
+              <button onclick="installStack()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-colors">
+                Install All (${lumenToolsState.stack.length} items)
+              </button>
+            </div>
+          </div>
+        ` : ''}
+      `;
+    }
+
+    function renderTemplateCard(item) {
+      const statusColors = { stable: 'bg-emerald-500/20 text-emerald-400', beta: 'bg-amber-500/20 text-amber-400', experimental: 'bg-red-500/20 text-red-400' };
+      const inStack = lumenToolsState.stack.some(s => s.id === item.id);
+      
+      return `
+        <div class="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:bg-zinc-800/50 hover:border-zinc-600/50 transition-all group">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="font-medium text-zinc-100 truncate">${escapeHtml(item.name)}</span>
+                ${item.status ? `<span class="px-1.5 py-0.5 text-[10px] rounded ${statusColors[item.status] || 'bg-zinc-700 text-zinc-400'}">${item.status}</span>` : ''}
+              </div>
+              <p class="text-xs text-zinc-500">${escapeHtml(item.category || item.type)}</p>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-zinc-500">
+              ${item.stars ? `<span title="Stars">⭐ ${item.stars >= 1000 ? (item.stars/1000).toFixed(1)+'k' : item.stars}</span>` : ''}
+              ${item.downloads ? `<span title="Downloads">↓ ${item.downloads >= 1000 ? (item.downloads/1000).toFixed(1)+'k' : item.downloads}</span>` : ''}
+            </div>
+          </div>
+          <p class="text-xs text-zinc-400 mb-3 line-clamp-2">${escapeHtml(item.description || '')}</p>
+          ${item.tags?.length ? `<div class="flex flex-wrap gap-1 mb-3">${item.tags.slice(0,3).map(t => `<span class="px-1.5 py-0.5 text-[10px] rounded bg-zinc-700/50 text-zinc-400">${t}</span>`).join('')}</div>` : ''}
+          
+          <!-- Install Command -->
+          <div class="flex items-center gap-2 p-2 bg-zinc-900/50 rounded-lg mb-3">
+            <span class="text-zinc-500 text-xs">$</span>
+            <code class="text-xs text-indigo-400 flex-1 truncate font-mono">${escapeHtml(item.installCommand || `npx claude-code-templates --${item.type} ${item.id}`)}</code>
+            <button onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(item.installCommand || `npx claude-code-templates --${item.type} ${item.id}`)}')" class="p-1 hover:bg-zinc-700 rounded text-zinc-500 hover:text-zinc-300" title="Copy">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            </button>
+          </div>
+          
+          <!-- Actions -->
+          <div class="flex gap-2">
+            <button onclick="event.stopPropagation(); showTemplateDetail('${item.type}', '${item.id}')" class="flex-1 py-2 text-xs bg-zinc-700/50 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors">View Details</button>
+            <button onclick="event.stopPropagation(); ${inStack ? `removeFromStackById('${item.id}')` : `addToStack(${JSON.stringify(item).replace(/'/g, "\\'")})`}" class="flex-1 py-2 text-xs ${inStack ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400' : 'bg-indigo-600 hover:bg-indigo-500 text-white'} rounded-lg transition-colors">
+              ${inStack ? 'Remove' : 'Add to Stack'}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderToolCard(icon, title, desc, cmd, isNew = false) {
+      return `
+        <div class="p-5 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:bg-zinc-800/50 transition-all">
+          <div class="flex items-start gap-4">
+            <div class="text-3xl">${icon}</div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2">
+                <h4 class="font-semibold text-zinc-100">${title}</h4>
+                ${isNew ? '<span class="px-1.5 py-0.5 text-[10px] bg-emerald-500/20 text-emerald-400 rounded">NEW</span>' : ''}
+              </div>
+              <p class="text-xs text-zinc-400 mb-3">${desc}</p>
+              <div class="flex items-center gap-2 p-2 bg-zinc-900/50 rounded-lg">
+                <span class="text-zinc-500 text-xs">$</span>
+                <code class="text-xs text-indigo-400 flex-1 truncate font-mono">${cmd}</code>
+                <button onclick="copyToClipboard('${cmd}')" class="p-1 hover:bg-zinc-700 rounded text-zinc-500 hover:text-zinc-300">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                 </button>
-              ` : ''}
+              </div>
             </div>
           </div>
         </div>
       `;
     }
 
-    function filterTemplates(search) {
-      lumenToolsState.templateSearch = search;
-      renderLumenTabContent();
+    // Template filtering functions
+    let templateSearchTimeout;
+    function debounceTemplateSearch(query) {
+      clearTimeout(templateSearchTimeout);
+      templateSearchTimeout = setTimeout(() => {
+        lumenToolsState.search = query;
+        lumenToolsState.page = 1;
+        loadAitmplTemplates();
+      }, 300);
     }
 
-    function filterTemplateType(type) {
-      lumenToolsState.templateType = type;
-      renderLumenTabContent();
+    function setTemplateType(type) {
+      lumenToolsState.type = type;
+      lumenToolsState.page = 1;
+      loadAitmplTemplates();
     }
 
-    // === ANALYTICS ===
+    function setTemplateCategory(category) {
+      lumenToolsState.category = category;
+      lumenToolsState.page = 1;
+      loadAitmplTemplates();
+    }
+
+    function setTemplateSort(sort) {
+      lumenToolsState.sort = sort;
+      lumenToolsState.page = 1;
+      loadAitmplTemplates();
+    }
+
+    function setTemplatePage(page) {
+      if (page < 1) return;
+      lumenToolsState.page = page;
+      loadAitmplTemplates();
+    }
+
+    // Stack Builder functions
+    function addToStack(item) {
+      if (!lumenToolsState.stack.some(s => s.id === item.id)) {
+        lumenToolsState.stack.push(item);
+        renderTemplatesBrowser();
+        showToast(`Added ${item.name} to stack`);
+      }
+    }
+
+    function removeFromStack(index) {
+      lumenToolsState.stack.splice(index, 1);
+      renderTemplatesBrowser();
+    }
+
+    function removeFromStackById(id) {
+      lumenToolsState.stack = lumenToolsState.stack.filter(s => s.id !== id);
+      renderTemplatesBrowser();
+    }
+
+    function clearStack() {
+      lumenToolsState.stack = [];
+      renderTemplatesBrowser();
+    }
+
+    function installStack() {
+      const commands = lumenToolsState.stack.map(item => item.installCommand || `npx claude-code-templates --${item.type} ${item.id}`);
+      const combined = commands.join(' && ');
+      copyToClipboard(combined);
+      showToast(`Copied install command for ${lumenToolsState.stack.length} items!`);
+    }
+
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 left-4 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg shadow-lg animate-fade-in z-50';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+    }
+
+    async function showTemplateDetail(type, id) {
+      try {
+        const response = await fetch(`/api/lumen-tools/templates/${type}/${id}`);
+        const item = await response.json();
+        
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        modal.innerHTML = `
+          <div class="bg-surface-900 rounded-2xl border border-zinc-700/50 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in">
+            <div class="p-6 border-b border-zinc-800 flex items-start justify-between">
+              <div>
+                <h2 class="text-xl font-bold text-zinc-100">${escapeHtml(item.name)}</h2>
+                <p class="text-sm text-zinc-500 mt-1">${escapeHtml(item.category || item.type)} • ${item.author || 'claude-templates'}</p>
+              </div>
+              <button onclick="this.closest('.fixed').remove()" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div class="p-6 space-y-6">
+              <p class="text-sm text-zinc-300">${escapeHtml(item.description || '')}</p>
+              
+              <div class="grid grid-cols-3 gap-4">
+                <div class="p-3 rounded-lg bg-zinc-800/50 text-center">
+                  <div class="text-lg font-bold text-zinc-100">${item.downloads?.toLocaleString() || '0'}</div>
+                  <div class="text-xs text-zinc-500">Downloads</div>
+                </div>
+                <div class="p-3 rounded-lg bg-zinc-800/50 text-center">
+                  <div class="text-lg font-bold text-zinc-100">${item.stars?.toLocaleString() || '0'}</div>
+                  <div class="text-xs text-zinc-500">Stars</div>
+                </div>
+                <div class="p-3 rounded-lg bg-zinc-800/50 text-center">
+                  <div class="text-lg font-bold text-zinc-100">${item.version || '1.0.0'}</div>
+                  <div class="text-xs text-zinc-500">Version</div>
+                </div>
+              </div>
+              
+              ${item.tags?.length ? `
+                <div>
+                  <h4 class="text-xs font-medium text-zinc-500 uppercase mb-2">Tags</h4>
+                  <div class="flex flex-wrap gap-2">${item.tags.map(t => `<span class="px-2 py-1 text-xs bg-zinc-800 text-zinc-300 rounded-lg">${t}</span>`).join('')}</div>
+                </div>
+              ` : ''}
+              
+              <div>
+                <h4 class="text-xs font-medium text-zinc-500 uppercase mb-2">Install Command</h4>
+                <div class="flex items-center gap-2 p-3 bg-zinc-900 rounded-lg">
+                  <span class="text-indigo-400">$</span>
+                  <code class="text-sm text-zinc-300 flex-1 font-mono">${escapeHtml(item.installCommand || `npx claude-code-templates --${type} ${id}`)}</code>
+                  <button onclick="copyToClipboard('${escapeHtml(item.installCommand || `npx claude-code-templates --${type} ${id}`)}')" class="p-2 hover:bg-zinc-800 rounded text-zinc-400">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="flex gap-3">
+                <button onclick="copyToClipboard('${escapeHtml(item.installCommand || `npx claude-code-templates --${type} ${id}`)}'); this.closest('.fixed').remove();" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl transition-colors">
+                  Copy Install Command
+                </button>
+                <button onclick="addToStack(${JSON.stringify(item).replace(/"/g, '&quot;')}); this.closest('.fixed').remove();" class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium rounded-xl transition-colors">
+                  Add to Stack
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      } catch (err) {
+        console.error('Error loading template detail:', err);
+      }
+    }
+
+    function showAddSkillModal() {
+      const categories = ['AI Research', 'Analytics', 'Business Marketing', 'Creative Design', 'Database', 'Development', 'DevOps', 'Document Processing', 'Security', 'Testing', 'Web Development'];
+      const types = ['skills', 'agents', 'commands', 'settings', 'hooks', 'mcps'];
+      
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+      modal.innerHTML = `
+        <div class="bg-surface-900 rounded-2xl border border-zinc-700/50 w-full max-w-lg animate-slide-in-up">
+          <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-zinc-100">Create New Skill</h2>
+            <button onclick="this.closest('.fixed').remove()" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <form onsubmit="submitNewSkill(event)" class="p-5 space-y-4">
+            <div>
+              <label class="block text-sm text-zinc-400 mb-1">Name *</label>
+              <input type="text" name="name" required class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 focus:border-indigo-500 focus:outline-none" placeholder="My Awesome Agent">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm text-zinc-400 mb-1">Type *</label>
+                <select name="type" required class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 focus:border-indigo-500 focus:outline-none">
+                  ${types.map(t => `<option value="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm text-zinc-400 mb-1">Category *</label>
+                <select name="category" required class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 focus:border-indigo-500 focus:outline-none">
+                  ${categories.map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm text-zinc-400 mb-1">Description</label>
+              <textarea name="description" rows="2" class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 focus:border-indigo-500 focus:outline-none resize-none" placeholder="What does this skill do?"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm text-zinc-400 mb-1">Instructions</label>
+              <textarea name="instructions" rows="4" class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 focus:border-indigo-500 focus:outline-none resize-none font-mono text-sm" placeholder="You are an expert in..."></textarea>
+            </div>
+            <div class="flex gap-3 pt-2">
+              <button type="button" onclick="this.closest('.fixed').remove()" class="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl transition-colors">Cancel</button>
+              <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl transition-colors">Create Skill</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    async function submitNewSkill(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        name: form.name.value,
+        type: form.type.value,
+        category: form.category.value,
+        description: form.description.value,
+        instructions: form.instructions.value
+      };
+      try {
+        await fetch('/api/lumen-tools/custom-skills', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        form.closest('.fixed').remove();
+        showToast('Skill created successfully!');
+        loadCustomSkills();
+      } catch (err) {
+        console.error('Error creating skill:', err);
+        alert('Failed to create skill');
+      }
+    }
+
+    // Other tab renderers (Analytics, Health, Monitor, Plugins)
     async function loadLumenAnalytics() {
       try {
         const response = await fetch('/api/lumen-tools/analytics');
         lumenToolsState.analytics = await response.json();
-        if (lumenToolsState.activeTab === 'analytics') renderLumenTabContent();
-      } catch (err) {
-        console.error('Error loading analytics:', err);
-      }
+        if (lumenToolsState.activeTab === 'analytics') renderAnalyticsTab(document.getElementById('lumen-tab-content'));
+      } catch (err) { console.error('Error loading analytics:', err); }
     }
 
     function renderAnalyticsTab(container) {
       const data = lumenToolsState.analytics;
-      if (!data) {
-        container.innerHTML = '<div class="text-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
-        return;
-      }
-
+      if (!data) { loadLumenAnalytics(); container.innerHTML = '<div class="text-center py-12"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>'; return; }
       const { summary, toolUsage, dailyStats } = data;
       const toolEntries = Object.entries(toolUsage).sort((a, b) => b[1] - a[1]);
       const totalTools = toolEntries.reduce((sum, [, v]) => sum + v, 0);
-
-      // Get last 14 days of daily stats
       const days = Object.entries(dailyStats).slice(0, 14).reverse();
       const maxSessions = Math.max(...days.map(([, d]) => d.sessions)) || 1;
-
-      container.innerHTML = `
-        <div class="space-y-6 animate-fade-in">
-          <!-- Summary Cards -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20">
-              <div class="text-3xl font-bold text-zinc-100">${summary.totalSessions}</div>
-              <div class="text-xs text-zinc-500 mt-1">Total Sessions</div>
-              <div class="text-xs text-indigo-400 mt-2">Last 30 days</div>
-            </div>
-            <div class="p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
-              <div class="text-3xl font-bold text-zinc-100">${(summary.totalTokens / 1000000).toFixed(2)}M</div>
-              <div class="text-xs text-zinc-500 mt-1">Tokens Used</div>
-              <div class="text-xs text-emerald-400 mt-2">${(summary.totalTokensIn / 1000000).toFixed(2)}M in / ${(summary.totalTokensOut / 1000000).toFixed(2)}M out</div>
-            </div>
-            <div class="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-              <div class="text-3xl font-bold text-zinc-100">$${summary.estimatedCost.toFixed(2)}</div>
-              <div class="text-xs text-zinc-500 mt-1">Estimated Cost</div>
-              <div class="text-xs text-amber-400 mt-2">~$${(summary.estimatedCost / 30).toFixed(2)}/day</div>
-            </div>
-            <div class="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-              <div class="text-3xl font-bold text-zinc-100">${Math.floor(summary.totalDurationMinutes / 60)}h</div>
-              <div class="text-xs text-zinc-500 mt-1">Time Spent</div>
-              <div class="text-xs text-blue-400 mt-2">~${summary.avgSessionDuration}min avg session</div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Activity Chart -->
-            <div class="p-5 rounded-2xl bg-zinc-800/30 border border-zinc-700/50">
-              <h3 class="text-sm font-semibold text-zinc-100 mb-4">Daily Activity (14 days)</h3>
-              <div class="flex items-end gap-1 h-32">
-                ${days.map(([date, d]) => `
-                  <div class="flex-1 flex flex-col items-center gap-1">
-                    <div class="w-full bg-indigo-500/30 rounded-t" style="height: ${(d.sessions / maxSessions) * 100}%" title="${date}: ${d.sessions} sessions"></div>
-                    <span class="text-[9px] text-zinc-600 -rotate-45 origin-top-left">${date.slice(5)}</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-
-            <!-- Tool Usage -->
-            <div class="p-5 rounded-2xl bg-zinc-800/30 border border-zinc-700/50">
-              <h3 class="text-sm font-semibold text-zinc-100 mb-4">Tool Usage</h3>
-              <div class="space-y-3">
-                ${toolEntries.map(([tool, count]) => {
-                  const pct = (count / totalTools) * 100;
-                  const icons = { file_read: '📖', file_write: '✏️', exec: '⚡', search: '🔍', browser: '🌐', git: '🔀' };
-                  return `
-                    <div>
-                      <div class="flex items-center justify-between text-xs mb-1">
-                        <span class="text-zinc-400">${icons[tool] || '🔧'} ${tool}</span>
-                        <span class="text-zinc-500">${count.toLocaleString()} (${pct.toFixed(0)}%)</span>
-                      </div>
-                      <div class="h-2 bg-zinc-700 rounded-full overflow-hidden">
-                        <div class="h-full bg-indigo-500 rounded-full" style="width: ${pct}%"></div>
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-          </div>
-
-          <p class="text-xs text-zinc-600 text-center">📊 This is sample/mock data. Connect Claude Code telemetry for real metrics.</p>
-        </div>
-      `;
+      container.innerHTML = `<div class="space-y-6 animate-fade-in"><div class="grid grid-cols-2 lg:grid-cols-4 gap-4"><div class="p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20"><div class="text-3xl font-bold text-zinc-100">${summary.totalSessions}</div><div class="text-xs text-zinc-500 mt-1">Total Sessions</div></div><div class="p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20"><div class="text-3xl font-bold text-zinc-100">${(summary.totalTokens / 1000000).toFixed(2)}M</div><div class="text-xs text-zinc-500 mt-1">Tokens Used</div></div><div class="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20"><div class="text-3xl font-bold text-zinc-100">$${summary.estimatedCost.toFixed(2)}</div><div class="text-xs text-zinc-500 mt-1">Estimated Cost</div></div><div class="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20"><div class="text-3xl font-bold text-zinc-100">${Math.floor(summary.totalDurationMinutes / 60)}h</div><div class="text-xs text-zinc-500 mt-1">Time Spent</div></div></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="p-5 rounded-2xl bg-zinc-800/30 border border-zinc-700/50"><h3 class="text-sm font-semibold text-zinc-100 mb-4">Daily Activity</h3><div class="flex items-end gap-1 h-32">${days.map(([date, d]) => `<div class="flex-1 flex flex-col items-center gap-1"><div class="w-full bg-indigo-500/30 rounded-t" style="height: ${(d.sessions / maxSessions) * 100}%"></div><span class="text-[9px] text-zinc-600">${date.slice(5)}</span></div>`).join('')}</div></div><div class="p-5 rounded-2xl bg-zinc-800/30 border border-zinc-700/50"><h3 class="text-sm font-semibold text-zinc-100 mb-4">Tool Usage</h3><div class="space-y-3">${toolEntries.map(([tool, count]) => { const pct = (count / totalTools) * 100; const icons = { file_read: '📖', file_write: '✏️', exec: '⚡', search: '🔍', browser: '🌐', git: '🔀' }; return `<div><div class="flex justify-between text-xs mb-1"><span class="text-zinc-400">${icons[tool] || '🔧'} ${tool}</span><span class="text-zinc-500">${count}</span></div><div class="h-2 bg-zinc-700 rounded-full"><div class="h-full bg-indigo-500 rounded-full" style="width: ${pct}%"></div></div></div>`; }).join('')}</div></div></div></div>`;
     }
 
-    // === HEALTH CHECK ===
     async function loadHealthCheck() {
       try {
         const response = await fetch('/api/lumen-tools/health');
         lumenToolsState.health = await response.json();
-        if (lumenToolsState.activeTab === 'health') renderLumenTabContent();
-      } catch (err) {
-        console.error('Error loading health check:', err);
-      }
+        if (lumenToolsState.activeTab === 'health') renderHealthTab(document.getElementById('lumen-tab-content'));
+      } catch (err) { console.error('Error loading health:', err); }
     }
 
     function renderHealthTab(container) {
       const data = lumenToolsState.health;
-      if (!data) {
-        container.innerHTML = '<div class="text-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
-        return;
-      }
-
-      const statusColors = {
-        healthy: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20',
-        degraded: 'from-amber-500/10 to-orange-500/10 border-amber-500/20',
-        unhealthy: 'from-red-500/10 to-rose-500/10 border-red-500/20'
-      };
+      if (!data) { loadHealthCheck(); container.innerHTML = '<div class="text-center py-12"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>'; return; }
+      const statusColors = { healthy: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20', degraded: 'from-amber-500/10 to-orange-500/10 border-amber-500/20', unhealthy: 'from-red-500/10 to-rose-500/10 border-red-500/20' };
       const statusIcons = { healthy: '✅', degraded: '⚠️', unhealthy: '❌' };
       const checkIcons = { ok: '✅', warning: '⚠️', error: '❌' };
-
-      container.innerHTML = `
-        <div class="space-y-6 animate-fade-in">
-          <!-- Overall Status -->
-          <div class="p-6 rounded-2xl bg-gradient-to-br ${statusColors[data.status]} border text-center">
-            <div class="text-4xl mb-2">${statusIcons[data.status]}</div>
-            <div class="text-xl font-bold text-zinc-100 capitalize">${data.status}</div>
-            <div class="text-xs text-zinc-500 mt-1">Last checked: ${new Date(data.timestamp).toLocaleString()}</div>
-            <button onclick="loadHealthCheck()" class="mt-3 px-4 py-2 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors">
-              🔄 Refresh
-            </button>
-          </div>
-
-          <!-- Individual Checks -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            ${data.checks.map(check => `
-              <div class="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:bg-zinc-800/50 transition-colors">
-                <div class="flex items-start gap-3">
-                  <div class="text-2xl">${checkIcons[check.status]}</div>
-                  <div class="flex-1 min-w-0">
-                    <div class="font-medium text-zinc-100">${check.name}</div>
-                    <div class="text-xs text-zinc-500 mb-2">${check.description}</div>
-                    <div class="text-sm ${check.status === 'ok' ? 'text-emerald-400' : check.status === 'warning' ? 'text-amber-400' : 'text-red-400'}">
-                      ${check.message}
-                    </div>
-                    ${check.details ? `
-                      <details class="mt-2">
-                        <summary class="text-xs text-zinc-500 cursor-pointer hover:text-zinc-400">Show details</summary>
-                        <pre class="mt-2 p-2 bg-zinc-900 rounded text-xs text-zinc-400 overflow-x-auto">${JSON.stringify(check.details, null, 2)}</pre>
-                      </details>
-                    ` : ''}
-                  </div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
+      container.innerHTML = `<div class="space-y-6 animate-fade-in"><div class="p-6 rounded-2xl bg-gradient-to-br ${statusColors[data.status]} border text-center"><div class="text-4xl mb-2">${statusIcons[data.status]}</div><div class="text-xl font-bold text-zinc-100 capitalize">${data.status}</div><div class="text-xs text-zinc-500 mt-1">Last: ${new Date(data.timestamp).toLocaleString()}</div><button onclick="loadHealthCheck()" class="mt-3 px-4 py-2 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg">🔄 Refresh</button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${data.checks.map(check => `<div class="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/50"><div class="flex gap-3"><div class="text-2xl">${checkIcons[check.status]}</div><div><div class="font-medium text-zinc-100">${check.name}</div><div class="text-xs text-zinc-500 mb-1">${check.description}</div><div class="text-sm ${check.status === 'ok' ? 'text-emerald-400' : check.status === 'warning' ? 'text-amber-400' : 'text-red-400'}">${check.message}</div></div></div></div>`).join('')}</div></div>`;
     }
 
-    // === CONVERSATIONS ===
     async function loadConversations() {
       try {
         const response = await fetch('/api/lumen-tools/conversations');
         lumenToolsState.conversations = await response.json();
-        if (lumenToolsState.activeTab === 'conversations') renderLumenTabContent();
-      } catch (err) {
-        console.error('Error loading conversations:', err);
-      }
+        if (lumenToolsState.activeTab === 'monitor') renderConversationsTab(document.getElementById('lumen-tab-content'));
+      } catch (err) { console.error('Error loading conversations:', err); }
     }
 
     function renderConversationsTab(container) {
       const data = lumenToolsState.conversations;
-      if (!data) {
-        container.innerHTML = '<div class="text-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
-        return;
-      }
-
-      const statusColors = {
-        active: 'bg-emerald-500',
-        completed: 'bg-zinc-500',
-        paused: 'bg-amber-500'
-      };
-
-      container.innerHTML = `
-        <div class="space-y-6 animate-fade-in">
-          <!-- Connection Status -->
-          <div class="p-4 rounded-xl ${data.connectionStatus === 'connected' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'} border flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-3 h-3 rounded-full ${data.connectionStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></div>
-              <span class="text-sm ${data.connectionStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'}">
-                ${data.connectionStatus === 'connected' ? 'Connected to Claude Code' : 'Disconnected'}
-              </span>
-            </div>
-            <button onclick="loadConversations()" class="px-3 py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors">
-              Refresh
-            </button>
-          </div>
-
-          ${data.hint ? `<p class="text-xs text-zinc-500 text-center">💡 ${data.hint}</p>` : ''}
-
-          <!-- Conversations List -->
-          <div class="space-y-3">
-            ${data.conversations && data.conversations.length > 0 ? data.conversations.map(conv => `
-              <div class="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:bg-zinc-800/50 transition-colors cursor-pointer">
-                <div class="flex items-start justify-between gap-4">
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-1">
-                      <div class="w-2 h-2 rounded-full ${statusColors[conv.status]}"></div>
-                      <span class="font-medium text-zinc-100">${escapeHtml(conv.title)}</span>
-                    </div>
-                    <p class="text-xs text-zinc-400 mb-2 line-clamp-2">${escapeHtml(conv.lastMessage)}</p>
-                    <div class="flex items-center gap-3 text-xs text-zinc-500">
-                      <span>💬 ${conv.messageCount} messages</span>
-                      <span>🔤 ${(conv.tokensUsed / 1000).toFixed(1)}k tokens</span>
-                      <span>🤖 ${conv.model.split('-').slice(0, 2).join('-')}</span>
-                    </div>
-                  </div>
-                  <div class="text-right shrink-0">
-                    <span class="text-xs text-zinc-500">${formatTimeAgo(new Date(conv.startedAt))}</span>
-                    <div class="mt-1 px-2 py-0.5 text-[10px] rounded-full ${conv.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-600/50 text-zinc-400'}">${conv.status}</div>
-                  </div>
-                </div>
-              </div>
-            `).join('') : `
-              <div class="text-center py-12">
-                <div class="text-4xl mb-3">💬</div>
-                <p class="text-zinc-400">No conversations yet</p>
-                <p class="text-xs text-zinc-600 mt-1">Start a Claude Code session to see it here</p>
-              </div>
-            `}
-          </div>
-        </div>
-      `;
+      if (!data) { loadConversations(); container.innerHTML = '<div class="text-center py-12"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>'; return; }
+      const statusColors = { active: 'bg-emerald-500', completed: 'bg-zinc-500', paused: 'bg-amber-500' };
+      container.innerHTML = `<div class="space-y-6 animate-fade-in"><div class="p-4 rounded-xl ${data.connectionStatus === 'connected' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'} border flex justify-between"><div class="flex items-center gap-3"><div class="w-3 h-3 rounded-full ${data.connectionStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></div><span class="text-sm ${data.connectionStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'}">${data.connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}</span></div><button onclick="loadConversations()" class="px-3 py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 rounded-lg">Refresh</button></div><div class="space-y-3">${data.conversations?.map(conv => `<div class="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/50"><div class="flex justify-between"><div><div class="flex items-center gap-2 mb-1"><div class="w-2 h-2 rounded-full ${statusColors[conv.status]}"></div><span class="font-medium text-zinc-100">${escapeHtml(conv.title)}</span></div><p class="text-xs text-zinc-400 mb-2 line-clamp-2">${escapeHtml(conv.lastMessage)}</p><div class="flex gap-3 text-xs text-zinc-500"><span>💬 ${conv.messageCount}</span><span>🔤 ${(conv.tokensUsed/1000).toFixed(1)}k</span></div></div><div class="text-xs text-zinc-500">${formatTimeAgo(new Date(conv.startedAt))}</div></div></div>`).join('') || '<div class="text-center py-12 text-zinc-500">No conversations</div>'}</div></div>`;
     }
 
-    function formatTimeAgo(date) {
-      const now = new Date();
-      const diff = now - date;
-      const mins = Math.floor(diff / 60000);
-      const hours = Math.floor(mins / 60);
-      const days = Math.floor(hours / 24);
-      
-      if (days > 0) return `${days}d ago`;
-      if (hours > 0) return `${hours}h ago`;
-      if (mins > 0) return `${mins}m ago`;
-      return 'Just now';
-    }
-
-    // === PLUGINS ===
     async function loadPlugins() {
       try {
         const response = await fetch('/api/lumen-tools/plugins');
         lumenToolsState.plugins = await response.json();
-        if (lumenToolsState.activeTab === 'plugins') renderLumenTabContent();
-      } catch (err) {
-        console.error('Error loading plugins:', err);
-      }
+        if (lumenToolsState.activeTab === 'plugins') renderPluginsTab(document.getElementById('lumen-tab-content'));
+      } catch (err) { console.error('Error loading plugins:', err); }
     }
 
     function renderPluginsTab(container) {
       const data = lumenToolsState.plugins;
-      if (!data) {
-        container.innerHTML = '<div class="text-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
-        return;
-      }
-
+      if (!data) { loadPlugins(); container.innerHTML = '<div class="text-center py-12"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>'; return; }
       const { plugins, stats } = data;
-      const mcps = plugins.filter(p => p.type === 'mcp');
-      const pluginsList = plugins.filter(p => p.type === 'plugin');
-
-      container.innerHTML = `
-        <div class="space-y-6 animate-fade-in">
-          <!-- Stats -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div class="p-3 rounded-xl bg-zinc-800/50 text-center">
-              <div class="text-2xl font-bold text-zinc-100">${stats.total}</div>
-              <div class="text-xs text-zinc-500">Total</div>
-            </div>
-            <div class="p-3 rounded-xl bg-zinc-800/50 text-center">
-              <div class="text-2xl font-bold text-emerald-400">${stats.running}</div>
-              <div class="text-xs text-zinc-500">Running</div>
-            </div>
-            <div class="p-3 rounded-xl bg-zinc-800/50 text-center">
-              <div class="text-2xl font-bold text-indigo-400">${stats.mcps}</div>
-              <div class="text-xs text-zinc-500">MCPs</div>
-            </div>
-            <div class="p-3 rounded-xl bg-zinc-800/50 text-center">
-              <div class="text-2xl font-bold text-purple-400">${stats.plugins}</div>
-              <div class="text-xs text-zinc-500">Plugins</div>
-            </div>
-          </div>
-
-          <!-- MCPs Section -->
-          <div class="bg-zinc-800/30 rounded-2xl border border-zinc-700/50 overflow-hidden">
-            <div class="p-4 border-b border-zinc-700/50 flex items-center gap-2">
-              <span class="text-xl">🔌</span>
-              <h3 class="text-sm font-semibold text-zinc-100">MCP Servers</h3>
-              <span class="text-xs text-zinc-500">(${mcps.length})</span>
-            </div>
-            <div class="divide-y divide-zinc-700/30">
-              ${mcps.map(p => renderPluginItem(p)).join('')}
-            </div>
-          </div>
-
-          <!-- Plugins Section -->
-          <div class="bg-zinc-800/30 rounded-2xl border border-zinc-700/50 overflow-hidden">
-            <div class="p-4 border-b border-zinc-700/50 flex items-center gap-2">
-              <span class="text-xl">🧩</span>
-              <h3 class="text-sm font-semibold text-zinc-100">Plugins</h3>
-              <span class="text-xs text-zinc-500">(${pluginsList.length})</span>
-            </div>
-            <div class="divide-y divide-zinc-700/30">
-              ${pluginsList.map(p => renderPluginItem(p)).join('')}
-            </div>
-          </div>
-
-          <p class="text-xs text-zinc-600 text-center">🔌 Plugin toggling is simulated. Full integration requires Claude Code API.</p>
-        </div>
-      `;
-    }
-
-    function renderPluginItem(plugin) {
-      const statusColor = plugin.status === 'running' ? 'bg-emerald-500' : 'bg-zinc-500';
-      const statusText = plugin.status === 'running' ? 'text-emerald-400' : 'text-zinc-400';
-
-      return `
-        <div class="p-4 hover:bg-zinc-800/50 transition-colors">
-          <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-2 h-2 rounded-full ${statusColor}"></div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium text-zinc-100">${escapeHtml(plugin.name)}</span>
-                  <span class="text-xs text-zinc-600">v${plugin.version}</span>
-                </div>
-                <p class="text-xs text-zinc-500 truncate">${escapeHtml(plugin.description)}</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-3 shrink-0">
-              <span class="text-xs ${statusText}">${plugin.status}</span>
-              <button onclick="togglePlugin('${plugin.id}')" 
-                      class="relative w-10 h-5 rounded-full transition-colors ${plugin.enabled ? 'bg-indigo-600' : 'bg-zinc-700'}"
-                      title="${plugin.enabled ? 'Disable' : 'Enable'}">
-                <div class="absolute top-0.5 ${plugin.enabled ? 'right-0.5' : 'left-0.5'} w-4 h-4 bg-white rounded-full transition-all shadow"></div>
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
+      container.innerHTML = `<div class="space-y-6 animate-fade-in"><div class="grid grid-cols-2 md:grid-cols-4 gap-3"><div class="p-3 rounded-xl bg-zinc-800/50 text-center"><div class="text-2xl font-bold text-zinc-100">${stats.total}</div><div class="text-xs text-zinc-500">Total</div></div><div class="p-3 rounded-xl bg-zinc-800/50 text-center"><div class="text-2xl font-bold text-emerald-400">${stats.running}</div><div class="text-xs text-zinc-500">Running</div></div><div class="p-3 rounded-xl bg-zinc-800/50 text-center"><div class="text-2xl font-bold text-indigo-400">${stats.mcps}</div><div class="text-xs text-zinc-500">MCPs</div></div><div class="p-3 rounded-xl bg-zinc-800/50 text-center"><div class="text-2xl font-bold text-purple-400">${stats.plugins}</div><div class="text-xs text-zinc-500">Plugins</div></div></div><div class="bg-zinc-800/30 rounded-2xl border border-zinc-700/50 overflow-hidden"><div class="p-4 border-b border-zinc-700/50"><span class="text-xl">🔌</span> <span class="font-semibold text-zinc-100">MCP Servers & Plugins</span></div><div class="divide-y divide-zinc-700/30">${plugins.map(p => `<div class="p-4 hover:bg-zinc-800/50"><div class="flex justify-between"><div class="flex items-center gap-3"><div class="w-2 h-2 rounded-full ${p.status === 'running' ? 'bg-emerald-500' : 'bg-zinc-500'}"></div><div><div class="font-medium text-zinc-100">${escapeHtml(p.name)} <span class="text-xs text-zinc-600">v${p.version}</span></div><p class="text-xs text-zinc-500">${escapeHtml(p.description)}</p></div></div><button onclick="togglePlugin('${p.id}')" class="relative w-10 h-5 rounded-full ${p.enabled ? 'bg-indigo-600' : 'bg-zinc-700'}"><div class="absolute top-0.5 ${p.enabled ? 'right-0.5' : 'left-0.5'} w-4 h-4 bg-white rounded-full shadow"></div></button></div></div>`).join('')}</div></div></div>`;
     }
 
     async function togglePlugin(id) {
-      try {
-        await fetch(`/api/lumen-tools/plugins/${id}/toggle`, { method: 'POST' });
-        loadPlugins();
-      } catch (err) {
-        console.error('Error toggling plugin:', err);
-      }
+      try { await fetch(`/api/lumen-tools/plugins/${id}/toggle`, { method: 'POST' }); loadPlugins(); } catch (err) { console.error('Error:', err); }
+    }
+
+    function formatTimeAgo(date) {
+      const diff = Date.now() - date;
+      const mins = Math.floor(diff / 60000);
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs}h ago`;
+      return `${Math.floor(hrs / 24)}d ago`;
     }
 
     function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        // Show toast
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 right-4 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg shadow-lg animate-fade-in z-50';
-        toast.textContent = '📋 Copied to clipboard!';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
-      });
+      navigator.clipboard.writeText(text).then(() => showToast('📋 Copied to clipboard!'));
     }
 
     // ============================================
