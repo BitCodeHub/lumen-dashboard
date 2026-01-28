@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const { Pool } = require('pg');
 const cron = require('node-cron');
 const cheerio = require('cheerio');
+const { execSync } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +43,316 @@ let syncStatus = {
 
 // Rate limiting helper - respectful delays between requests
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// ============================================
+// GITHUB WEBHOOK SYNC - REAL-TIME TEMPLATES
+// ============================================
+
+// GitHub webhook secret from environment
+const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || '';
+
+// GitHub sync status tracking (separate from scraper sync)
+let githubSyncStatus = {
+  connected: !!process.env.GITHUB_WEBHOOK_SECRET,
+  lastWebhookAt: null,
+  lastSyncAt: null,
+  lastSyncSuccess: false,
+  isRunning: false,
+  error: null,
+  templatesUpdated: 0,
+  webhookEvents: []
+};
+
+// Verify GitHub webhook signature
+function verifyGitHubSignature(payload, signature) {
+  if (!GITHUB_WEBHOOK_SECRET) {
+    console.log('[Webhook] No secret configured, skipping verification');
+    return true; // Allow if no secret configured (for testing)
+  }
+  
+  if (!signature) {
+    console.log('[Webhook] No signature provided');
+    return false;
+  }
+  
+  const expectedSignature = 'sha256=' + crypto
+    .createHmac('sha256', GITHUB_WEBHOOK_SECRET)
+    .update(payload)
+    .digest('hex');
+  
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    );
+  } catch (err) {
+    console.error('[Webhook] Signature verification error:', err.message);
+    return false;
+  }
+}
+
+// Clone or pull the templates repository
+async function cloneOrPullTemplatesRepo() {
+  const repoUrl = 'https://github.com/davila7/claude-code-templates.git';
+  const repoDir = path.join(__dirname, 'data', 'claude-code-templates');
+  
+  try {
+    // Create data directory if it doesn't exist
+    if (!fs.existsSync(path.join(__dirname, 'data'))) {
+      fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+    }
+    
+    if (fs.existsSync(repoDir)) {
+      // Pull latest changes
+      console.log('[GitHub Sync] Pulling latest changes...');
+      execSync('git fetch origin && git reset --hard origin/main', {
+        cwd: repoDir,
+        stdio: 'pipe'
+      });
+    } else {
+      // Clone the repository
+      console.log('[GitHub Sync] Cloning repository...');
+      execSync(`git clone --depth 1 ${repoUrl} "${repoDir}"`, {
+        stdio: 'pipe'
+      });
+    }
+    
+    return repoDir;
+  } catch (err) {
+    console.error('[GitHub Sync] Git operation failed:', err.message);
+    throw err;
+  }
+}
+
+// Parse a single template directory
+function parseTemplateDirectory(templatePath, type) {
+  const template = {
+    id: null,
+    type: type,
+    name: null,
+    description: null,
+    category: 'Other',
+    downloads: 0,
+    stars: 0,
+    version: '1.0.0',
+    status: 'stable',
+    tags: [type],
+    install_command: null,
+    source_url: `https://github.com/davila7/claude-code-templates`,
+    content: {}
+  };
+  
+  try {
+    const dirName = path.basename(templatePath);
+    template.name = dirName
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    template.id = `github-${type}-${dirName}`;
+    
+    // Read SKILL.md or README.md for description
+    const skillMdPath = path.join(templatePath, 'SKILL.md');
+    const readmePath = path.join(templatePath, 'README.md');
+    
+    if (fs.existsSync(skillMdPath)) {
+      const content = fs.readFileSync(skillMdPath, 'utf-8');
+      template.content.skill_md = content;
+      
+      // Extract description from first paragraph
+      const descMatch = content.match(/^#[^\n]*\n+([^\n#]+)/m);
+      if (descMatch) {
+        template.description = descMatch[1].trim().substring(0, 500);
+      }
+      
+      // Extract category from content
+      const categoryMatch = content.match(/category[:\s]+([^\n,]+)/i);
+      if (categoryMatch) {
+        template.category = categoryMatch[1].trim();
+      }
+    } else if (fs.existsSync(readmePath)) {
+      const content = fs.readFileSync(readmePath, 'utf-8');
+      template.content.readme = content;
+      
+      // Extract description from first paragraph
+      const descMatch = content.match(/^#[^\n]*\n+([^\n#]+)/m);
+      if (descMatch) {
+        template.description = descMatch[1].trim().substring(0, 500);
+      }
+    }
+    
+    // Read other common files
+    const filesToRead = ['settings.json', 'config.json', 'manifest.json', 'agent.md', 'command.md', 'hook.md', 'mcp.json'];
+    filesToRead.forEach(file => {
+      const filePath = path.join(templatePath, file);
+      if (fs.existsSync(filePath)) {
+        try {
+          const content = fs.readFileSync(filePath, 'utf-8');
+          const key = file.replace('.', '_');
+          template.content[key] = content;
+          
+          // Extract metadata from JSON files
+          if (file.endsWith('.json')) {
+            const json = JSON.parse(content);
+            if (json.name) template.name = json.name;
+            if (json.description) template.description = json.description;
+            if (json.version) template.version = json.version;
+            if (json.category) template.category = json.category;
+            if (json.tags) template.tags = [...template.tags, ...json.tags];
+          }
+        } catch (e) {
+          // Skip files that can't be read
+        }
+      }
+    });
+    
+    // Generate install command based on type
+    const templateSlug = dirName.toLowerCase().replace(/\s+/g, '-');
+    template.install_command = `npx claude-code-templates@latest --${type.slice(0, -1)}=${templateSlug} --yes`;
+    
+    // Set default description if none found
+    if (!template.description) {
+      template.description = `${template.name} - A ${type.slice(0, -1)} template for Claude Code`;
+    }
+    
+    return template;
+  } catch (err) {
+    console.error(`[GitHub Sync] Error parsing template ${templatePath}:`, err.message);
+    return null;
+  }
+}
+
+// Scan and parse all templates from the repository
+async function parseAllTemplates(repoDir) {
+  const componentsDir = path.join(repoDir, 'cli-tool', 'components');
+  const templates = [];
+  
+  const templateTypes = ['agents', 'commands', 'hooks', 'mcps', 'settings', 'skills'];
+  
+  for (const type of templateTypes) {
+    const typeDir = path.join(componentsDir, type);
+    
+    if (!fs.existsSync(typeDir)) {
+      console.log(`[GitHub Sync] Directory not found: ${typeDir}`);
+      continue;
+    }
+    
+    const entries = fs.readdirSync(typeDir, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const templatePath = path.join(typeDir, entry.name);
+        const template = parseTemplateDirectory(templatePath, type);
+        if (template) {
+          templates.push(template);
+        }
+      }
+    }
+  }
+  
+  console.log(`[GitHub Sync] Parsed ${templates.length} templates from repository`);
+  return templates;
+}
+
+// Sync templates from GitHub to database
+async function performGitHubSync() {
+  if (githubSyncStatus.isRunning) {
+    console.log('[GitHub Sync] Sync already in progress, skipping...');
+    return { success: false, error: 'Sync already in progress' };
+  }
+  
+  githubSyncStatus.isRunning = true;
+  githubSyncStatus.error = null;
+  const startTime = Date.now();
+  
+  console.log('[GitHub Sync] Starting GitHub template sync...');
+  
+  try {
+    // Clone or pull the repository
+    const repoDir = await cloneOrPullTemplatesRepo();
+    
+    // Parse all templates
+    const templates = await parseAllTemplates(repoDir);
+    
+    if (templates.length === 0) {
+      console.log('[GitHub Sync] No templates found in repository');
+      githubSyncStatus.isRunning = false;
+      return { success: true, count: 0, message: 'No templates found' };
+    }
+    
+    // Upsert templates to database
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      let upsertCount = 0;
+      for (const template of templates) {
+        await client.query(`
+          INSERT INTO lumen_synced_templates (
+            id, type, name, description, category, downloads, stars, 
+            version, status, tags, install_command, source_url, synced_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            description = EXCLUDED.description,
+            category = EXCLUDED.category,
+            version = EXCLUDED.version,
+            status = EXCLUDED.status,
+            tags = EXCLUDED.tags,
+            install_command = EXCLUDED.install_command,
+            source_url = EXCLUDED.source_url,
+            synced_at = NOW()
+        `, [
+          template.id, template.type, template.name, template.description,
+          template.category, template.downloads, template.stars,
+          template.version, template.status, template.tags,
+          template.install_command, template.source_url
+        ]);
+        upsertCount++;
+      }
+      
+      await client.query('COMMIT');
+      
+      const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`[GitHub Sync] Completed! Synced ${upsertCount} templates in ${duration}s`);
+      
+      githubSyncStatus.lastSyncAt = new Date().toISOString();
+      githubSyncStatus.lastSyncSuccess = true;
+      githubSyncStatus.templatesUpdated = upsertCount;
+      githubSyncStatus.isRunning = false;
+      
+      return { success: true, count: upsertCount, duration };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('[GitHub Sync] Error during sync:', err);
+    githubSyncStatus.error = err.message;
+    githubSyncStatus.lastSyncSuccess = false;
+    githubSyncStatus.isRunning = false;
+    return { success: false, error: err.message };
+  }
+}
+
+// Log webhook event
+function logWebhookEvent(event, success, details = {}) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    event,
+    success,
+    ...details
+  };
+  
+  // Keep last 50 webhook events
+  githubSyncStatus.webhookEvents.unshift(entry);
+  if (githubSyncStatus.webhookEvents.length > 50) {
+    githubSyncStatus.webhookEvents = githubSyncStatus.webhookEvents.slice(0, 50);
+  }
+  
+  console.log(`[Webhook] Event logged: ${event} - ${success ? 'success' : 'failed'}`);
+}
 
 // Parse template card from HTML
 function parseTemplateCard($, element, type) {
@@ -1904,6 +2215,7 @@ app.post('/api/lumen-tools/sync', async (req, res) => {
 app.get('/api/lumen-tools/sync-status', (req, res) => {
   res.json({
     ...syncStatus,
+    github: githubSyncStatus,
     nextScheduledSync: getNextCronRun()
   });
 });
@@ -1918,6 +2230,137 @@ function getNextCronRun() {
   next.setHours(next.getHours() + 1);
   return next.toISOString();
 }
+
+// ============================================
+// GITHUB WEBHOOK ENDPOINT
+// ============================================
+
+// GitHub webhook endpoint - receives push events from davila7/claude-code-templates
+app.post('/api/webhooks/github', express.raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.headers['x-hub-signature-256'];
+  const event = req.headers['x-github-event'];
+  const delivery = req.headers['x-github-delivery'];
+  
+  console.log(`[Webhook] Received GitHub webhook: event=${event}, delivery=${delivery}`);
+  
+  // Get raw body for signature verification
+  const rawBody = req.body.toString ? req.body.toString() : JSON.stringify(req.body);
+  
+  // Verify signature if secret is configured
+  if (GITHUB_WEBHOOK_SECRET && !verifyGitHubSignature(rawBody, signature)) {
+    console.error('[Webhook] Invalid signature');
+    logWebhookEvent('signature_failed', false, { delivery });
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+  
+  // Parse the payload
+  let payload;
+  try {
+    payload = typeof req.body === 'string' ? JSON.parse(req.body) : 
+              Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString()) : req.body;
+  } catch (err) {
+    console.error('[Webhook] Failed to parse payload:', err.message);
+    logWebhookEvent('parse_failed', false, { delivery, error: err.message });
+    return res.status(400).json({ error: 'Invalid JSON payload' });
+  }
+  
+  githubSyncStatus.lastWebhookAt = new Date().toISOString();
+  githubSyncStatus.connected = true;
+  
+  // Handle ping event (sent when webhook is first configured)
+  if (event === 'ping') {
+    console.log('[Webhook] Ping received, webhook is configured correctly');
+    logWebhookEvent('ping', true, { delivery, zen: payload.zen });
+    return res.json({ 
+      message: 'Pong! Webhook configured successfully',
+      zen: payload.zen 
+    });
+  }
+  
+  // Handle push events
+  if (event === 'push') {
+    const ref = payload.ref;
+    const branch = ref ? ref.replace('refs/heads/', '') : 'unknown';
+    const pusher = payload.pusher?.name || 'unknown';
+    const commits = payload.commits?.length || 0;
+    const repository = payload.repository?.full_name || 'unknown';
+    
+    console.log(`[Webhook] Push event: ${repository} ${branch} by ${pusher} (${commits} commits)`);
+    
+    // Only sync on push to main/master branch
+    if (branch === 'main' || branch === 'master') {
+      console.log('[Webhook] Push to main branch detected, triggering sync...');
+      logWebhookEvent('push', true, { delivery, branch, pusher, commits, repository });
+      
+      // Trigger sync in background
+      performGitHubSync().then(result => {
+        console.log('[Webhook] GitHub sync completed:', result);
+      }).catch(err => {
+        console.error('[Webhook] GitHub sync failed:', err);
+      });
+      
+      return res.json({ 
+        message: 'Webhook received, sync triggered',
+        branch,
+        commits,
+        repository
+      });
+    } else {
+      console.log(`[Webhook] Ignoring push to non-main branch: ${branch}`);
+      logWebhookEvent('push_ignored', true, { delivery, branch, reason: 'non-main branch' });
+      return res.json({ 
+        message: 'Push received but not on main branch, skipping sync',
+        branch 
+      });
+    }
+  }
+  
+  // Other events
+  console.log(`[Webhook] Ignoring event type: ${event}`);
+  logWebhookEvent(event, true, { delivery, ignored: true });
+  res.json({ message: `Event ${event} received but not processed` });
+});
+
+// Get GitHub sync status
+app.get('/api/webhooks/github/status', (req, res) => {
+  res.json({
+    ...githubSyncStatus,
+    secretConfigured: !!GITHUB_WEBHOOK_SECRET,
+    webhookUrl: 'https://lumen-dashboard.onrender.com/api/webhooks/github'
+  });
+});
+
+// Trigger manual GitHub sync
+app.post('/api/webhooks/github/sync', async (req, res) => {
+  if (githubSyncStatus.isRunning) {
+    return res.json({ 
+      success: false, 
+      message: 'GitHub sync already in progress',
+      status: githubSyncStatus 
+    });
+  }
+  
+  // Start sync in background
+  performGitHubSync().then(result => {
+    console.log('[GitHub Sync] Manual sync completed:', result);
+  }).catch(err => {
+    console.error('[GitHub Sync] Manual sync failed:', err);
+  });
+  
+  res.json({ 
+    success: true, 
+    message: 'GitHub sync started',
+    status: githubSyncStatus 
+  });
+});
+
+// Get webhook events log
+app.get('/api/webhooks/github/events', (req, res) => {
+  res.json({
+    events: githubSyncStatus.webhookEvents,
+    total: githubSyncStatus.webhookEvents.length
+  });
+});
 
 // Custom skills CRUD
 app.get('/api/lumen-tools/custom-skills', async (req, res) => {
@@ -2042,6 +2485,29 @@ app.get('/api/lumen-tools/health', async (req, res) => {
     }
   });
   
+  // Add GitHub webhook sync status
+  checks.push({
+    id: 'github-sync',
+    name: 'GitHub Webhook Sync',
+    description: 'Real-time template sync from GitHub',
+    status: githubSyncStatus.connected ? 
+      (githubSyncStatus.lastSyncSuccess ? 'ok' : githubSyncStatus.error ? 'error' : 'warning') : 
+      'warning',
+    message: githubSyncStatus.connected ?
+      (githubSyncStatus.lastSyncAt 
+        ? `Connected - Last sync: ${new Date(githubSyncStatus.lastSyncAt).toLocaleString()} (${githubSyncStatus.templatesUpdated} templates)`
+        : 'Connected - Awaiting first sync') :
+      'Not configured - Set GITHUB_WEBHOOK_SECRET',
+    details: {
+      connected: githubSyncStatus.connected,
+      lastWebhook: githubSyncStatus.lastWebhookAt,
+      lastSync: githubSyncStatus.lastSyncAt,
+      templatesUpdated: githubSyncStatus.templatesUpdated,
+      isRunning: githubSyncStatus.isRunning,
+      secretConfigured: !!GITHUB_WEBHOOK_SECRET
+    }
+  });
+  
   const overallStatus = checks.every(c => c.status === 'ok') ? 'healthy' : checks.some(c => c.status === 'error') ? 'unhealthy' : 'degraded';
   res.json({ status: overallStatus, timestamp: new Date().toISOString(), checks });
 });
@@ -2082,9 +2548,9 @@ app.post('/api/lumen-tools/plugins/:id/toggle', (req, res) => {
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString(), version: '3.2.0' });
+    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString(), version: '3.3.0' });
   } catch (err) {
-    res.json({ status: 'degraded', database: 'disconnected', timestamp: new Date().toISOString(), version: '3.2.0' });
+    res.json({ status: 'degraded', database: 'disconnected', timestamp: new Date().toISOString(), version: '3.3.0' });
   }
 });
 
@@ -2134,5 +2600,8 @@ setTimeout(async () => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🔆 Lumen Dashboard v3.2 (with aitmpl.com hourly sync) running on port ${PORT}`);
+  console.log(`🔆 Lumen Dashboard v3.3 running on port ${PORT}`);
+  console.log(`   📡 GitHub webhook: ${GITHUB_WEBHOOK_SECRET ? 'configured' : 'not configured (set GITHUB_WEBHOOK_SECRET)'}`);
+  console.log(`   🔄 Hourly scrape sync: enabled`);
+  console.log(`   🌐 Webhook URL: https://lumen-dashboard.onrender.com/api/webhooks/github`);
 });
