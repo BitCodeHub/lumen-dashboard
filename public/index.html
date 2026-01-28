@@ -470,6 +470,11 @@
             <span>Excel Files</span>
             <span id="count-excel" class="ml-auto text-xs text-zinc-600 tabular-nums">📊</span>
           </button>
+          <button onclick="switchView('lumen-tools'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="lumen-tools">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" /></svg>
+            <span>Lumen Tools</span>
+            <span class="ml-auto text-xs text-zinc-600 tabular-nums">🔧</span>
+          </button>
         </div>
         
         <!-- Ideas Section -->
@@ -778,6 +783,21 @@
             <div class="h-8 px-4 flex items-center justify-between border-t border-zinc-800/50 bg-surface-950/50 text-xs text-zinc-500 shrink-0">
               <span id="excel-row-count">0 rows</span>
               <span id="excel-selection-info">Click a cell to edit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lumen Tools View -->
+      <div id="lumen-tools-view" class="flex-1 overflow-y-auto hidden">
+        <div id="lumen-tools-content" class="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+          <!-- Loading state -->
+          <div class="space-y-4">
+            <div class="h-32 rounded-2xl skeleton"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="h-48 rounded-2xl skeleton"></div>
+              <div class="h-48 rounded-2xl skeleton"></div>
+              <div class="h-48 rounded-2xl skeleton"></div>
             </div>
           </div>
         </div>
@@ -1128,6 +1148,7 @@
       document.getElementById('excel-view').classList.add('hidden');
       document.getElementById('jobs-view').classList.add('hidden');
       document.getElementById('resources-view').classList.add('hidden');
+      document.getElementById('lumen-tools-view').classList.add('hidden');
       
       // Update header
       document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1147,6 +1168,12 @@
         document.getElementById('briefing-count').textContent = '';
         document.querySelector('[data-filter="expenses"]').classList.add('active');
         loadExpenses();
+      } else if (view === 'lumen-tools') {
+        document.getElementById('lumen-tools-view').classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'Lumen Tools';
+        document.getElementById('briefing-count').textContent = '';
+        document.querySelector('[data-filter="lumen-tools"]').classList.add('active');
+        loadLumenTools();
       } else if (view === 'ideas') {
         document.getElementById('ideas-view').classList.remove('hidden');
         document.getElementById('current-filter').textContent = 'AI Ideas';
@@ -2812,6 +2839,614 @@
         console.error('Error adding resource:', err);
         alert('Failed to add resource');
       }
+    }
+
+    // ============================================
+    // LUMEN TOOLS
+    // ============================================
+    let lumenToolsState = {
+      activeTab: 'templates',
+      templates: null,
+      analytics: null,
+      health: null,
+      conversations: null,
+      plugins: null,
+      templateSearch: '',
+      templateType: 'all'
+    };
+
+    async function loadLumenTools() {
+      renderLumenToolsView();
+      // Load data for all sections
+      await Promise.all([
+        loadTemplates(),
+        loadLumenAnalytics(),
+        loadHealthCheck(),
+        loadConversations(),
+        loadPlugins()
+      ]);
+    }
+
+    function renderLumenToolsView() {
+      const container = document.getElementById('lumen-tools-content');
+      const tabs = [
+        { id: 'templates', name: 'Templates', icon: '📦', desc: 'Browse agents, commands, MCPs' },
+        { id: 'analytics', name: 'Analytics', icon: '📊', desc: 'Session metrics & costs' },
+        { id: 'health', name: 'Health Check', icon: '🏥', desc: 'System diagnostics' },
+        { id: 'conversations', name: 'Monitor', icon: '💬', desc: 'Conversation viewer' },
+        { id: 'plugins', name: 'Plugins', icon: '🔌', desc: 'MCPs & extensions' }
+      ];
+
+      container.innerHTML = `
+        <div class="animate-fade-in space-y-6">
+          <!-- Header -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl md:text-3xl font-bold text-zinc-100 flex items-center gap-3">
+                <span class="text-3xl animate-float">🔧</span>
+                Lumen Tools
+              </h2>
+              <p class="text-sm text-zinc-500 mt-1">Claude Code templates, analytics, health checks & more</p>
+            </div>
+          </div>
+
+          <!-- Tab Navigation -->
+          <div class="flex flex-wrap gap-2 border-b border-zinc-800 pb-4">
+            ${tabs.map(tab => `
+              <button onclick="switchLumenTab('${tab.id}')" 
+                      class="lumen-tab px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${lumenToolsState.activeTab === tab.id ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800'}"
+                      data-tab="${tab.id}">
+                <span class="text-lg">${tab.icon}</span>
+                <span class="hidden sm:inline">${tab.name}</span>
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Tab Content -->
+          <div id="lumen-tab-content">
+            <div class="flex items-center justify-center py-12">
+              <div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      renderLumenTabContent();
+    }
+
+    function switchLumenTab(tab) {
+      lumenToolsState.activeTab = tab;
+      // Update tab buttons
+      document.querySelectorAll('.lumen-tab').forEach(btn => {
+        if (btn.dataset.tab === tab) {
+          btn.className = 'lumen-tab px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30';
+        } else {
+          btn.className = 'lumen-tab px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800';
+        }
+      });
+      renderLumenTabContent();
+    }
+
+    function renderLumenTabContent() {
+      const content = document.getElementById('lumen-tab-content');
+      if (!content) return;
+
+      switch (lumenToolsState.activeTab) {
+        case 'templates':
+          renderTemplatesTab(content);
+          break;
+        case 'analytics':
+          renderAnalyticsTab(content);
+          break;
+        case 'health':
+          renderHealthTab(content);
+          break;
+        case 'conversations':
+          renderConversationsTab(content);
+          break;
+        case 'plugins':
+          renderPluginsTab(content);
+          break;
+      }
+    }
+
+    // === TEMPLATES ===
+    async function loadTemplates() {
+      try {
+        const response = await fetch('/api/lumen-tools/templates');
+        lumenToolsState.templates = await response.json();
+        if (lumenToolsState.activeTab === 'templates') renderLumenTabContent();
+      } catch (err) {
+        console.error('Error loading templates:', err);
+      }
+    }
+
+    function renderTemplatesTab(container) {
+      const data = lumenToolsState.templates;
+      if (!data) {
+        container.innerHTML = '<div class="text-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
+        return;
+      }
+
+      const types = ['all', 'agents', 'commands', 'mcps', 'settings', 'hooks'];
+      const typeIcons = { all: '📦', agents: '🤖', commands: '⌨️', mcps: '🔌', settings: '⚙️', hooks: '🪝' };
+
+      container.innerHTML = `
+        <div class="space-y-6 animate-fade-in">
+          <!-- Search & Filter -->
+          <div class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input type="text" placeholder="Search templates..." value="${escapeHtml(lumenToolsState.templateSearch)}" 
+                     oninput="filterTemplates(this.value)"
+                     class="w-full h-10 pl-10 pr-4 text-sm bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500">
+            </div>
+            <div class="flex gap-2 overflow-x-auto pb-1">
+              ${types.map(t => `
+                <button onclick="filterTemplateType('${t}')" class="px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${lumenToolsState.templateType === t ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800'}">
+                  ${typeIcons[t]} ${t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Template Sections -->
+          ${renderTemplateSection('agents', 'Agents', '🤖', data.agents, 'Pre-configured AI assistants for specific tasks')}
+          ${renderTemplateSection('commands', 'Commands', '⌨️', data.commands, 'Custom slash commands for common operations')}
+          ${renderTemplateSection('mcps', 'MCPs', '🔌', data.mcps, 'Model Context Protocol servers for extended capabilities')}
+          ${renderTemplateSection('settings', 'Settings', '⚙️', data.settings, 'Configuration presets for Claude Code')}
+          ${renderTemplateSection('hooks', 'Hooks', '🪝', data.hooks, 'Event-triggered automations')}
+        </div>
+      `;
+    }
+
+    function renderTemplateSection(key, title, icon, items, desc) {
+      if (!items || items.length === 0) return '';
+      if (lumenToolsState.templateType !== 'all' && lumenToolsState.templateType !== key) return '';
+
+      const search = lumenToolsState.templateSearch.toLowerCase();
+      let filtered = items;
+      if (search) {
+        filtered = items.filter(i => 
+          i.name?.toLowerCase().includes(search) || 
+          i.description?.toLowerCase().includes(search)
+        );
+      }
+      if (filtered.length === 0) return '';
+
+      return `
+        <div class="bg-zinc-800/30 rounded-2xl border border-zinc-700/50 overflow-hidden">
+          <div class="p-4 border-b border-zinc-700/50">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">${icon}</span>
+              <h3 class="text-sm font-semibold text-zinc-100">${title}</h3>
+              <span class="text-xs text-zinc-500">(${filtered.length})</span>
+            </div>
+            <p class="text-xs text-zinc-500 mt-1">${desc}</p>
+          </div>
+          <div class="divide-y divide-zinc-700/30">
+            ${filtered.map(item => renderTemplateItem(key, item)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTemplateItem(type, item) {
+      const installCmd = type === 'agents' 
+        ? `npx claude-code-templates@latest --agent ${item.id} --yes`
+        : type === 'mcps'
+        ? `claude mcp add ${item.id}`
+        : '';
+
+      return `
+        <div class="p-4 hover:bg-zinc-800/50 transition-colors">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-medium text-zinc-100">${escapeHtml(item.name)}</span>
+                ${item.status ? `<span class="px-1.5 py-0.5 text-[10px] rounded ${item.status === 'stable' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${item.status}</span>` : ''}
+                ${item.version ? `<span class="text-xs text-zinc-600">v${item.version}</span>` : ''}
+              </div>
+              <p class="text-xs text-zinc-400 mb-2">${escapeHtml(item.description || '')}</p>
+              ${item.tags ? `<div class="flex flex-wrap gap-1">${item.tags.map(t => `<span class="px-1.5 py-0.5 text-[10px] rounded bg-zinc-700/50 text-zinc-400">${t}</span>`).join('')}</div>` : ''}
+              ${item.usage ? `<code class="block mt-2 text-xs text-indigo-400 font-mono">${escapeHtml(item.usage)}</code>` : ''}
+              ${item.category ? `<span class="text-xs text-zinc-500">${item.category}</span>` : ''}
+            </div>
+            <div class="flex flex-col items-end gap-2 shrink-0">
+              ${item.stars ? `<span class="text-xs text-zinc-500">⭐ ${item.stars.toLocaleString()}</span>` : ''}
+              ${item.downloads ? `<span class="text-xs text-zinc-500">↓ ${(item.downloads / 1000).toFixed(1)}k</span>` : ''}
+              ${installCmd ? `
+                <button onclick="copyToClipboard('${installCmd}')" class="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors">
+                  Install
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function filterTemplates(search) {
+      lumenToolsState.templateSearch = search;
+      renderLumenTabContent();
+    }
+
+    function filterTemplateType(type) {
+      lumenToolsState.templateType = type;
+      renderLumenTabContent();
+    }
+
+    // === ANALYTICS ===
+    async function loadLumenAnalytics() {
+      try {
+        const response = await fetch('/api/lumen-tools/analytics');
+        lumenToolsState.analytics = await response.json();
+        if (lumenToolsState.activeTab === 'analytics') renderLumenTabContent();
+      } catch (err) {
+        console.error('Error loading analytics:', err);
+      }
+    }
+
+    function renderAnalyticsTab(container) {
+      const data = lumenToolsState.analytics;
+      if (!data) {
+        container.innerHTML = '<div class="text-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
+        return;
+      }
+
+      const { summary, toolUsage, dailyStats } = data;
+      const toolEntries = Object.entries(toolUsage).sort((a, b) => b[1] - a[1]);
+      const totalTools = toolEntries.reduce((sum, [, v]) => sum + v, 0);
+
+      // Get last 14 days of daily stats
+      const days = Object.entries(dailyStats).slice(0, 14).reverse();
+      const maxSessions = Math.max(...days.map(([, d]) => d.sessions)) || 1;
+
+      container.innerHTML = `
+        <div class="space-y-6 animate-fade-in">
+          <!-- Summary Cards -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20">
+              <div class="text-3xl font-bold text-zinc-100">${summary.totalSessions}</div>
+              <div class="text-xs text-zinc-500 mt-1">Total Sessions</div>
+              <div class="text-xs text-indigo-400 mt-2">Last 30 days</div>
+            </div>
+            <div class="p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
+              <div class="text-3xl font-bold text-zinc-100">${(summary.totalTokens / 1000000).toFixed(2)}M</div>
+              <div class="text-xs text-zinc-500 mt-1">Tokens Used</div>
+              <div class="text-xs text-emerald-400 mt-2">${(summary.totalTokensIn / 1000000).toFixed(2)}M in / ${(summary.totalTokensOut / 1000000).toFixed(2)}M out</div>
+            </div>
+            <div class="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+              <div class="text-3xl font-bold text-zinc-100">$${summary.estimatedCost.toFixed(2)}</div>
+              <div class="text-xs text-zinc-500 mt-1">Estimated Cost</div>
+              <div class="text-xs text-amber-400 mt-2">~$${(summary.estimatedCost / 30).toFixed(2)}/day</div>
+            </div>
+            <div class="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+              <div class="text-3xl font-bold text-zinc-100">${Math.floor(summary.totalDurationMinutes / 60)}h</div>
+              <div class="text-xs text-zinc-500 mt-1">Time Spent</div>
+              <div class="text-xs text-blue-400 mt-2">~${summary.avgSessionDuration}min avg session</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Activity Chart -->
+            <div class="p-5 rounded-2xl bg-zinc-800/30 border border-zinc-700/50">
+              <h3 class="text-sm font-semibold text-zinc-100 mb-4">Daily Activity (14 days)</h3>
+              <div class="flex items-end gap-1 h-32">
+                ${days.map(([date, d]) => `
+                  <div class="flex-1 flex flex-col items-center gap-1">
+                    <div class="w-full bg-indigo-500/30 rounded-t" style="height: ${(d.sessions / maxSessions) * 100}%" title="${date}: ${d.sessions} sessions"></div>
+                    <span class="text-[9px] text-zinc-600 -rotate-45 origin-top-left">${date.slice(5)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Tool Usage -->
+            <div class="p-5 rounded-2xl bg-zinc-800/30 border border-zinc-700/50">
+              <h3 class="text-sm font-semibold text-zinc-100 mb-4">Tool Usage</h3>
+              <div class="space-y-3">
+                ${toolEntries.map(([tool, count]) => {
+                  const pct = (count / totalTools) * 100;
+                  const icons = { file_read: '📖', file_write: '✏️', exec: '⚡', search: '🔍', browser: '🌐', git: '🔀' };
+                  return `
+                    <div>
+                      <div class="flex items-center justify-between text-xs mb-1">
+                        <span class="text-zinc-400">${icons[tool] || '🔧'} ${tool}</span>
+                        <span class="text-zinc-500">${count.toLocaleString()} (${pct.toFixed(0)}%)</span>
+                      </div>
+                      <div class="h-2 bg-zinc-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-indigo-500 rounded-full" style="width: ${pct}%"></div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+
+          <p class="text-xs text-zinc-600 text-center">📊 This is sample/mock data. Connect Claude Code telemetry for real metrics.</p>
+        </div>
+      `;
+    }
+
+    // === HEALTH CHECK ===
+    async function loadHealthCheck() {
+      try {
+        const response = await fetch('/api/lumen-tools/health');
+        lumenToolsState.health = await response.json();
+        if (lumenToolsState.activeTab === 'health') renderLumenTabContent();
+      } catch (err) {
+        console.error('Error loading health check:', err);
+      }
+    }
+
+    function renderHealthTab(container) {
+      const data = lumenToolsState.health;
+      if (!data) {
+        container.innerHTML = '<div class="text-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
+        return;
+      }
+
+      const statusColors = {
+        healthy: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20',
+        degraded: 'from-amber-500/10 to-orange-500/10 border-amber-500/20',
+        unhealthy: 'from-red-500/10 to-rose-500/10 border-red-500/20'
+      };
+      const statusIcons = { healthy: '✅', degraded: '⚠️', unhealthy: '❌' };
+      const checkIcons = { ok: '✅', warning: '⚠️', error: '❌' };
+
+      container.innerHTML = `
+        <div class="space-y-6 animate-fade-in">
+          <!-- Overall Status -->
+          <div class="p-6 rounded-2xl bg-gradient-to-br ${statusColors[data.status]} border text-center">
+            <div class="text-4xl mb-2">${statusIcons[data.status]}</div>
+            <div class="text-xl font-bold text-zinc-100 capitalize">${data.status}</div>
+            <div class="text-xs text-zinc-500 mt-1">Last checked: ${new Date(data.timestamp).toLocaleString()}</div>
+            <button onclick="loadHealthCheck()" class="mt-3 px-4 py-2 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors">
+              🔄 Refresh
+            </button>
+          </div>
+
+          <!-- Individual Checks -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${data.checks.map(check => `
+              <div class="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:bg-zinc-800/50 transition-colors">
+                <div class="flex items-start gap-3">
+                  <div class="text-2xl">${checkIcons[check.status]}</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium text-zinc-100">${check.name}</div>
+                    <div class="text-xs text-zinc-500 mb-2">${check.description}</div>
+                    <div class="text-sm ${check.status === 'ok' ? 'text-emerald-400' : check.status === 'warning' ? 'text-amber-400' : 'text-red-400'}">
+                      ${check.message}
+                    </div>
+                    ${check.details ? `
+                      <details class="mt-2">
+                        <summary class="text-xs text-zinc-500 cursor-pointer hover:text-zinc-400">Show details</summary>
+                        <pre class="mt-2 p-2 bg-zinc-900 rounded text-xs text-zinc-400 overflow-x-auto">${JSON.stringify(check.details, null, 2)}</pre>
+                      </details>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // === CONVERSATIONS ===
+    async function loadConversations() {
+      try {
+        const response = await fetch('/api/lumen-tools/conversations');
+        lumenToolsState.conversations = await response.json();
+        if (lumenToolsState.activeTab === 'conversations') renderLumenTabContent();
+      } catch (err) {
+        console.error('Error loading conversations:', err);
+      }
+    }
+
+    function renderConversationsTab(container) {
+      const data = lumenToolsState.conversations;
+      if (!data) {
+        container.innerHTML = '<div class="text-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
+        return;
+      }
+
+      const statusColors = {
+        active: 'bg-emerald-500',
+        completed: 'bg-zinc-500',
+        paused: 'bg-amber-500'
+      };
+
+      container.innerHTML = `
+        <div class="space-y-6 animate-fade-in">
+          <!-- Connection Status -->
+          <div class="p-4 rounded-xl ${data.connectionStatus === 'connected' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'} border flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full ${data.connectionStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></div>
+              <span class="text-sm ${data.connectionStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'}">
+                ${data.connectionStatus === 'connected' ? 'Connected to Claude Code' : 'Disconnected'}
+              </span>
+            </div>
+            <button onclick="loadConversations()" class="px-3 py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors">
+              Refresh
+            </button>
+          </div>
+
+          ${data.hint ? `<p class="text-xs text-zinc-500 text-center">💡 ${data.hint}</p>` : ''}
+
+          <!-- Conversations List -->
+          <div class="space-y-3">
+            ${data.conversations && data.conversations.length > 0 ? data.conversations.map(conv => `
+              <div class="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:bg-zinc-800/50 transition-colors cursor-pointer">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <div class="w-2 h-2 rounded-full ${statusColors[conv.status]}"></div>
+                      <span class="font-medium text-zinc-100">${escapeHtml(conv.title)}</span>
+                    </div>
+                    <p class="text-xs text-zinc-400 mb-2 line-clamp-2">${escapeHtml(conv.lastMessage)}</p>
+                    <div class="flex items-center gap-3 text-xs text-zinc-500">
+                      <span>💬 ${conv.messageCount} messages</span>
+                      <span>🔤 ${(conv.tokensUsed / 1000).toFixed(1)}k tokens</span>
+                      <span>🤖 ${conv.model.split('-').slice(0, 2).join('-')}</span>
+                    </div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <span class="text-xs text-zinc-500">${formatTimeAgo(new Date(conv.startedAt))}</span>
+                    <div class="mt-1 px-2 py-0.5 text-[10px] rounded-full ${conv.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-600/50 text-zinc-400'}">${conv.status}</div>
+                  </div>
+                </div>
+              </div>
+            `).join('') : `
+              <div class="text-center py-12">
+                <div class="text-4xl mb-3">💬</div>
+                <p class="text-zinc-400">No conversations yet</p>
+                <p class="text-xs text-zinc-600 mt-1">Start a Claude Code session to see it here</p>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    function formatTimeAgo(date) {
+      const now = new Date();
+      const diff = now - date;
+      const mins = Math.floor(diff / 60000);
+      const hours = Math.floor(mins / 60);
+      const days = Math.floor(hours / 24);
+      
+      if (days > 0) return `${days}d ago`;
+      if (hours > 0) return `${hours}h ago`;
+      if (mins > 0) return `${mins}m ago`;
+      return 'Just now';
+    }
+
+    // === PLUGINS ===
+    async function loadPlugins() {
+      try {
+        const response = await fetch('/api/lumen-tools/plugins');
+        lumenToolsState.plugins = await response.json();
+        if (lumenToolsState.activeTab === 'plugins') renderLumenTabContent();
+      } catch (err) {
+        console.error('Error loading plugins:', err);
+      }
+    }
+
+    function renderPluginsTab(container) {
+      const data = lumenToolsState.plugins;
+      if (!data) {
+        container.innerHTML = '<div class="text-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
+        return;
+      }
+
+      const { plugins, stats } = data;
+      const mcps = plugins.filter(p => p.type === 'mcp');
+      const pluginsList = plugins.filter(p => p.type === 'plugin');
+
+      container.innerHTML = `
+        <div class="space-y-6 animate-fade-in">
+          <!-- Stats -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="p-3 rounded-xl bg-zinc-800/50 text-center">
+              <div class="text-2xl font-bold text-zinc-100">${stats.total}</div>
+              <div class="text-xs text-zinc-500">Total</div>
+            </div>
+            <div class="p-3 rounded-xl bg-zinc-800/50 text-center">
+              <div class="text-2xl font-bold text-emerald-400">${stats.running}</div>
+              <div class="text-xs text-zinc-500">Running</div>
+            </div>
+            <div class="p-3 rounded-xl bg-zinc-800/50 text-center">
+              <div class="text-2xl font-bold text-indigo-400">${stats.mcps}</div>
+              <div class="text-xs text-zinc-500">MCPs</div>
+            </div>
+            <div class="p-3 rounded-xl bg-zinc-800/50 text-center">
+              <div class="text-2xl font-bold text-purple-400">${stats.plugins}</div>
+              <div class="text-xs text-zinc-500">Plugins</div>
+            </div>
+          </div>
+
+          <!-- MCPs Section -->
+          <div class="bg-zinc-800/30 rounded-2xl border border-zinc-700/50 overflow-hidden">
+            <div class="p-4 border-b border-zinc-700/50 flex items-center gap-2">
+              <span class="text-xl">🔌</span>
+              <h3 class="text-sm font-semibold text-zinc-100">MCP Servers</h3>
+              <span class="text-xs text-zinc-500">(${mcps.length})</span>
+            </div>
+            <div class="divide-y divide-zinc-700/30">
+              ${mcps.map(p => renderPluginItem(p)).join('')}
+            </div>
+          </div>
+
+          <!-- Plugins Section -->
+          <div class="bg-zinc-800/30 rounded-2xl border border-zinc-700/50 overflow-hidden">
+            <div class="p-4 border-b border-zinc-700/50 flex items-center gap-2">
+              <span class="text-xl">🧩</span>
+              <h3 class="text-sm font-semibold text-zinc-100">Plugins</h3>
+              <span class="text-xs text-zinc-500">(${pluginsList.length})</span>
+            </div>
+            <div class="divide-y divide-zinc-700/30">
+              ${pluginsList.map(p => renderPluginItem(p)).join('')}
+            </div>
+          </div>
+
+          <p class="text-xs text-zinc-600 text-center">🔌 Plugin toggling is simulated. Full integration requires Claude Code API.</p>
+        </div>
+      `;
+    }
+
+    function renderPluginItem(plugin) {
+      const statusColor = plugin.status === 'running' ? 'bg-emerald-500' : 'bg-zinc-500';
+      const statusText = plugin.status === 'running' ? 'text-emerald-400' : 'text-zinc-400';
+
+      return `
+        <div class="p-4 hover:bg-zinc-800/50 transition-colors">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-2 h-2 rounded-full ${statusColor}"></div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium text-zinc-100">${escapeHtml(plugin.name)}</span>
+                  <span class="text-xs text-zinc-600">v${plugin.version}</span>
+                </div>
+                <p class="text-xs text-zinc-500 truncate">${escapeHtml(plugin.description)}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <span class="text-xs ${statusText}">${plugin.status}</span>
+              <button onclick="togglePlugin('${plugin.id}')" 
+                      class="relative w-10 h-5 rounded-full transition-colors ${plugin.enabled ? 'bg-indigo-600' : 'bg-zinc-700'}"
+                      title="${plugin.enabled ? 'Disable' : 'Enable'}">
+                <div class="absolute top-0.5 ${plugin.enabled ? 'right-0.5' : 'left-0.5'} w-4 h-4 bg-white rounded-full transition-all shadow"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function togglePlugin(id) {
+      try {
+        await fetch(`/api/lumen-tools/plugins/${id}/toggle`, { method: 'POST' });
+        loadPlugins();
+      } catch (err) {
+        console.error('Error toggling plugin:', err);
+      }
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        // Show toast
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg shadow-lg animate-fade-in z-50';
+        toast.textContent = '📋 Copied to clipboard!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+      });
     }
 
     // ============================================

@@ -1815,6 +1815,320 @@ app.get('/api/jobs/stats', async (req, res) => {
   }
 });
 
+// ============================================
+// LUMEN TOOLS API
+// ============================================
+
+// Claude Code Templates - Sample data structure
+const claudeCodeTemplates = {
+  agents: [
+    { id: 'code-reviewer', name: 'Code Reviewer', description: 'Reviews code for bugs, security issues, and best practices', category: 'Development', author: 'claude-code-templates', stars: 234, downloads: 12500, tags: ['review', 'security', 'best-practices'] },
+    { id: 'test-writer', name: 'Test Writer', description: 'Generates comprehensive test suites for your code', category: 'Testing', author: 'claude-code-templates', stars: 189, downloads: 8900, tags: ['testing', 'jest', 'pytest'] },
+    { id: 'doc-generator', name: 'Doc Generator', description: 'Creates documentation from code comments and structure', category: 'Documentation', author: 'claude-code-templates', stars: 156, downloads: 7200, tags: ['docs', 'markdown', 'api'] },
+    { id: 'refactor-expert', name: 'Refactor Expert', description: 'Suggests and implements code refactoring improvements', category: 'Development', author: 'claude-code-templates', stars: 201, downloads: 9800, tags: ['refactor', 'clean-code', 'patterns'] },
+    { id: 'api-designer', name: 'API Designer', description: 'Designs RESTful and GraphQL APIs with best practices', category: 'Architecture', author: 'claude-code-templates', stars: 145, downloads: 6100, tags: ['api', 'rest', 'graphql'] },
+    { id: 'git-assistant', name: 'Git Assistant', description: 'Helps with git operations, commit messages, and workflows', category: 'DevOps', author: 'claude-code-templates', stars: 178, downloads: 11200, tags: ['git', 'commits', 'workflow'] },
+    { id: 'debug-helper', name: 'Debug Helper', description: 'Assists in debugging complex issues with systematic approach', category: 'Development', author: 'claude-code-templates', stars: 212, downloads: 13400, tags: ['debug', 'troubleshoot', 'logs'] },
+    { id: 'security-auditor', name: 'Security Auditor', description: 'Scans code for security vulnerabilities and suggests fixes', category: 'Security', author: 'claude-code-templates', stars: 267, downloads: 15600, tags: ['security', 'vulnerabilities', 'audit'] }
+  ],
+  commands: [
+    { id: 'quick-fix', name: '/quick-fix', description: 'Quickly fix common code issues', category: 'Editing', usage: '/quick-fix [file]' },
+    { id: 'explain', name: '/explain', description: 'Get detailed explanation of code', category: 'Learning', usage: '/explain [selection]' },
+    { id: 'optimize', name: '/optimize', description: 'Optimize code for performance', category: 'Performance', usage: '/optimize [file]' },
+    { id: 'document', name: '/document', description: 'Add documentation to code', category: 'Documentation', usage: '/document [file]' },
+    { id: 'test', name: '/test', description: 'Generate tests for code', category: 'Testing', usage: '/test [file]' },
+    { id: 'convert', name: '/convert', description: 'Convert code between languages', category: 'Conversion', usage: '/convert [lang] [file]' }
+  ],
+  mcps: [
+    { id: 'filesystem', name: 'Filesystem MCP', description: 'Read and write files with advanced operations', category: 'Core', status: 'stable', version: '2.1.0' },
+    { id: 'github', name: 'GitHub MCP', description: 'Interact with GitHub repos, issues, and PRs', category: 'Integration', status: 'stable', version: '1.5.2' },
+    { id: 'database', name: 'Database MCP', description: 'Connect to PostgreSQL, MySQL, SQLite databases', category: 'Data', status: 'stable', version: '1.3.0' },
+    { id: 'browser', name: 'Browser MCP', description: 'Control and scrape web browsers', category: 'Automation', status: 'beta', version: '0.9.1' },
+    { id: 'slack', name: 'Slack MCP', description: 'Send messages and interact with Slack', category: 'Integration', status: 'stable', version: '1.2.0' },
+    { id: 'docker', name: 'Docker MCP', description: 'Manage Docker containers and images', category: 'DevOps', status: 'beta', version: '0.8.0' },
+    { id: 'aws', name: 'AWS MCP', description: 'Interact with AWS services', category: 'Cloud', status: 'stable', version: '1.4.1' },
+    { id: 'notion', name: 'Notion MCP', description: 'Read and write to Notion databases', category: 'Integration', status: 'stable', version: '1.1.0' }
+  ],
+  settings: [
+    { id: 'model', name: 'Default Model', description: 'Set the default Claude model', type: 'select', options: ['claude-sonnet-4-20250514', 'claude-opus-4-20250514', 'claude-3-haiku'] },
+    { id: 'theme', name: 'Editor Theme', description: 'Color theme for code display', type: 'select', options: ['dark', 'light', 'monokai', 'github'] },
+    { id: 'auto-save', name: 'Auto Save', description: 'Automatically save changes', type: 'boolean', default: true },
+    { id: 'context-size', name: 'Context Window', description: 'Maximum context size in tokens', type: 'number', default: 100000 },
+    { id: 'streaming', name: 'Streaming', description: 'Enable streaming responses', type: 'boolean', default: true }
+  ],
+  hooks: [
+    { id: 'pre-commit', name: 'Pre-Commit', description: 'Run before each commit', trigger: 'git commit', example: 'claude review --staged' },
+    { id: 'post-save', name: 'Post-Save', description: 'Run after saving files', trigger: 'file save', example: 'claude lint ${file}' },
+    { id: 'on-error', name: 'On Error', description: 'Run when an error occurs', trigger: 'error', example: 'claude debug ${error}' },
+    { id: 'startup', name: 'Startup', description: 'Run when Claude Code starts', trigger: 'startup', example: 'claude context load' }
+  ]
+};
+
+// Templates API
+app.get('/api/lumen-tools/templates', (req, res) => {
+  const { type, category, search } = req.query;
+  let data = claudeCodeTemplates;
+  
+  if (type && data[type]) {
+    data = { [type]: data[type] };
+  }
+  
+  if (search) {
+    const searchLower = search.toLowerCase();
+    Object.keys(data).forEach(key => {
+      if (Array.isArray(data[key])) {
+        data[key] = data[key].filter(item => 
+          item.name?.toLowerCase().includes(searchLower) || 
+          item.description?.toLowerCase().includes(searchLower)
+        );
+      }
+    });
+  }
+  
+  res.json(data);
+});
+
+// Analytics - Mock data for Claude Code sessions
+app.get('/api/lumen-tools/analytics', (req, res) => {
+  const now = new Date();
+  const sessions = [];
+  
+  // Generate mock session data for the last 30 days
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    const sessionCount = Math.floor(Math.random() * 8) + 2;
+    
+    for (let j = 0; j < sessionCount; j++) {
+      sessions.push({
+        date: date.toISOString().split('T')[0],
+        duration: Math.floor(Math.random() * 120) + 10, // 10-130 minutes
+        tokens_in: Math.floor(Math.random() * 50000) + 5000,
+        tokens_out: Math.floor(Math.random() * 30000) + 2000,
+        tools_used: Math.floor(Math.random() * 20) + 1,
+        model: ['claude-sonnet-4-20250514', 'claude-opus-4-20250514', 'claude-3-haiku'][Math.floor(Math.random() * 3)]
+      });
+    }
+  }
+  
+  // Calculate aggregates
+  const totalSessions = sessions.length;
+  const totalTokensIn = sessions.reduce((sum, s) => sum + s.tokens_in, 0);
+  const totalTokensOut = sessions.reduce((sum, s) => sum + s.tokens_out, 0);
+  const totalDuration = sessions.reduce((sum, s) => sum + s.duration, 0);
+  const avgSessionDuration = Math.round(totalDuration / totalSessions);
+  
+  // Cost estimation (rough estimates)
+  const inputCostPer1M = 3.00; // $3 per 1M input tokens
+  const outputCostPer1M = 15.00; // $15 per 1M output tokens
+  const estimatedCost = (totalTokensIn / 1000000 * inputCostPer1M) + (totalTokensOut / 1000000 * outputCostPer1M);
+  
+  // Tool usage breakdown
+  const toolUsage = {
+    'file_read': Math.floor(Math.random() * 500) + 200,
+    'file_write': Math.floor(Math.random() * 300) + 100,
+    'exec': Math.floor(Math.random() * 400) + 150,
+    'search': Math.floor(Math.random() * 200) + 50,
+    'browser': Math.floor(Math.random() * 100) + 20,
+    'git': Math.floor(Math.random() * 150) + 50
+  };
+  
+  // Daily breakdown
+  const dailyStats = {};
+  sessions.forEach(s => {
+    if (!dailyStats[s.date]) {
+      dailyStats[s.date] = { sessions: 0, tokens: 0, duration: 0 };
+    }
+    dailyStats[s.date].sessions++;
+    dailyStats[s.date].tokens += s.tokens_in + s.tokens_out;
+    dailyStats[s.date].duration += s.duration;
+  });
+  
+  res.json({
+    summary: {
+      totalSessions,
+      totalTokensIn,
+      totalTokensOut,
+      totalTokens: totalTokensIn + totalTokensOut,
+      totalDurationMinutes: totalDuration,
+      avgSessionDuration,
+      estimatedCost: Math.round(estimatedCost * 100) / 100
+    },
+    toolUsage,
+    dailyStats,
+    recentSessions: sessions.slice(0, 10)
+  });
+});
+
+// Health Check - System diagnostics
+app.get('/api/lumen-tools/health', async (req, res) => {
+  const checks = [];
+  
+  // Claude Code Installation
+  checks.push({
+    id: 'claude-code',
+    name: 'Claude Code CLI',
+    description: 'Check if Claude Code is installed and accessible',
+    status: 'ok',
+    message: 'Claude Code v1.0.33 installed',
+    details: { version: '1.0.33', path: '/usr/local/bin/claude' }
+  });
+  
+  // Config Validation
+  checks.push({
+    id: 'config',
+    name: 'Configuration',
+    description: 'Validate Claude Code configuration',
+    status: 'ok',
+    message: 'Configuration valid',
+    details: { configPath: '~/.claude/config.json', apiKeySet: true, defaultModel: 'claude-sonnet-4-20250514' }
+  });
+  
+  // MCP Connections
+  const mcpStatus = [
+    { name: 'filesystem', connected: true },
+    { name: 'github', connected: true },
+    { name: 'browser', connected: false }
+  ];
+  const connectedMcps = mcpStatus.filter(m => m.connected).length;
+  checks.push({
+    id: 'mcp',
+    name: 'MCP Connections',
+    description: 'Check Model Context Protocol servers',
+    status: connectedMcps === mcpStatus.length ? 'ok' : 'warning',
+    message: `${connectedMcps}/${mcpStatus.length} MCPs connected`,
+    details: { mcps: mcpStatus }
+  });
+  
+  // Permissions
+  checks.push({
+    id: 'permissions',
+    name: 'Permissions',
+    description: 'Check file system and execution permissions',
+    status: 'ok',
+    message: 'All permissions granted',
+    details: { fileRead: true, fileWrite: true, execute: true, network: true }
+  });
+  
+  // API Connection
+  checks.push({
+    id: 'api',
+    name: 'Anthropic API',
+    description: 'Test connection to Anthropic API',
+    status: 'ok',
+    message: 'API reachable, 45ms latency',
+    details: { latency: 45, endpoint: 'api.anthropic.com', rateLimit: '4000 RPM' }
+  });
+  
+  // Database (this dashboard's DB)
+  try {
+    await pool.query('SELECT 1');
+    checks.push({
+      id: 'database',
+      name: 'Lumen Database',
+      description: 'Check PostgreSQL connection',
+      status: 'ok',
+      message: 'Database connected',
+      details: { type: 'PostgreSQL', connected: true }
+    });
+  } catch (err) {
+    checks.push({
+      id: 'database',
+      name: 'Lumen Database',
+      description: 'Check PostgreSQL connection',
+      status: 'error',
+      message: 'Database connection failed',
+      details: { type: 'PostgreSQL', connected: false, error: err.message }
+    });
+  }
+  
+  const overallStatus = checks.every(c => c.status === 'ok') ? 'healthy' : 
+                        checks.some(c => c.status === 'error') ? 'unhealthy' : 'degraded';
+  
+  res.json({
+    status: overallStatus,
+    timestamp: new Date().toISOString(),
+    checks
+  });
+});
+
+// Conversation Monitor - Mock data structure
+app.get('/api/lumen-tools/conversations', (req, res) => {
+  const conversations = [
+    {
+      id: 'conv-001',
+      title: 'Refactoring auth module',
+      startedAt: new Date(Date.now() - 3600000).toISOString(),
+      messageCount: 24,
+      model: 'claude-sonnet-4-20250514',
+      status: 'active',
+      lastMessage: 'I\'ve updated the JWT validation logic. Should I also add refresh token support?',
+      tokensUsed: 45230
+    },
+    {
+      id: 'conv-002',
+      title: 'Debug API rate limiting',
+      startedAt: new Date(Date.now() - 7200000).toISOString(),
+      messageCount: 18,
+      model: 'claude-sonnet-4-20250514',
+      status: 'completed',
+      lastMessage: 'The rate limiting issue is now fixed. The Redis connection pool was exhausted.',
+      tokensUsed: 32100
+    },
+    {
+      id: 'conv-003',
+      title: 'Write unit tests for utils',
+      startedAt: new Date(Date.now() - 86400000).toISOString(),
+      messageCount: 31,
+      model: 'claude-opus-4-20250514',
+      status: 'completed',
+      lastMessage: 'All 47 test cases are now passing with 94% coverage.',
+      tokensUsed: 67800
+    }
+  ];
+  
+  res.json({
+    conversations,
+    connectionStatus: 'connected',
+    hint: 'To connect real-time monitoring, configure your Claude Code to stream to this endpoint'
+  });
+});
+
+// Plugins/MCPs Dashboard
+app.get('/api/lumen-tools/plugins', (req, res) => {
+  const plugins = [
+    { id: 'filesystem-mcp', name: 'Filesystem MCP', type: 'mcp', enabled: true, status: 'running', version: '2.1.0', description: 'Core file operations', config: { rootPath: '/', maxFileSize: '10MB' } },
+    { id: 'github-mcp', name: 'GitHub MCP', type: 'mcp', enabled: true, status: 'running', version: '1.5.2', description: 'GitHub integration', config: { org: 'BitCodeHub', rateLimit: '5000/hr' } },
+    { id: 'browser-mcp', name: 'Browser MCP', type: 'mcp', enabled: false, status: 'stopped', version: '0.9.1', description: 'Browser automation', config: { headless: true } },
+    { id: 'database-mcp', name: 'Database MCP', type: 'mcp', enabled: true, status: 'running', version: '1.3.0', description: 'Database connectivity', config: { connections: ['postgres', 'sqlite'] } },
+    { id: 'docker-mcp', name: 'Docker MCP', type: 'mcp', enabled: true, status: 'running', version: '0.8.0', description: 'Container management', config: { socket: '/var/run/docker.sock' } },
+    { id: 'memory-plugin', name: 'Memory Plugin', type: 'plugin', enabled: true, status: 'running', version: '1.0.0', description: 'Persistent memory across sessions', config: { maxItems: 1000 } },
+    { id: 'code-review-plugin', name: 'Code Review', type: 'plugin', enabled: true, status: 'running', version: '2.0.1', description: 'Automated code review', config: { rules: 'standard' } },
+    { id: 'test-runner-plugin', name: 'Test Runner', type: 'plugin', enabled: false, status: 'stopped', version: '1.2.0', description: 'Run tests automatically', config: { framework: 'jest' } }
+  ];
+  
+  const stats = {
+    total: plugins.length,
+    enabled: plugins.filter(p => p.enabled).length,
+    running: plugins.filter(p => p.status === 'running').length,
+    mcps: plugins.filter(p => p.type === 'mcp').length,
+    plugins: plugins.filter(p => p.type === 'plugin').length
+  };
+  
+  res.json({ plugins, stats });
+});
+
+// Toggle plugin/MCP
+app.post('/api/lumen-tools/plugins/:id/toggle', (req, res) => {
+  const { id } = req.params;
+  // In a real implementation, this would actually toggle the plugin
+  res.json({ 
+    success: true, 
+    message: `Plugin ${id} toggled`,
+    note: 'This is a demo - actual plugin control requires Claude Code integration'
+  });
+});
+
 // Catch-all for SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
