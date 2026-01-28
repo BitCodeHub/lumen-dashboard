@@ -2913,9 +2913,11 @@
       const text = document.getElementById('sync-status-text');
       const btn = document.getElementById('sync-now-btn');
       const icon = document.getElementById('sync-icon');
+      const githubIndicator = document.getElementById('github-status-indicator');
       
       if (!dot || !text) return;
       
+      // Main sync status (hourly scrape)
       if (status.isRunning) {
         dot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
         text.textContent = `Syncing ${status.progress?.type || ''}...`;
@@ -2944,6 +2946,31 @@
         text.className = 'text-zinc-500';
         if (btn) btn.disabled = false;
         if (icon) icon.classList.remove('animate-spin');
+      }
+      
+      // GitHub polling status
+      if (githubIndicator && status.github) {
+        const gh = status.github;
+        let githubHtml = '';
+        
+        if (gh.isChecking || gh.isRunning) {
+          githubHtml = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <span class="text-amber-400">${gh.isRunning ? 'Syncing GitHub...' : 'Checking...'}</span>`;
+        } else if (gh.newCommitDetected) {
+          githubHtml = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-emerald-400">New commits detected!</span>`;
+        } else if (gh.error) {
+          githubHtml = `<span class="w-2 h-2 rounded-full bg-red-500"></span>
+            <span class="text-red-400" title="${gh.error}">GitHub error</span>`;
+        } else if (gh.lastCheckAt) {
+          githubHtml = `<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            <span class="text-zinc-400">GitHub: ${gh.lastCheckAgo}${gh.lastCommitShort ? ' · ' + gh.lastCommitShort : ''}</span>`;
+        } else {
+          githubHtml = `<span class="w-2 h-2 rounded-full bg-zinc-500"></span>
+            <span class="text-zinc-500">GitHub: waiting...</span>`;
+        }
+        
+        githubIndicator.innerHTML = githubHtml;
       }
     }
     
@@ -3010,10 +3037,18 @@
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <!-- Sync Status Indicator -->
-              <div id="sync-status-indicator" class="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-zinc-800/50 border border-zinc-700/50">
-                <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span id="sync-status-text" class="text-zinc-400">Loading...</span>
+              <!-- Sync Status Indicators -->
+              <div class="flex items-center gap-2">
+                <!-- Hourly Scrape Status -->
+                <div id="sync-status-indicator" class="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                  <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span id="sync-status-text" class="text-zinc-400">Loading...</span>
+                </div>
+                <!-- GitHub Polling Status -->
+                <div id="github-status-indicator" class="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                  <span class="w-2 h-2 rounded-full bg-zinc-500"></span>
+                  <span class="text-zinc-500">GitHub: waiting...</span>
+                </div>
               </div>
               <button onclick="triggerManualSync()" id="sync-now-btn" class="px-3 py-1.5 text-xs bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-lg hover:bg-indigo-600/30 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
                 <svg id="sync-icon" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>

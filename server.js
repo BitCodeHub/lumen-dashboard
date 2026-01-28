@@ -45,50 +45,143 @@ let syncStatus = {
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ============================================
-// GITHUB WEBHOOK SYNC - REAL-TIME TEMPLATES
+// GITHUB API POLLING - REAL-TIME TEMPLATES
 // ============================================
 
-// GitHub webhook secret from environment
-const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || '';
+// GitHub polling configuration
+const GITHUB_POLL_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+const GITHUB_REPO_API = 'https://api.github.com/repos/davila7/claude-code-templates/commits';
 
-// GitHub sync status tracking (separate from scraper sync)
+// GitHub sync status tracking (now uses polling instead of webhooks)
 let githubSyncStatus = {
-  connected: !!process.env.GITHUB_WEBHOOK_SECRET,
-  lastWebhookAt: null,
+  enabled: true,
+  lastCheckAt: null,
+  lastCommitSha: null,
+  lastCommitMessage: null,
+  lastCommitAuthor: null,
   lastSyncAt: null,
   lastSyncSuccess: false,
   isRunning: false,
+  isChecking: false,
   error: null,
   templatesUpdated: 0,
-  webhookEvents: []
+  pollCount: 0,
+  rateLimitRemaining: 60,
+  rateLimitReset: null,
+  backoffMs: 0, // Exponential backoff for rate limiting
+  newCommitDetected: false // Flag for UI to show "New commits detected!"
 };
 
-// Verify GitHub webhook signature
-function verifyGitHubSignature(payload, signature) {
-  if (!GITHUB_WEBHOOK_SECRET) {
-    console.log('[Webhook] No secret configured, skipping verification');
-    return true; // Allow if no secret configured (for testing)
+// Check GitHub API for new commits
+async function checkGitHubForUpdates() {
+  if (githubSyncStatus.isChecking || githubSyncStatus.isRunning) {
+    console.log('[GitHub Poll] Already checking or syncing, skipping...');
+    return { changed: false, reason: 'busy' };
   }
   
-  if (!signature) {
-    console.log('[Webhook] No signature provided');
-    return false;
+  // Check if we're in backoff period
+  if (githubSyncStatus.backoffMs > 0) {
+    console.log(`[GitHub Poll] In backoff period, waiting ${githubSyncStatus.backoffMs}ms`);
+    githubSyncStatus.backoffMs = Math.max(0, githubSyncStatus.backoffMs - GITHUB_POLL_INTERVAL_MS);
+    return { changed: false, reason: 'backoff' };
   }
   
-  const expectedSignature = 'sha256=' + crypto
-    .createHmac('sha256', GITHUB_WEBHOOK_SECRET)
-    .update(payload)
-    .digest('hex');
+  githubSyncStatus.isChecking = true;
+  githubSyncStatus.pollCount++;
+  
+  console.log(`[GitHub Poll] Checking for updates (poll #${githubSyncStatus.pollCount})...`);
   
   try {
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
+    const response = await fetch(`${GITHUB_REPO_API}?per_page=1`, {
+      headers: {
+        'User-Agent': 'Lumen-Dashboard/1.0',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    
+    // Track rate limit headers
+    githubSyncStatus.rateLimitRemaining = parseInt(response.headers.get('x-ratelimit-remaining')) || 60;
+    const resetTimestamp = parseInt(response.headers.get('x-ratelimit-reset'));
+    githubSyncStatus.rateLimitReset = resetTimestamp ? new Date(resetTimestamp * 1000).toISOString() : null;
+    
+    githubSyncStatus.lastCheckAt = new Date().toISOString();
+    
+    // Handle rate limiting
+    if (response.status === 403 || response.status === 429) {
+      const retryAfter = response.headers.get('retry-after');
+      const backoffTime = retryAfter ? parseInt(retryAfter) * 1000 : Math.min(githubSyncStatus.backoffMs * 2 || 60000, 3600000);
+      githubSyncStatus.backoffMs = backoffTime;
+      githubSyncStatus.error = `Rate limited. Backing off for ${Math.round(backoffTime / 60000)} minutes.`;
+      console.warn(`[GitHub Poll] Rate limited! Backing off for ${backoffTime}ms`);
+      githubSyncStatus.isChecking = false;
+      return { changed: false, reason: 'rate_limited', backoffMs: backoffTime };
+    }
+    
+    if (!response.ok) {
+      throw new Error(`GitHub API returned ${response.status}`);
+    }
+    
+    const commits = await response.json();
+    
+    if (!commits || commits.length === 0) {
+      console.log('[GitHub Poll] No commits found');
+      githubSyncStatus.isChecking = false;
+      return { changed: false, reason: 'no_commits' };
+    }
+    
+    const latestCommit = commits[0];
+    const latestSha = latestCommit.sha;
+    const latestMessage = latestCommit.commit?.message?.split('\n')[0] || 'No message';
+    const latestAuthor = latestCommit.commit?.author?.name || 'Unknown';
+    
+    // Reset backoff on successful request
+    githubSyncStatus.backoffMs = 0;
+    githubSyncStatus.error = null;
+    
+    // Check if this is a new commit
+    const previousSha = githubSyncStatus.lastCommitSha;
+    githubSyncStatus.lastCommitSha = latestSha;
+    githubSyncStatus.lastCommitMessage = latestMessage;
+    githubSyncStatus.lastCommitAuthor = latestAuthor;
+    
+    if (previousSha && previousSha !== latestSha) {
+      console.log(`[GitHub Poll] New commit detected! ${previousSha.slice(0, 7)} -> ${latestSha.slice(0, 7)}`);
+      console.log(`[GitHub Poll] Commit: "${latestMessage}" by ${latestAuthor}`);
+      githubSyncStatus.newCommitDetected = true;
+      githubSyncStatus.isChecking = false;
+      return { changed: true, sha: latestSha, message: latestMessage, author: latestAuthor };
+    } else if (!previousSha) {
+      console.log(`[GitHub Poll] Initial check - latest commit: ${latestSha.slice(0, 7)}`);
+      githubSyncStatus.isChecking = false;
+      return { changed: false, reason: 'initial_check', sha: latestSha };
+    } else {
+      console.log(`[GitHub Poll] No changes (still at ${latestSha.slice(0, 7)})`);
+      githubSyncStatus.isChecking = false;
+      return { changed: false, reason: 'no_change', sha: latestSha };
+    }
+    
   } catch (err) {
-    console.error('[Webhook] Signature verification error:', err.message);
-    return false;
+    console.error('[GitHub Poll] Error checking for updates:', err.message);
+    githubSyncStatus.error = err.message;
+    // Exponential backoff on error
+    githubSyncStatus.backoffMs = Math.min((githubSyncStatus.backoffMs || 30000) * 2, 3600000);
+    githubSyncStatus.isChecking = false;
+    return { changed: false, reason: 'error', error: err.message };
   }
+}
+
+// Poll GitHub and sync if changes detected
+async function pollGitHubAndSync() {
+  const result = await checkGitHubForUpdates();
+  
+  if (result.changed) {
+    console.log('[GitHub Poll] Triggering sync due to new commit...');
+    const syncResult = await performGitHubSync();
+    githubSyncStatus.newCommitDetected = false; // Clear flag after sync
+    return { ...result, syncResult };
+  }
+  
+  return result;
 }
 
 // Clone or pull the templates repository
@@ -336,22 +429,9 @@ async function performGitHubSync() {
   }
 }
 
-// Log webhook event
-function logWebhookEvent(event, success, details = {}) {
-  const entry = {
-    timestamp: new Date().toISOString(),
-    event,
-    success,
-    ...details
-  };
-  
-  // Keep last 50 webhook events
-  githubSyncStatus.webhookEvents.unshift(entry);
-  if (githubSyncStatus.webhookEvents.length > 50) {
-    githubSyncStatus.webhookEvents = githubSyncStatus.webhookEvents.slice(0, 50);
-  }
-  
-  console.log(`[Webhook] Event logged: ${event} - ${success ? 'success' : 'failed'}`);
+// Log GitHub polling event (for monitoring)
+function logPollingEvent(event, success, details = {}) {
+  console.log(`[GitHub Poll] ${event} - ${success ? 'success' : 'failed'}`, details);
 }
 
 // Parse template card from HTML
@@ -2211,14 +2291,55 @@ app.post('/api/lumen-tools/sync', async (req, res) => {
   });
 });
 
-// Get sync status
+// Get sync status (includes both hourly scrape and GitHub polling)
 app.get('/api/lumen-tools/sync-status', (req, res) => {
+  const now = new Date();
+  const lastGithubCheck = githubSyncStatus.lastCheckAt ? new Date(githubSyncStatus.lastCheckAt) : null;
+  const githubMinutesAgo = lastGithubCheck ? Math.floor((now - lastGithubCheck) / 60000) : null;
+  
   res.json({
+    // Hourly scrape status
     ...syncStatus,
-    github: githubSyncStatus,
-    nextScheduledSync: getNextCronRun()
+    nextScheduledSync: getNextCronRun(),
+    
+    // GitHub polling status
+    github: {
+      enabled: githubSyncStatus.enabled,
+      lastCheckAt: githubSyncStatus.lastCheckAt,
+      lastCheckAgo: githubMinutesAgo !== null ? `${githubMinutesAgo}m ago` : 'never',
+      lastCommitSha: githubSyncStatus.lastCommitSha,
+      lastCommitShort: githubSyncStatus.lastCommitSha ? githubSyncStatus.lastCommitSha.slice(0, 7) : null,
+      lastSyncAt: githubSyncStatus.lastSyncAt,
+      lastSyncSuccess: githubSyncStatus.lastSyncSuccess,
+      isRunning: githubSyncStatus.isRunning,
+      isChecking: githubSyncStatus.isChecking,
+      templatesUpdated: githubSyncStatus.templatesUpdated,
+      error: githubSyncStatus.error,
+      newCommitDetected: githubSyncStatus.newCommitDetected,
+      pollIntervalMinutes: 15,
+      pollCount: githubSyncStatus.pollCount,
+      rateLimitRemaining: githubSyncStatus.rateLimitRemaining
+    },
+    nextGithubCheck: getNextGithubPollTime()
   });
 });
+
+// Helper to get next GitHub poll time
+function getNextGithubPollTime() {
+  const now = new Date();
+  const next = new Date(now);
+  const minutes = next.getMinutes();
+  // Next check at minute 5, 20, 35, or 50
+  const pollMinutes = [5, 20, 35, 50];
+  const nextPollMinute = pollMinutes.find(m => m > minutes) || pollMinutes[0];
+  if (nextPollMinute <= minutes) {
+    next.setHours(next.getHours() + 1);
+  }
+  next.setMinutes(nextPollMinute);
+  next.setSeconds(0);
+  next.setMilliseconds(0);
+  return next.toISOString();
+}
 
 // Helper to get next cron run time
 function getNextCronRun() {
@@ -2232,106 +2353,67 @@ function getNextCronRun() {
 }
 
 // ============================================
-// GITHUB WEBHOOK ENDPOINT
+// GITHUB POLLING STATUS ENDPOINTS
 // ============================================
 
-// GitHub webhook endpoint - receives push events from davila7/claude-code-templates
-app.post('/api/webhooks/github', express.raw({ type: 'application/json' }), async (req, res) => {
-  const signature = req.headers['x-hub-signature-256'];
-  const event = req.headers['x-github-event'];
-  const delivery = req.headers['x-github-delivery'];
+// Get GitHub polling status - shows last check time, commit SHA, sync status
+app.get('/api/lumen-tools/github-status', (req, res) => {
+  const now = new Date();
+  const lastCheck = githubSyncStatus.lastCheckAt ? new Date(githubSyncStatus.lastCheckAt) : null;
+  const minutesAgo = lastCheck ? Math.floor((now - lastCheck) / 60000) : null;
   
-  console.log(`[Webhook] Received GitHub webhook: event=${event}, delivery=${delivery}`);
-  
-  // Get raw body for signature verification
-  const rawBody = req.body.toString ? req.body.toString() : JSON.stringify(req.body);
-  
-  // Verify signature if secret is configured
-  if (GITHUB_WEBHOOK_SECRET && !verifyGitHubSignature(rawBody, signature)) {
-    console.error('[Webhook] Invalid signature');
-    logWebhookEvent('signature_failed', false, { delivery });
-    return res.status(401).json({ error: 'Invalid signature' });
-  }
-  
-  // Parse the payload
-  let payload;
-  try {
-    payload = typeof req.body === 'string' ? JSON.parse(req.body) : 
-              Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString()) : req.body;
-  } catch (err) {
-    console.error('[Webhook] Failed to parse payload:', err.message);
-    logWebhookEvent('parse_failed', false, { delivery, error: err.message });
-    return res.status(400).json({ error: 'Invalid JSON payload' });
-  }
-  
-  githubSyncStatus.lastWebhookAt = new Date().toISOString();
-  githubSyncStatus.connected = true;
-  
-  // Handle ping event (sent when webhook is first configured)
-  if (event === 'ping') {
-    console.log('[Webhook] Ping received, webhook is configured correctly');
-    logWebhookEvent('ping', true, { delivery, zen: payload.zen });
-    return res.json({ 
-      message: 'Pong! Webhook configured successfully',
-      zen: payload.zen 
-    });
-  }
-  
-  // Handle push events
-  if (event === 'push') {
-    const ref = payload.ref;
-    const branch = ref ? ref.replace('refs/heads/', '') : 'unknown';
-    const pusher = payload.pusher?.name || 'unknown';
-    const commits = payload.commits?.length || 0;
-    const repository = payload.repository?.full_name || 'unknown';
-    
-    console.log(`[Webhook] Push event: ${repository} ${branch} by ${pusher} (${commits} commits)`);
-    
-    // Only sync on push to main/master branch
-    if (branch === 'main' || branch === 'master') {
-      console.log('[Webhook] Push to main branch detected, triggering sync...');
-      logWebhookEvent('push', true, { delivery, branch, pusher, commits, repository });
-      
-      // Trigger sync in background
-      performGitHubSync().then(result => {
-        console.log('[Webhook] GitHub sync completed:', result);
-      }).catch(err => {
-        console.error('[Webhook] GitHub sync failed:', err);
-      });
-      
-      return res.json({ 
-        message: 'Webhook received, sync triggered',
-        branch,
-        commits,
-        repository
-      });
-    } else {
-      console.log(`[Webhook] Ignoring push to non-main branch: ${branch}`);
-      logWebhookEvent('push_ignored', true, { delivery, branch, reason: 'non-main branch' });
-      return res.json({ 
-        message: 'Push received but not on main branch, skipping sync',
-        branch 
-      });
-    }
-  }
-  
-  // Other events
-  console.log(`[Webhook] Ignoring event type: ${event}`);
-  logWebhookEvent(event, true, { delivery, ignored: true });
-  res.json({ message: `Event ${event} received but not processed` });
-});
-
-// Get GitHub sync status
-app.get('/api/webhooks/github/status', (req, res) => {
   res.json({
-    ...githubSyncStatus,
-    secretConfigured: !!GITHUB_WEBHOOK_SECRET,
-    webhookUrl: 'https://lumen-dashboard.onrender.com/api/webhooks/github'
+    enabled: githubSyncStatus.enabled,
+    lastCheckAt: githubSyncStatus.lastCheckAt,
+    lastCheckAgo: minutesAgo !== null ? `${minutesAgo} min ago` : 'never',
+    lastCommitSha: githubSyncStatus.lastCommitSha,
+    lastCommitShort: githubSyncStatus.lastCommitSha ? githubSyncStatus.lastCommitSha.slice(0, 7) : null,
+    lastCommitMessage: githubSyncStatus.lastCommitMessage,
+    lastCommitAuthor: githubSyncStatus.lastCommitAuthor,
+    lastSyncAt: githubSyncStatus.lastSyncAt,
+    lastSyncSuccess: githubSyncStatus.lastSyncSuccess,
+    isRunning: githubSyncStatus.isRunning,
+    isChecking: githubSyncStatus.isChecking,
+    templatesUpdated: githubSyncStatus.templatesUpdated,
+    error: githubSyncStatus.error,
+    newCommitDetected: githubSyncStatus.newCommitDetected,
+    pollCount: githubSyncStatus.pollCount,
+    pollIntervalMinutes: 15,
+    rateLimitRemaining: githubSyncStatus.rateLimitRemaining,
+    rateLimitReset: githubSyncStatus.rateLimitReset,
+    backoffMs: githubSyncStatus.backoffMs,
+    sourceRepo: 'davila7/claude-code-templates'
   });
 });
 
-// Trigger manual GitHub sync
-app.post('/api/webhooks/github/sync', async (req, res) => {
+// Trigger manual GitHub check and sync
+app.post('/api/lumen-tools/github-sync', async (req, res) => {
+  if (githubSyncStatus.isRunning || githubSyncStatus.isChecking) {
+    return res.json({ 
+      success: false, 
+      message: githubSyncStatus.isRunning ? 'GitHub sync already in progress' : 'Already checking for updates',
+      status: githubSyncStatus 
+    });
+  }
+  
+  // Check for updates and sync if needed
+  console.log('[GitHub Sync] Manual trigger requested');
+  
+  pollGitHubAndSync().then(result => {
+    console.log('[GitHub Sync] Manual poll completed:', result);
+  }).catch(err => {
+    console.error('[GitHub Sync] Manual poll failed:', err);
+  });
+  
+  res.json({ 
+    success: true, 
+    message: 'GitHub check and sync started',
+    status: githubSyncStatus 
+  });
+});
+
+// Force sync from GitHub (bypasses change detection)
+app.post('/api/lumen-tools/github-force-sync', async (req, res) => {
   if (githubSyncStatus.isRunning) {
     return res.json({ 
       success: false, 
@@ -2340,26 +2422,37 @@ app.post('/api/webhooks/github/sync', async (req, res) => {
     });
   }
   
-  // Start sync in background
+  console.log('[GitHub Sync] Force sync requested');
+  
   performGitHubSync().then(result => {
-    console.log('[GitHub Sync] Manual sync completed:', result);
+    console.log('[GitHub Sync] Force sync completed:', result);
   }).catch(err => {
-    console.error('[GitHub Sync] Manual sync failed:', err);
+    console.error('[GitHub Sync] Force sync failed:', err);
   });
   
   res.json({ 
     success: true, 
-    message: 'GitHub sync started',
+    message: 'GitHub force sync started',
     status: githubSyncStatus 
   });
 });
 
-// Get webhook events log
-app.get('/api/webhooks/github/events', (req, res) => {
-  res.json({
-    events: githubSyncStatus.webhookEvents,
-    total: githubSyncStatus.webhookEvents.length
-  });
+// ============================================
+// LEGACY WEBHOOK ENDPOINTS (DISABLED - kept for reference)
+// ============================================
+// Note: Webhook functionality has been replaced with GitHub API polling
+// which doesn't require GitHub webhook configuration and works within
+// the free tier rate limits (60 requests/hour unauthenticated).
+// Polling runs every 15 minutes = 4 requests/hour.
+
+// Redirect old webhook status endpoint to new polling status
+app.get('/api/webhooks/github/status', (req, res) => {
+  res.redirect(301, '/api/lumen-tools/github-status');
+});
+
+// Redirect old webhook sync endpoint to new polling sync
+app.post('/api/webhooks/github/sync', (req, res) => {
+  res.redirect(307, '/api/lumen-tools/github-sync');
 });
 
 // Custom skills CRUD
@@ -2485,26 +2578,31 @@ app.get('/api/lumen-tools/health', async (req, res) => {
     }
   });
   
-  // Add GitHub webhook sync status
+  // Add GitHub polling sync status
+  const lastCheckAgo = githubSyncStatus.lastCheckAt 
+    ? Math.floor((Date.now() - new Date(githubSyncStatus.lastCheckAt)) / 60000)
+    : null;
+  
   checks.push({
     id: 'github-sync',
-    name: 'GitHub Webhook Sync',
-    description: 'Real-time template sync from GitHub',
-    status: githubSyncStatus.connected ? 
-      (githubSyncStatus.lastSyncSuccess ? 'ok' : githubSyncStatus.error ? 'error' : 'warning') : 
-      'warning',
-    message: githubSyncStatus.connected ?
-      (githubSyncStatus.lastSyncAt 
-        ? `Connected - Last sync: ${new Date(githubSyncStatus.lastSyncAt).toLocaleString()} (${githubSyncStatus.templatesUpdated} templates)`
-        : 'Connected - Awaiting first sync') :
-      'Not configured - Set GITHUB_WEBHOOK_SECRET',
+    name: 'GitHub Polling Sync',
+    description: 'Polls GitHub API every 15 min for template updates',
+    status: githubSyncStatus.error ? 'error' : 
+            githubSyncStatus.lastSyncSuccess ? 'ok' : 
+            githubSyncStatus.lastCheckAt ? 'ok' : 'warning',
+    message: githubSyncStatus.lastCheckAt 
+      ? `Checked ${lastCheckAgo}m ago${githubSyncStatus.lastSyncAt ? ` · Synced ${githubSyncStatus.templatesUpdated} templates` : ' · No sync yet'}`
+      : 'Polling not started yet',
     details: {
-      connected: githubSyncStatus.connected,
-      lastWebhook: githubSyncStatus.lastWebhookAt,
+      enabled: githubSyncStatus.enabled,
+      lastCheck: githubSyncStatus.lastCheckAt,
+      lastCommitSha: githubSyncStatus.lastCommitSha ? githubSyncStatus.lastCommitSha.slice(0, 7) : null,
       lastSync: githubSyncStatus.lastSyncAt,
       templatesUpdated: githubSyncStatus.templatesUpdated,
       isRunning: githubSyncStatus.isRunning,
-      secretConfigured: !!GITHUB_WEBHOOK_SECRET
+      pollCount: githubSyncStatus.pollCount,
+      rateLimitRemaining: githubSyncStatus.rateLimitRemaining,
+      error: githubSyncStatus.error
     }
   });
   
@@ -2581,27 +2679,48 @@ app.get('*', (req, res) => {
 });
 
 // ============================================
-// HOURLY CRON JOB FOR SYNC
+// CRON JOBS FOR SYNC
 // ============================================
 
-// Schedule sync every hour at minute 0
+// Schedule aitmpl.com scrape every hour at minute 0
 cron.schedule('0 * * * *', async () => {
-  console.log('[Cron] Starting scheduled hourly sync...');
+  console.log('[Cron] Starting scheduled hourly scrape sync...');
   const result = await performFullSync();
-  console.log('[Cron] Scheduled sync result:', result);
+  console.log('[Cron] Scheduled scrape sync result:', result);
+});
+
+// Schedule GitHub polling every 15 minutes (at 5, 20, 35, 50 minutes past the hour)
+// This gives us 4 requests/hour, well within the 60/hour unauthenticated limit
+cron.schedule('5,20,35,50 * * * *', async () => {
+  console.log('[Cron] Starting scheduled GitHub poll...');
+  const result = await pollGitHubAndSync();
+  console.log('[Cron] GitHub poll result:', result);
 });
 
 // Also run initial sync on startup (after 30 seconds to let DB initialize)
 setTimeout(async () => {
-  console.log('[Startup] Running initial sync...');
-  const result = await performFullSync();
-  console.log('[Startup] Initial sync result:', result);
+  console.log('[Startup] Running initial scrape sync...');
+  const scrapeResult = await performFullSync();
+  console.log('[Startup] Initial scrape sync result:', scrapeResult);
+  
+  // Initial GitHub check (don't sync, just get baseline commit SHA)
+  console.log('[Startup] Running initial GitHub check...');
+  const githubResult = await checkGitHubForUpdates();
+  console.log('[Startup] Initial GitHub check result:', githubResult);
+  
+  // If this is truly the first run, do an initial GitHub sync
+  if (githubResult.reason === 'initial_check') {
+    console.log('[Startup] First run - performing initial GitHub sync...');
+    const syncResult = await performGitHubSync();
+    console.log('[Startup] Initial GitHub sync result:', syncResult);
+  }
 }, 30000);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🔆 Lumen Dashboard v3.3 running on port ${PORT}`);
-  console.log(`   📡 GitHub webhook: ${GITHUB_WEBHOOK_SECRET ? 'configured' : 'not configured (set GITHUB_WEBHOOK_SECRET)'}`);
-  console.log(`   🔄 Hourly scrape sync: enabled`);
-  console.log(`   🌐 Webhook URL: https://lumen-dashboard.onrender.com/api/webhooks/github`);
+  console.log(`🔆 Lumen Dashboard v3.4 running on port ${PORT}`);
+  console.log(`   🔄 Hourly scrape sync: enabled (every hour at :00)`);
+  console.log(`   📡 GitHub polling: enabled (every 15 min at :05, :20, :35, :50)`);
+  console.log(`   📊 Rate limit: 4 req/hr (limit: 60/hr unauthenticated)`);
+  console.log(`   🎯 Watching: davila7/claude-code-templates`);
 });

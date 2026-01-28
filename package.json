@@ -1,6 +1,6 @@
 {
   "name": "briefing-dashboard",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Daily briefings and AI opportunity dashboard for Jimmy",
   "main": "server.js",
   "scripts": {
