@@ -1261,10 +1261,14 @@
       }
     }
 
+    let allExpenses = [];
+    let expenseSearchQuery = '';
+
     function renderExpensesView(data) {
       const container = document.getElementById('expenses-content');
       const categories = Object.entries(data.byCategory || {}).sort((a, b) => b[1] - a[1]);
       const totalForDonut = categories.reduce((sum, [, val]) => sum + val, 0) || 1;
+      allExpenses = data.recentExpenses || [];
       
       container.innerHTML = `
         <div class="animate-fade-in">
@@ -1345,34 +1349,169 @@
             </div>
           </div>
           
-          <!-- Recent Expenses -->
+          <!-- Expense Details Table -->
           <div class="rounded-2xl bg-zinc-800/30 border border-zinc-700/50 overflow-hidden">
-            <div class="p-4 border-b border-zinc-700/50">
-              <h3 class="text-sm font-medium text-zinc-300">Recent Expenses</h3>
+            <div class="p-4 border-b border-zinc-700/50 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+              <h3 class="text-sm font-medium text-zinc-300">All Expenses</h3>
+              <div class="relative w-full sm:w-64">
+                <input 
+                  type="text" 
+                  id="expense-search" 
+                  placeholder="Search expenses..." 
+                  oninput="filterExpenses(this.value)"
+                  class="w-full pl-9 pr-4 py-2 text-sm bg-zinc-900/50 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                />
+                <svg class="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+              </div>
             </div>
-            <div class="divide-y divide-zinc-700/30">
-              ${data.recentExpenses && data.recentExpenses.length > 0 ? data.recentExpenses.map(exp => {
-                const cfg = categoryConfig[exp.category] || categoryConfig.Other;
-                const date = new Date(exp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                return `
-                  <div class="expense-item p-4 flex items-center justify-between cursor-pointer" onclick="deleteExpense(${exp.id})">
-                    <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-xl ${cfg.bgColor} flex items-center justify-center category-icon">
-                        <span class="text-lg">${cfg.icon}</span>
-                      </div>
-                      <div>
-                        <p class="text-sm text-zinc-200">${escapeHtml(exp.description || exp.category)}</p>
-                        <p class="text-xs text-zinc-500">${date}${exp.vendor ? ' · ' + escapeHtml(exp.vendor) : ''}</p>
-                      </div>
-                    </div>
-                    <span class="text-sm font-semibold ${cfg.textColor}">-$${exp.amount.toFixed(2)}</span>
-                  </div>
-                `;
-              }).join('') : '<div class="p-8 text-center text-zinc-500 text-sm">No expenses this month</div>'}
+            
+            <!-- Table Header -->
+            <div class="hidden md:grid grid-cols-12 gap-2 px-4 py-3 bg-zinc-900/30 border-b border-zinc-700/30 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              <div class="col-span-2">Date</div>
+              <div class="col-span-2">Amount</div>
+              <div class="col-span-2">Category</div>
+              <div class="col-span-3">Vendor</div>
+              <div class="col-span-2">Description</div>
+              <div class="col-span-1"></div>
+            </div>
+            
+            <!-- Table Body -->
+            <div id="expenses-table-body" class="divide-y divide-zinc-700/30 max-h-96 overflow-y-auto">
+              ${renderExpenseRows(allExpenses)}
             </div>
           </div>
         </div>
       `;
+    }
+
+    function renderExpenseRows(expenses) {
+      if (!expenses || expenses.length === 0) {
+        return '<div class="p-8 text-center text-zinc-500 text-sm">No expenses found</div>';
+      }
+      
+      return expenses.map(exp => {
+        const cfg = categoryConfig[exp.category] || categoryConfig.Other;
+        const date = new Date(exp.date);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+        const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        
+        return `
+          <div class="expense-item grid grid-cols-1 md:grid-cols-12 gap-2 p-4 hover:bg-zinc-800/30 cursor-pointer" onclick="showExpenseDetail(${exp.id})">
+            <!-- Mobile: Card layout -->
+            <div class="md:hidden flex justify-between items-start mb-2">
+              <div>
+                <span class="text-sm font-medium text-zinc-200">$${exp.amount.toFixed(2)}</span>
+                <span class="ml-2 px-2 py-0.5 text-xs rounded-full ${cfg.bgColor} ${cfg.textColor}">${exp.category}</span>
+              </div>
+              <span class="text-xs text-zinc-500">${dateStr}</span>
+            </div>
+            <div class="md:hidden">
+              <p class="text-sm text-zinc-300">${escapeHtml(exp.vendor || 'Unknown vendor')}</p>
+              <p class="text-xs text-zinc-500">${escapeHtml(exp.description || '')}</p>
+            </div>
+            
+            <!-- Desktop: Table layout -->
+            <div class="hidden md:block col-span-2">
+              <p class="text-sm text-zinc-300">${dateStr}</p>
+              <p class="text-xs text-zinc-500">${timeStr}</p>
+            </div>
+            <div class="hidden md:block col-span-2">
+              <span class="text-sm font-semibold ${cfg.textColor}">$${exp.amount.toFixed(2)}</span>
+              ${exp.tax ? `<p class="text-xs text-zinc-600">+$${exp.tax.toFixed(2)} tax</p>` : ''}
+            </div>
+            <div class="hidden md:block col-span-2">
+              <span class="px-2 py-1 text-xs rounded-full ${cfg.bgColor} ${cfg.textColor}">${cfg.icon} ${exp.category}</span>
+            </div>
+            <div class="hidden md:block col-span-3">
+              <p class="text-sm text-zinc-300 truncate">${escapeHtml(exp.vendor || '—')}</p>
+              ${exp.merchant_address ? `<p class="text-xs text-zinc-600 truncate">${escapeHtml(exp.merchant_address)}</p>` : ''}
+            </div>
+            <div class="hidden md:block col-span-2">
+              <p class="text-sm text-zinc-400 truncate">${escapeHtml(exp.description || '—')}</p>
+              ${exp.payment_method ? `<p class="text-xs text-zinc-600">${exp.payment_method}${exp.card_last_four ? ' •••• ' + exp.card_last_four : ''}</p>` : ''}
+            </div>
+            <div class="hidden md:flex col-span-1 justify-end">
+              <button onclick="event.stopPropagation(); deleteExpense(${exp.id})" class="p-1.5 rounded-lg hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterExpenses(query) {
+      expenseSearchQuery = query.toLowerCase();
+      const filtered = allExpenses.filter(exp => {
+        const searchStr = `${exp.amount} ${exp.category} ${exp.vendor || ''} ${exp.description || ''} ${exp.merchant_address || ''} ${exp.payment_method || ''}`.toLowerCase();
+        return searchStr.includes(expenseSearchQuery);
+      });
+      document.getElementById('expenses-table-body').innerHTML = renderExpenseRows(filtered);
+    }
+
+    function showExpenseDetail(id) {
+      const exp = allExpenses.find(e => e.id === id);
+      if (!exp) return;
+      
+      const cfg = categoryConfig[exp.category] || categoryConfig.Other;
+      const date = new Date(exp.date);
+      
+      const fields = [
+        { label: 'Amount', value: `$${exp.amount.toFixed(2)}`, show: true },
+        { label: 'Category', value: `${cfg.icon} ${exp.category}`, show: true },
+        { label: 'Vendor', value: exp.vendor, show: exp.vendor },
+        { label: 'Description', value: exp.description, show: exp.description },
+        { label: 'Date', value: date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }), show: true },
+        { label: 'Time', value: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }), show: true },
+        { label: 'Address', value: exp.merchant_address, show: exp.merchant_address },
+        { label: 'Phone', value: exp.merchant_phone, show: exp.merchant_phone },
+        { label: 'Subtotal', value: exp.subtotal ? `$${exp.subtotal.toFixed(2)}` : null, show: exp.subtotal },
+        { label: 'Tax', value: exp.tax ? `$${exp.tax.toFixed(2)}` : null, show: exp.tax },
+        { label: 'Tip', value: exp.tip ? `$${exp.tip.toFixed(2)}` : null, show: exp.tip },
+        { label: 'Discount', value: exp.discount ? `-$${exp.discount.toFixed(2)}` : null, show: exp.discount },
+        { label: 'Payment', value: exp.payment_method, show: exp.payment_method },
+        { label: 'Card', value: exp.card_type ? `${exp.card_type}${exp.card_last_four ? ' •••• ' + exp.card_last_four : ''}` : null, show: exp.card_type },
+        { label: 'Receipt #', value: exp.receipt_number, show: exp.receipt_number },
+      ];
+      
+      const html = `
+        <div class="space-y-3">
+          ${fields.filter(f => f.show && f.value).map(f => `
+            <div class="flex justify-between items-start py-2 border-b border-zinc-700/50">
+              <span class="text-sm text-zinc-500">${f.label}</span>
+              <span class="text-sm text-zinc-200 text-right max-w-[60%]">${escapeHtml(String(f.value))}</span>
+            </div>
+          `).join('')}
+          <div class="pt-4 flex gap-2">
+            <button onclick="closeModal()" class="flex-1 px-4 py-2 rounded-lg bg-zinc-700 text-zinc-200 hover:bg-zinc-600 transition-colors">Close</button>
+            <button onclick="closeModal(); deleteExpense(${exp.id})" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">Delete</button>
+          </div>
+        </div>
+      `;
+      
+      showCustomModal('Expense Details', html);
+    }
+
+    function showCustomModal(title, content) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70';
+      modal.innerHTML = `
+        <div class="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div class="sticky top-0 flex items-center justify-between p-4 border-b border-zinc-700 bg-zinc-900">
+            <h3 class="font-semibold text-zinc-100">${title}</h3>
+            <button onclick="this.closest('.fixed').remove()" class="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div class="p-4">${content}</div>
+        </div>
+      `;
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+      document.body.appendChild(modal);
     }
 
     function renderDonutChart(categories, total) {
