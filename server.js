@@ -23,6 +23,9 @@ const proactiveNotifications = require('./proactive-notifications');
 const voiceClone = require('./voice-clone');
 
 const app = express();
+
+// Trust proxy for secure cookies behind Cloudflare/Render
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 // Excel file storage (still uses filesystem for actual files)
