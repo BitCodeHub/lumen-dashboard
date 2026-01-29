@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Lumen Factory Report</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Lumen Factory Report</h1>
+</header>
+<h1 id="lumen-factory-output-report">🏭 Lumen Factory Output Report</h1>
+<h2 id="agents-19-tools-20-research-documents">40 Agents • 19 Tools • 20
+Research Documents</h2>
+<p><strong>Generated:</strong> January 28, 2026</p>
+<hr />
+<h1 id="executive-summary">Executive Summary</h1>
+<p>On January 28, 2026, 40 AI agents were deployed simultaneously to
+research, analyze, and build tools across multiple domains. This report
+catalogs all deliverables.</p>
+<p><strong>Results:</strong> - <strong>19 Working Tools</strong> — Ready
+for immediate use - <strong>20 Research Documents</strong> — Market
+intelligence, competitive analysis, pain points - <strong>1 Master
+Index</strong> — PROJECTS-INDEX.md cataloging everything</p>
+<hr />
+<h1 id="part-1-tools-built">Part 1: Tools Built</h1>
+<h2 id="infrastructure-apis">Infrastructure &amp; APIs</h2>
+<h3 id="ai-gateway">1. AI Gateway</h3>
+<p><strong>Location:</strong> <code>projects/ai-gateway/</code></p>
+<p>A unified AI routing layer that classifies prompts and routes to the
+optimal AI provider.</p>
+<ul>
+<li><strong>Supported Providers:</strong> OpenAI, Anthropic, Google,
+Mistral, DeepSeek</li>
+<li><strong>Task Types:</strong> Code, creative, analysis, math,
+conversation, summarization, translation, image, research</li>
+<li><strong>Features:</strong> Smart classification, fallback chains,
+REST API, dry-run mode</li>
+<li><strong>Tests:</strong> 26 passing</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run demo      <span class="co"># See classification in action</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run server    <span class="co"># Start HTTP API on port 3000</span></span></code></pre></div>
+<hr />
+<h3 id="automation-health-monitor">2. Automation Health Monitor</h3>
+<p><strong>Location:</strong>
+<code>projects/automation-monitor/</code></p>
+<p>Python tool for monitoring n8n workflow health.</p>
+<ul>
+<li><strong>Features:</strong> Failure detection, health reports,
+continuous monitoring, alerting</li>
+<li><strong>Modes:</strong> Single scan, watch mode, mock mode for
+testing</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> health_monitor.py <span class="at">--watch</span> <span class="at">--interval</span> 60</span></code></pre></div>
+<hr />
+<h2 id="developer-tools">Developer Tools</h2>
+<h3 id="changelog-generator">3. Changelog Generator</h3>
+<p><strong>Location:</strong>
+<code>projects/dev-tools/changelog-gen/</code></p>
+<p>Parses git commits into formatted changelogs.</p>
+<ul>
+<li><strong>Formats:</strong> Markdown, JSON, plain text</li>
+<li><strong>Features:</strong> Conventional commits, breaking change
+detection, tag-aware</li>
+<li><strong>Dependencies:</strong> Zero (pure Node.js)</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">changelog-gen</span>                          <span class="co"># last tag → HEAD</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">changelog-gen</span> <span class="at">-f</span> v1.0.0 <span class="at">-t</span> v2.0.0     <span class="co"># between tags</span></span></code></pre></div>
+<hr />
+<h3 id="commit-formatter">4. Commit Formatter</h3>
+<p><strong>Location:</strong>
+<code>projects/dev-tools/commit-formatter/</code></p>
+<p>Converts natural language to conventional commit messages.</p>
+<ul>
+<li><strong>Auto-detection:</strong> feat, fix, docs, refactor, perf,
+test, build, ci, chore, revert</li>
+<li><strong>Features:</strong> Scope extraction, breaking change
+detection, suggestions mode</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> cli.js <span class="st">&quot;add user authentication&quot;</span>  <span class="co"># → feat: user authentication</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> cli.js <span class="st">&quot;fix validation error&quot;</span> <span class="at">--scope</span> auth  <span class="co"># → fix(auth): validation error</span></span></code></pre></div>
+<hr />
+<h3 id="dependency-auditor">5. Dependency Auditor</h3>
+<p><strong>Location:</strong>
+<code>projects/dev-tools/dep-auditor/</code></p>
+<p>Checks for outdated packages and security vulnerabilities.</p>
+<ul>
+<li><strong>Sources:</strong> npm audit + OSV.dev API</li>
+<li><strong>Outputs:</strong> Colorized console, JSON, Markdown</li>
+<li><strong>CI/CD Ready:</strong> Exit codes based on severity</li>
+</ul>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dep-auditor</span>                       <span class="co"># Audit current directory</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">dep-auditor</span> <span class="at">--severity</span> high       <span class="co"># Only high/critical</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">dep-auditor</span> <span class="at">--markdown</span> <span class="at">-o</span> AUDIT.md</span></code></pre></div>
+<hr />
+<h3 id="environment-manager">6. Environment Manager</h3>
+<p><strong>Location:</strong>
+<code>projects/dev-tools/env-manager/</code></p>
+<p>Manage .env files across dev/staging/prod environments.</p>
+<ul>
+<li><strong>Features:</strong> Switch environments, secret masking, key
+sync, diff, backup</li>
+<li><strong>Multi-project:</strong> Register and switch between
+projects</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">envm</span> init</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">envm</span> switch prod</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">envm</span> diff dev prod</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ex">envm</span> sync</span></code></pre></div>
+<hr />
+<h3 id="pr-description-generator">7. PR Description Generator</h3>
+<p><strong>Location:</strong>
+<code>projects/dev-tools/pr-gen/</code></p>
+<p>Auto-generates pull request descriptions from git diffs.</p>
+<ul>
+<li><strong>Features:</strong> Change type detection, file
+categorization, review checklist</li>
+<li><strong>Inputs:</strong> Git diff, staged changes, branch
+comparison, stdin</li>
+</ul>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pr-gen</span>                    <span class="co"># Auto-detect from git</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pr-gen</span> <span class="at">--staged</span>           <span class="co"># Staged changes only</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pr-gen</span> <span class="at">--copy</span>             <span class="co"># Copy to clipboard</span></span></code></pre></div>
+<hr />
+<h3 id="readme-generator">8. README Generator</h3>
+<p><strong>Location:</strong>
+<code>projects/dev-tools/readme-gen/</code></p>
+<p>Generates professional README.md from project analysis.</p>
+<ul>
+<li><strong>Detection:</strong> 30+ frameworks, TypeScript, Docker,
+CI/CD</li>
+<li><strong>Templates:</strong> Minimal, standard, detailed</li>
+<li><strong>Features:</strong> Smart badges, directory tree, preview
+mode</li>
+</ul>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> bin/cli.js /path/to/project</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> bin/cli.js <span class="at">--template</span> detailed</span></code></pre></div>
+<hr />
+<h3 id="snippet-manager">9. Snippet Manager</h3>
+<p><strong>Location:</strong>
+<code>projects/dev-tools/snippet-manager/</code></p>
+<p>Save, tag, search, and retrieve code snippets locally.</p>
+<ul>
+<li><strong>Features:</strong> Tag management, language detection,
+search, raw output for piping</li>
+<li><strong>Storage:</strong>
+<code>~/.snippet-manager/snippets.json</code></li>
+</ul>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">snip</span> add my-util <span class="at">--file</span> ./utils.js <span class="at">--tags</span> <span class="st">&quot;util,helper&quot;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">snip</span> search <span class="st">&quot;sort&quot;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ex">snip</span> get 1 <span class="at">--raw</span> <span class="kw">|</span> <span class="ex">pbcopy</span></span></code></pre></div>
+<hr />
+<h3 id="mock-api-server">10. Mock API Server</h3>
+<p><strong>Location:</strong>
+<code>projects/dev-tools/mock-api/</code></p>
+<p>Instant fake REST endpoints for frontend development.</p>
+<ul>
+<li><strong>Features:</strong> Faker.js integration, pagination, path
+params, delays, hot reload</li>
+<li><strong>Configs:</strong> JSON or YAML</li>
+</ul>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run demo          <span class="co"># Start with demo config</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> start <span class="at">--</span> <span class="at">--config</span> my-api.json <span class="at">--watch</span></span></code></pre></div>
+<hr />
+<h2 id="freelancer-tools">Freelancer Tools</h2>
+<h3 id="invoice-generator">11. Invoice Generator</h3>
+<p><strong>Location:</strong>
+<code>projects/freelancer-tools/invoice-gen/</code></p>
+<p>Free, offline PDF invoice generator.</p>
+<ul>
+<li><strong>Configs:</strong> YAML or JSON</li>
+<li><strong>Features:</strong> Auto-calculations, tax, discounts,
+multi-currency, payment details</li>
+<li><strong>100% Offline:</strong> No subscriptions, no data leaves your
+machine</li>
+</ul>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> src/cli.js init</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> src/cli.js generate <span class="at">-c</span> invoice.yaml <span class="at">-o</span> ./invoices/</span></code></pre></div>
+<hr />
+<h3 id="proposal-generator">12. Proposal Generator</h3>
+<p><strong>Location:</strong>
+<code>projects/freelancer-tools/proposal-gen/</code></p>
+<p>Professional proposal templates for freelancers.</p>
+<ul>
+<li><strong>Project Types:</strong> 8 built-in (web, mobile, design,
+branding, etc.)</li>
+<li><strong>Outputs:</strong> Executive summary, scope, timeline,
+payment schedule, terms</li>
+</ul>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> proposal-gen.js              <span class="co"># Interactive mode</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> proposal-gen.js <span class="at">--file</span> examples/web-project.json</span></code></pre></div>
+<hr />
+<h3 id="contract-generator">13. Contract Generator</h3>
+<p><strong>Location:</strong>
+<code>projects/freelancer-tools/contract-gen/</code></p>
+<p>Config-driven service agreement generator.</p>
+<ul>
+<li><strong>Sections:</strong> Parties, scope, deliverables, timeline,
+payment, IP, confidentiality</li>
+<li><strong>Zero Dependencies:</strong> Pure Node.js</li>
+</ul>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> generate.js</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> generate.js <span class="at">-c</span> clients/acme-corp.json</span></code></pre></div>
+<hr />
+<h3 id="crm-lite">14. CRM Lite</h3>
+<p><strong>Location:</strong>
+<code>projects/freelancer-tools/crm-lite/</code></p>
+<p>Simple JSON-based client relationship manager.</p>
+<ul>
+<li><strong>Entities:</strong> Clients, projects, notes</li>
+<li><strong>Features:</strong> Tags, search, stats, filtering</li>
+</ul>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> cli.js client add <span class="st">&quot;Acme Corp&quot;</span> <span class="at">--email</span> client@acme.com</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> cli.js project add <span class="st">&quot;Website Redesign&quot;</span> <span class="at">--clientId</span> xxx <span class="at">--budget</span> 5000</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> cli.js stats</span></code></pre></div>
+<hr />
+<h3 id="scope-calculator">15. Scope Calculator</h3>
+<p><strong>Location:</strong>
+<code>projects/freelancer-tools/scope-calc/</code></p>
+<p>Estimate project hours and costs.</p>
+<ul>
+<li><strong>Project Types:</strong> 9 types (landing page, web app,
+mobile, API, etc.)</li>
+<li><strong>Features:</strong> 14 feature add-ons, complexity
+multipliers, rush pricing, 20% buffer</li>
+</ul>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> index.js                                    <span class="co"># Interactive</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> index.js quick <span class="at">-t</span> web_app <span class="at">-c</span> complex <span class="at">-f</span> auth,database</span></code></pre></div>
+<hr />
+<h3 id="time-tracker">16. Time Tracker</h3>
+<p><strong>Location:</strong>
+<code>projects/freelancer-tools/time-tracker/</code></p>
+<p>Simple local-only time tracking CLI.</p>
+<ul>
+<li><strong>Features:</strong> Start/stop, manual logging, reports, CSV
+export</li>
+<li><strong>Storage:</strong> <code>~/.time-tracker/</code></li>
+</ul>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">tt</span> start <span class="st">&quot;Client Work&quot;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tt</span> stop</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ex">tt</span> report</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ex">tt</span> export invoices.csv</span></code></pre></div>
+<hr />
+<h2 id="productivity-tools">Productivity Tools</h2>
+<h3 id="standup-generator">17. Standup Generator</h3>
+<p><strong>Location:</strong>
+<code>projects/productivity-tools/standup-gen/</code></p>
+<p>Interactive daily standup with Slack integration.</p>
+<ul>
+<li><strong>Features:</strong> Multi-line editor, quick mode, history
+tracking</li>
+<li><strong>Integration:</strong> Slack webhook posting</li>
+</ul>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> standup.js           <span class="co"># Interactive</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> standup.js <span class="at">-q</span>        <span class="co"># Quick mode</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> standup.js <span class="at">--config</span>  <span class="co"># Set up Slack</span></span></code></pre></div>
+<hr />
+<h3 id="meeting-notes-parser">18. Meeting Notes Parser</h3>
+<p><strong>Location:</strong>
+<code>projects/productivity-tools/meeting-parser/</code></p>
+<p>Extract action items from meeting transcripts.</p>
+<ul>
+<li><strong>Detection:</strong> Tasks, owners, priorities,
+deadlines</li>
+<li><strong>Outputs:</strong> Markdown (grouped by owner/priority),
+JSON</li>
+</ul>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> cli.js meeting-notes.txt</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> cli.js notes.txt <span class="at">-f</span> json</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> transcript.txt <span class="kw">|</span> <span class="ex">node</span> cli.js <span class="at">--stdin</span></span></code></pre></div>
+<hr />
+<h3 id="email-template-manager">19. Email Template Manager</h3>
+<p><strong>Location:</strong>
+<code>projects/productivity-tools/email-templates/</code></p>
+<p>Store, search, and insert email templates.</p>
+<ul>
+<li><strong>Features:</strong> Categories, search, variable
+placeholders, usage stats</li>
+<li><strong>Starter Templates:</strong> 6 included</li>
+</ul>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">etm</span> list</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">etm</span> insert <span class="st">&quot;Meeting Follow Up&quot;</span> <span class="kw">|</span> <span class="ex">pbcopy</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="ex">etm</span> search invoice</span></code></pre></div>
+<hr />
+<h2 id="smb-tools">SMB Tools</h2>
+<h3 id="tech-stack-recommender">20. Tech Stack Recommender</h3>
+<p><strong>Location:</strong>
+<code>projects/smb-tools/stack-recommender/</code></p>
+<p>Recommends tech stacks for small businesses.</p>
+<ul>
+<li><strong>Business Profiles:</strong> 17 types (e-commerce, SaaS,
+agency, restaurant, etc.)</li>
+<li><strong>Tool Categories:</strong> 15 categories, 100+ curated
+tools</li>
+<li><strong>Interfaces:</strong> CLI, REST API, Web UI</li>
+</ul>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> src/cli.js <span class="st">&quot;ecommerce startup&quot;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> src/cli.js <span class="at">--interactive</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> start  <span class="co"># Web UI at localhost:3000</span></span></code></pre></div>
+<hr />
+<h1 id="part-2-research-documents">Part 2: Research Documents</h1>
+<h2 id="market-intelligence">Market Intelligence</h2>
+<table>
+<colgroup>
+<col style="width: 41%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr>
+<th>Document</th>
+<th>Key Findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>market-research-20260128.md</strong></td>
+<td>10 product opportunities. 700M weekly ChatGPT users, $391B
+enterprise AI spend. Top picks: MCPHub, AIKeyVault, VoiceLatency.</td>
+</tr>
+<tr>
+<td><strong>competitive-analysis.md</strong></td>
+<td>No unified personal dashboard exists. Users need 5-7 apps, pay
+$1,500+/year. Lumen’s edge: one place for everything.</td>
+</tr>
+<tr>
+<td><strong>social-signals-20260128.md</strong></td>
+<td>15 pain points identified. AI subscription fatigue ($60-200/mo),
+freelancer tool fragmentation, automation maintenance debt.</td>
+</tr>
+<tr>
+<td><strong>tech-trends-20260128.md</strong></td>
+<td>2025-2026 shift from chatbots to agents. MCP becoming “USB-C for
+AI.” Opportunities: MCP marketplace, browser agent verticals.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="ai-ecosystem-analysis">AI Ecosystem Analysis</h2>
+<table>
+<colgroup>
+<col style="width: 41%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr>
+<th>Document</th>
+<th>Key Findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ai-api-comparison.md</strong></td>
+<td>10 providers compared. Cheapest: DeepSeek ($0.28/1M). Fastest: Groq
+(500-1000 TPS). Largest context: Gemini (2M tokens).</td>
+</tr>
+<tr>
+<td><strong>ai-agent-frameworks.md</strong></td>
+<td>LangGraph most mature. CrewAI best for rapid prototyping. OpenAI
+Agents SDK production-ready. Trend: graph-based orchestration.</td>
+</tr>
+<tr>
+<td><strong>ai-coding-tools.md</strong></td>
+<td>Universal complaints: context limits, hallucinations, 41% higher
+code churn. Users want background agents, persistent memory.</td>
+</tr>
+<tr>
+<td><strong>mcp-ecosystem.md</strong></td>
+<td>10,000+ servers, 97M+ monthly SDK downloads. Gap: 53% have hardcoded
+credentials. Missing: healthcare, ERP, government.</td>
+</tr>
+<tr>
+<td><strong>voice-ai-market.md</strong></td>
+<td>$2.4B → $47.5B by 2034. Pricing $0.08-0.33/min. Limitations: latency
+(400ms-2s), hallucinations, hidden costs.</td>
+</tr>
+<tr>
+<td><strong>ai-gateway-competitors.md</strong></td>
+<td>$3.9B → $8.8B by 2030. Key players: OpenRouter, Portkey, LiteLLM.
+Gaps: open-source intelligent routing, edge-native.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="pain-points-opportunities">Pain Points &amp; Opportunities</h2>
+<table>
+<colgroup>
+<col style="width: 41%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr>
+<th>Document</th>
+<th>Key Findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ai-subscription-fatigue.md</strong></td>
+<td>“Death by $20 subscriptions.” Devs spend $50-60/mo, power users
+$100-200/mo. BYOK demand rising.</td>
+</tr>
+<tr>
+<td><strong>chatgpt-quality-complaints.md</strong></td>
+<td>7 complaint categories. Code generation dropped 52% → 10% (Stanford
+study). Users migrating to Claude, Gemini.</td>
+</tr>
+<tr>
+<td><strong>automation-platforms-analysis.md</strong></td>
+<td>Why workflows break: OAuth decay, API changes, data drift,
+complexity collapse. No platform is “set and forget.”</td>
+</tr>
+<tr>
+<td><strong>nocode-limitations.md</strong></td>
+<td>10 walls: vendor lock-in, scalability (Airtable 50K limit), hidden
+costs, outgrow pattern. Great for MVPs, ceiling inevitable.</td>
+</tr>
+<tr>
+<td><strong>api-docs-pain-points.md</strong></td>
+<td>75% of APIs don’t match specs. Postman exodus to Bruno/Hoppscotch.
+Tools charge $400/mo for CSS customization.</td>
+</tr>
+<tr>
+<td><strong>pkm-pain-points.md</strong></td>
+<td>Obsidian mobile rough, Notion slow at scale (10+ sec), Roam
+declining. Gap: fast, offline-first, mobile-friendly.</td>
+</tr>
+<tr>
+<td><strong>collector-pain-points.md</strong></td>
+<td>Manual entry hell, inaccurate pricing, duplicate purchases,
+subscription fatigue ($110+/yr for comics alone).</td>
+</tr>
+<tr>
+<td><strong>inventory-solutions.md</strong></td>
+<td>Tools too generic OR too specific. Gap: condition grading, variant
+tracking, open data export.</td>
+</tr>
+<tr>
+<td><strong>browser-ext-opportunities.md</strong></td>
+<td>Top asks: web annotation layer, personal web archive, natural
+language mods (YC validated with Tweeks).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="developer-business-resources">Developer &amp; Business
+Resources</h2>
+<table>
+<colgroup>
+<col style="width: 41%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr>
+<th>Document</th>
+<th>Key Findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>indie-monetization.md</strong></td>
+<td>SaaS sweet spot: $29-99/mo, 3 tiers. Underpricing is #1 mistake.
+“200 at $49” beats “2,000 at $10.”</td>
+</tr>
+<tr>
+<td><strong>local-first-movement.md</strong></td>
+<td>Users want data ownership, instant responsiveness, escape
+subscription fatigue. Obsidian is the model.</td>
+</tr>
+<tr>
+<td><strong>smb-tech-stacks.md</strong></td>
+<td>Universal pain: 5-10 tools, high costs, admin burden.
+Vertical-specific all-in-ones winning.</td>
+</tr>
+<tr>
+<td><strong>cli-distribution.md</strong></td>
+<td>Homebrew &gt; npm &gt; curl scripts &gt; binaries. Multi-channel is
+standard. GoReleaser for Go/Rust.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h1 id="appendix-quick-reference">Appendix: Quick Reference</h1>
+<h2 id="tools-by-use-case">Tools by Use Case</h2>
+<p><strong>Starting a Freelance Project:</strong> 1.
+<code>scope-calc</code> — Estimate hours and cost 2.
+<code>proposal-gen</code> — Generate proposal 3.
+<code>contract-gen</code> — Generate contract 4.
+<code>invoice-gen</code> — Generate invoice when done</p>
+<p><strong>Daily Development:</strong> 1. <code>commit-formatter</code>
+— Format commit messages 2. <code>pr-gen</code> — Generate PR
+descriptions 3. <code>changelog-gen</code> — Generate changelogs 4.
+<code>dep-auditor</code> — Check dependencies</p>
+<p><strong>Managing Work:</strong> 1. <code>time-tracker</code> — Track
+hours 2. <code>standup-gen</code> — Daily standups 3.
+<code>meeting-parser</code> — Extract action items 4.
+<code>crm-lite</code> — Track clients</p>
+<hr />
+<p><em>Report compiled by Lumen Factory • January 28, 2026</em></p>
+</body>
+</html>
