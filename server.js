@@ -1544,14 +1544,22 @@ app.post('/api/auth/login', async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
     
-    res.json({
-      success: true,
-      message: 'Logged in successfully',
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email
+    // Explicitly save session before responding (prevents race condition with async stores)
+    req.session.save((saveErr) => {
+      if (saveErr) {
+        console.error('[Auth] Session save error:', saveErr);
+        return res.status(500).json({ error: 'Session save failed' });
       }
+      
+      res.json({
+        success: true,
+        message: 'Logged in successfully',
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email
+        }
+      });
     });
   } catch (err) {
     console.error('[Auth] Login error:', err);
