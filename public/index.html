@@ -1082,6 +1082,25 @@
 
   <script>
     // ============================================
+    // AUTH HELPER
+    // ============================================
+    async function authFetch(url, options = {}) {
+      const res = await fetch(url, { ...options, redirect: 'manual' });
+      // Check for redirect (302) or unauthorized (401/403)
+      if (res.type === 'opaqueredirect' || res.status === 401 || res.status === 403) {
+        window.location.href = '/login.html';
+        throw new Error('Unauthorized - redirecting to login');
+      }
+      // Also check if response is HTML (login page) instead of JSON
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json') && url.includes('/api/')) {
+        window.location.href = '/login.html';
+        throw new Error('Not authenticated - redirecting to login');
+      }
+      return res;
+    }
+
+    // ============================================
     // STATE
     // ============================================
     let briefings = [];
@@ -1252,7 +1271,7 @@
 
     async function loadExpenses() {
       try {
-        const response = await fetch(`/api/expenses/summary?month=${selectedMonth}`);
+        const response = await authFetch(`/api/expenses/summary?month=${selectedMonth}`);
         const data = await response.json();
         renderExpensesView(data);
       } catch (err) {
@@ -1596,7 +1615,7 @@
       }
       
       try {
-        const res = await fetch('/api/expenses', {
+        const res = await authFetch('/api/expenses', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1623,7 +1642,7 @@
       if (!confirm('Delete this expense?')) return;
       
       try {
-        await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+        await authFetch(`/api/expenses/${id}`, { method: 'DELETE' });
         loadExpenses();
       } catch (err) {
         console.error('Error deleting expense:', err);
@@ -1642,11 +1661,11 @@
         }
         
         // Fetch ALL ideas (no server-side filtering for better UX)
-        const response = await fetch('/api/ideas?limit=500');
+        const response = await authFetch('/api/ideas?limit=500');
         allIdeasCache = await response.json();
         
         // Also fetch filter metadata
-        const metaRes = await fetch('/api/ideas/meta/filters');
+        const metaRes = await authFetch('/api/ideas/meta/filters');
         ideasMeta = await metaRes.json();
         
         // Apply local filters
@@ -2094,7 +2113,7 @@
 
     async function updateIdeaStatus(id, status) {
       try {
-        await fetch(`/api/ideas/${id}`, {
+        await authFetch(`/api/ideas/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status })
@@ -2117,14 +2136,14 @@
       if (searchQuery) params.append('q', searchQuery);
       params.append('limit', '100');
 
-      const res = await fetch(`/api/briefings?${params}`);
+      const res = await authFetch(`/api/briefings?${params}`);
       briefings = await res.json();
       renderBriefingList();
       updateCount();
     }
 
     async function fetchStats() {
-      const res = await fetch('/api/stats');
+      const res = await authFetch('/api/stats');
       const stats = await res.json();
       
       document.getElementById('count-all').textContent = stats.total;
@@ -2138,13 +2157,13 @@
       document.getElementById('count-traffic').textContent = types['traffic'] || 0;
       document.getElementById('count-evening').textContent = types['evening-wrap'] || 0;
       
-      const archivedRes = await fetch('/api/briefings?archived=only&limit=1000');
+      const archivedRes = await authFetch('/api/briefings?archived=only&limit=1000');
       const archived = await archivedRes.json();
       document.getElementById('count-archived').textContent = archived.length;
     }
 
     async function fetchTags() {
-      const res = await fetch('/api/tags');
+      const res = await authFetch('/api/tags');
       const tags = await res.json();
       
       const container = document.getElementById('tags-list');
@@ -2218,7 +2237,7 @@
       renderBriefingList();
       showDetailPanel();
       
-      const res = await fetch(`/api/briefings/${id}`);
+      const res = await authFetch(`/api/briefings/${id}`);
       const b = await res.json();
       const type = typeConfig[b.type] || { label: b.type, color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' };
       const date = new Date(b.created_at).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -2265,10 +2284,10 @@
       fetchStats();
     }
 
-    async function toggleStar(id) { await fetch(`/api/briefings/${id}/star`, { method: 'PATCH' }); viewBriefing(id); }
+    async function toggleStar(id) { await authFetch(`/api/briefings/${id}/star`, { method: 'PATCH' }); viewBriefing(id); }
     
     async function archiveBriefing(id) {
-      await fetch(`/api/briefings/${id}/archive`, { method: 'PATCH' });
+      await authFetch(`/api/briefings/${id}/archive`, { method: 'PATCH' });
       selectedId = null;
       hideDetailPanel();
       document.getElementById('briefing-detail').innerHTML = `<div class="flex items-center justify-center h-full"><div class="text-center"><div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-zinc-800/50 flex items-center justify-center"><svg class="w-6 h-6 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><p class="text-sm text-zinc-500">Briefing archived</p></div></div>`;
@@ -2277,7 +2296,7 @@
 
     async function deleteBriefing(id) {
       if (!confirm('Permanently delete this briefing?')) return;
-      await fetch(`/api/briefings/${id}`, { method: 'DELETE' });
+      await authFetch(`/api/briefings/${id}`, { method: 'DELETE' });
       selectedId = null;
       hideDetailPanel();
       document.getElementById('briefing-detail').innerHTML = `<div class="flex items-center justify-center h-full"><div class="text-center"><div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-zinc-800/50 flex items-center justify-center"><svg class="w-6 h-6 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><p class="text-sm text-zinc-500">Briefing deleted</p></div></div>`;
@@ -2352,7 +2371,7 @@
     
     async function loadExcelFiles() {
       try {
-        const response = await fetch('/api/excel');
+        const response = await authFetch('/api/excel');
         excelFiles = await response.json();
         renderExcelFiles();
         fetchExcelStats();
@@ -2363,7 +2382,7 @@
 
     async function fetchExcelStats() {
       try {
-        const response = await fetch('/api/excel/stats');
+        const response = await authFetch('/api/excel/stats');
         const stats = await response.json();
         document.getElementById('excel-stat-total').textContent = stats.total || 0;
         document.getElementById('excel-stat-pending').textContent = stats.pending || 0;
@@ -2401,7 +2420,7 @@
       renderExcelFiles();
       
       try {
-        const response = await fetch(`/api/excel/${id}`);
+        const response = await authFetch(`/api/excel/${id}`);
         const file = await response.json();
         
         document.getElementById('excel-empty-state').classList.add('hidden');
@@ -2538,7 +2557,7 @@
       saveBtn.disabled = true;
       saveBtn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...';
       try {
-        await fetch(`/api/excel/${currentPreviewFileId}`, {
+        await authFetch(`/api/excel/${currentPreviewFileId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ preview_data: currentExcelData, status: 'completed', status_message: 'Edited and saved' })
@@ -2611,7 +2630,7 @@
       try {
         const content = await readFileAsBase64(excelFileToUpload);
         const instructions = document.getElementById('excel-instructions').value.trim();
-        const response = await fetch('/api/excel/upload', {
+        const response = await authFetch('/api/excel/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ filename: excelFileToUpload.name, content, instructions: instructions || null })
@@ -2645,7 +2664,7 @@
     async function deleteExcelFile(id) {
       if (!confirm('Delete this file?')) return;
       try {
-        await fetch(`/api/excel/${id}`, { method: 'DELETE' });
+        await authFetch(`/api/excel/${id}`, { method: 'DELETE' });
         if (currentPreviewFileId === id) backToExcelList();
         loadExcelFiles();
       } catch (e) {
@@ -2673,7 +2692,7 @@
 
     async function showAnalytics() {
       showModal('analytics-modal-template');
-      const res = await fetch('/api/analytics');
+      const res = await authFetch('/api/analytics');
       const data = await res.json();
       const maxByDay = Math.max(...Object.values(data.byDay), 1);
       const days = Object.entries(data.byDay).slice(-14);
@@ -2683,7 +2702,7 @@
     async function showShareModal(id) {
       showModal('share-modal-template');
       document.getElementById('share-content').innerHTML = '<div class="flex justify-center py-4"><div class="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>';
-      const res = await fetch(`/api/briefings/${id}/share`, { method: 'POST' });
+      const res = await authFetch(`/api/briefings/${id}/share`, { method: 'POST' });
       const data = await res.json();
       document.getElementById('share-content').innerHTML = `<p class="text-sm text-zinc-400 mb-3">Anyone with this link can view this briefing:</p><div class="flex gap-2"><input type="text" readonly value="${data.shareUrl}" class="flex-1 h-10 px-3 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 text-ellipsis" id="share-url-input"><button onclick="copyShareUrl()" class="px-4 h-10 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg shrink-0">Copy</button></div><button onclick="revokeShare(${id})" class="mt-3 text-xs text-red-400 hover:text-red-300">Revoke link</button>`;
     }
@@ -2695,7 +2714,7 @@
     }
 
     async function revokeShare(id) {
-      await fetch(`/api/briefings/${id}/share`, { method: 'DELETE' });
+      await authFetch(`/api/briefings/${id}/share`, { method: 'DELETE' });
       closeModal();
     }
 
@@ -2710,7 +2729,7 @@
       const tag = input.value.trim();
       const id = input.dataset.briefingId;
       if (!tag) return;
-      await fetch(`/api/briefings/${id}/tags`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tag }) });
+      await authFetch(`/api/briefings/${id}/tags`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tag }) });
       closeModal();
       viewBriefing(parseInt(id));
       fetchTags();
@@ -2912,7 +2931,7 @@
 
     async function showPitchDetail(id) {
       try {
-        const response = await fetch(`/api/pitches/${id}`);
+        const response = await authFetch(`/api/pitches/${id}`);
         const pitch = await response.json();
         const verdict = pitchVerdictConfig[pitch.verdict] || pitchVerdictConfig.pending;
         const date = new Date(pitch.pitch_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -2997,7 +3016,7 @@
 
     async function updatePitchVerdict(id, verdict) {
       try {
-        await fetch(`/api/pitches/${id}/verdict`, {
+        await authFetch(`/api/pitches/${id}/verdict`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ verdict })
@@ -3011,7 +3030,7 @@
 
     async function togglePitchStar(id) {
       try {
-        await fetch(`/api/pitches/${id}/star`, { method: 'PATCH' });
+        await authFetch(`/api/pitches/${id}/star`, { method: 'PATCH' });
         loadPitches();
       } catch (err) {
         console.error('Error toggling star:', err);
@@ -3097,7 +3116,7 @@
 
     async function updateJobStatus(id, status) {
       try {
-        await fetch(`/api/jobs/${id}/status`, {
+        await authFetch(`/api/jobs/${id}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status })
@@ -3110,7 +3129,7 @@
 
     async function toggleJobStar(id) {
       try {
-        await fetch(`/api/jobs/${id}/star`, { method: 'PATCH' });
+        await authFetch(`/api/jobs/${id}/star`, { method: 'PATCH' });
         loadJobs();
       } catch (err) {
         console.error('Error toggling job star:', err);
@@ -3122,7 +3141,7 @@
     // ============================================
     async function loadResources() {
       try {
-        const response = await fetch('/api/resources');
+        const response = await authFetch('/api/resources');
         const resources = await response.json();
         renderResourcesView(resources);
       } catch (err) {
@@ -3173,7 +3192,7 @@
 
     async function toggleResourceStar(id) {
       try {
-        await fetch(`/api/resources/${id}/star`, { method: 'PATCH' });
+        await authFetch(`/api/resources/${id}/star`, { method: 'PATCH' });
         loadResources();
       } catch (err) {
         console.error('Error toggling resource star:', err);
@@ -3183,7 +3202,7 @@
     async function deleteResource(id) {
       if (!confirm('Delete this resource?')) return;
       try {
-        await fetch(`/api/resources/${id}`, { method: 'DELETE' });
+        await authFetch(`/api/resources/${id}`, { method: 'DELETE' });
         loadResources();
       } catch (err) {
         console.error('Error deleting resource:', err);
@@ -3241,7 +3260,7 @@
         type: document.getElementById('resource-url').value ? 'link' : 'note'
       };
       try {
-        await fetch('/api/resources', {
+        await authFetch('/api/resources', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
@@ -3289,7 +3308,7 @@
           page: lumenToolsState.page,
           limit: 24
         });
-        const response = await fetch(`/api/lumen-tools/templates?${params}`);
+        const response = await authFetch(`/api/lumen-tools/templates?${params}`);
         lumenToolsState.data = await response.json();
         if (lumenToolsState.activeTab === 'templates') renderTemplatesBrowser();
       } catch (err) {
@@ -3299,7 +3318,7 @@
 
     async function loadCustomSkills() {
       try {
-        const response = await fetch('/api/lumen-tools/custom-skills');
+        const response = await authFetch('/api/lumen-tools/custom-skills');
         lumenToolsState.customSkills = await response.json();
       } catch (err) {
         console.error('Error loading custom skills:', err);
@@ -3311,7 +3330,7 @@
     
     async function loadSyncStatus() {
       try {
-        const response = await fetch('/api/lumen-tools/sync-status');
+        const response = await authFetch('/api/lumen-tools/sync-status');
         const status = await response.json();
         updateSyncStatusUI(status);
         return status;
@@ -3392,7 +3411,7 @@
       if (btn) btn.disabled = true;
       
       try {
-        const response = await fetch('/api/lumen-tools/sync', { method: 'POST' });
+        const response = await authFetch('/api/lumen-tools/sync', { method: 'POST' });
         const result = await response.json();
         
         if (result.success) {
@@ -3786,7 +3805,7 @@
 
     async function showTemplateDetail(type, id) {
       try {
-        const response = await fetch(`/api/lumen-tools/templates/${type}/${id}`);
+        const response = await authFetch(`/api/lumen-tools/templates/${type}/${id}`);
         const item = await response.json();
         
         const modal = document.createElement('div');
@@ -3919,7 +3938,7 @@
         instructions: form.instructions.value
       };
       try {
-        await fetch('/api/lumen-tools/custom-skills', {
+        await authFetch('/api/lumen-tools/custom-skills', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
@@ -3936,7 +3955,7 @@
     // Other tab renderers (Analytics, Health, Monitor, Plugins)
     async function loadLumenAnalytics() {
       try {
-        const response = await fetch('/api/lumen-tools/analytics');
+        const response = await authFetch('/api/lumen-tools/analytics');
         lumenToolsState.analytics = await response.json();
         if (lumenToolsState.activeTab === 'analytics') renderAnalyticsTab(document.getElementById('lumen-tab-content'));
       } catch (err) { console.error('Error loading analytics:', err); }
@@ -3955,7 +3974,7 @@
 
     async function loadHealthCheck() {
       try {
-        const response = await fetch('/api/lumen-tools/health');
+        const response = await authFetch('/api/lumen-tools/health');
         lumenToolsState.health = await response.json();
         if (lumenToolsState.activeTab === 'health') renderHealthTab(document.getElementById('lumen-tab-content'));
       } catch (err) { console.error('Error loading health:', err); }
@@ -3972,7 +3991,7 @@
 
     async function loadConversations() {
       try {
-        const response = await fetch('/api/lumen-tools/conversations');
+        const response = await authFetch('/api/lumen-tools/conversations');
         lumenToolsState.conversations = await response.json();
         if (lumenToolsState.activeTab === 'monitor') renderConversationsTab(document.getElementById('lumen-tab-content'));
       } catch (err) { console.error('Error loading conversations:', err); }
@@ -3987,7 +4006,7 @@
 
     async function loadPlugins() {
       try {
-        const response = await fetch('/api/lumen-tools/plugins');
+        const response = await authFetch('/api/lumen-tools/plugins');
         lumenToolsState.plugins = await response.json();
         if (lumenToolsState.activeTab === 'plugins') renderPluginsTab(document.getElementById('lumen-tab-content'));
       } catch (err) { console.error('Error loading plugins:', err); }
@@ -4001,7 +4020,7 @@
     }
 
     async function togglePlugin(id) {
-      try { await fetch(`/api/lumen-tools/plugins/${id}/toggle`, { method: 'POST' }); loadPlugins(); } catch (err) { console.error('Error:', err); }
+      try { await authFetch(`/api/lumen-tools/plugins/${id}/toggle`, { method: 'POST' }); loadPlugins(); } catch (err) { console.error('Error:', err); }
     }
 
     function formatTimeAgo(date) {
