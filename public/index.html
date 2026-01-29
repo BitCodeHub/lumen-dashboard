@@ -489,6 +489,18 @@
           </button>
         </div>
 
+        <!-- Pitches Section (Shark Tank) -->
+        <div class="border-t border-zinc-800/50 pt-3 mb-4">
+          <div class="px-3 py-2">
+            <span class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Shark Tank</span>
+          </div>
+          <button onclick="switchView('pitches'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="pitches">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" /></svg>
+            <span>AI Pitches</span>
+            <span id="count-pitches" class="ml-auto text-xs text-zinc-600 tabular-nums">🦈</span>
+          </button>
+        </div>
+
         <!-- Jobs Section -->
         <div class="border-t border-zinc-800/50 pt-3 mb-4">
           <div class="px-3 py-2">
@@ -618,6 +630,20 @@
             <div class="h-32 rounded-2xl skeleton"></div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div class="h-48 rounded-2xl skeleton"></div>
+              <div class="h-48 rounded-2xl skeleton"></div>
+              <div class="h-48 rounded-2xl skeleton"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pitches View (Shark Tank) -->
+      <div id="pitches-view" class="flex-1 overflow-y-auto hidden">
+        <div id="pitches-content" class="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+          <!-- Loading state -->
+          <div class="space-y-4">
+            <div class="h-32 rounded-2xl skeleton"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="h-48 rounded-2xl skeleton"></div>
               <div class="h-48 rounded-2xl skeleton"></div>
             </div>
@@ -1145,6 +1171,7 @@
       document.getElementById('briefings-view').classList.add('hidden');
       document.getElementById('expenses-view').classList.add('hidden');
       document.getElementById('ideas-view').classList.add('hidden');
+      document.getElementById('pitches-view').classList.add('hidden');
       document.getElementById('excel-view').classList.add('hidden');
       document.getElementById('jobs-view').classList.add('hidden');
       document.getElementById('resources-view').classList.add('hidden');
@@ -1186,6 +1213,12 @@
         document.getElementById('briefing-count').textContent = '';
         document.querySelector('[data-filter="excel"]').classList.add('active');
         loadExcelFiles();
+      } else if (view === 'pitches') {
+        document.getElementById('pitches-view').classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'AI Pitches (Shark Tank)';
+        document.getElementById('briefing-count').textContent = '';
+        document.querySelector('[data-filter="pitches"]').classList.add('active');
+        loadPitches();
       } else if (view === 'jobs') {
         document.getElementById('jobs-view').classList.remove('hidden');
         document.getElementById('current-filter').textContent = 'Job Search';
@@ -2604,6 +2637,236 @@
         fetchBriefings();
       }, 300);
     });
+
+    // ============================================
+    // PITCHES (Shark Tank)
+    // ============================================
+    const pitchVerdictConfig = {
+      'pending': { label: 'Pending', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: '⏳' },
+      'approved': { label: 'Approved', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', icon: '✅' },
+      'rejected': { label: 'Rejected', color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '❌' },
+      'maybe': { label: 'Maybe', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: '🤔' },
+      'revisit': { label: 'Revisit', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: '🔄' }
+    };
+
+    async function loadPitches() {
+      try {
+        const [pitchesRes, statsRes] = await Promise.all([
+          fetch('/api/pitches'),
+          fetch('/api/pitches/stats')
+        ]);
+        const pitches = await pitchesRes.json();
+        const stats = await statsRes.json();
+        renderPitchesView(pitches, stats);
+      } catch (err) {
+        console.error('Error loading pitches:', err);
+        document.getElementById('pitches-content').innerHTML = '<div class="text-center text-red-400 py-8">Failed to load pitches</div>';
+      }
+    }
+
+    function renderPitchesView(pitches, stats) {
+      const container = document.getElementById('pitches-content');
+      
+      container.innerHTML = `
+        <div class="animate-fade-in space-y-6">
+          <!-- Header -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <span class="text-4xl animate-float">🦈</span>
+              <div>
+                <h2 class="text-2xl md:text-3xl font-bold text-zinc-100">Shark Tank Pitches</h2>
+                <p class="text-sm text-zinc-500">Daily AI opportunity pitches with research & debate</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 text-center">
+              <div class="text-2xl font-bold text-zinc-100">${stats.total || 0}</div>
+              <div class="text-xs text-zinc-500">Total Pitches</div>
+            </div>
+            <div class="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-center">
+              <div class="text-2xl font-bold text-amber-400">${stats.pending || 0}</div>
+              <div class="text-xs text-zinc-500">Pending</div>
+            </div>
+            <div class="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-center">
+              <div class="text-2xl font-bold text-emerald-400">${stats.approved || 0}</div>
+              <div class="text-xs text-zinc-500">Approved</div>
+            </div>
+            <div class="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-center">
+              <div class="text-2xl font-bold text-red-400">${stats.rejected || 0}</div>
+              <div class="text-xs text-zinc-500">Rejected</div>
+            </div>
+            <div class="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-center">
+              <div class="text-2xl font-bold text-blue-400">${stats.maybe || 0}</div>
+              <div class="text-xs text-zinc-500">Maybe</div>
+            </div>
+          </div>
+          
+          <!-- Pitches List -->
+          <div class="space-y-4" id="pitches-list">
+            ${pitches.length > 0 ? pitches.map(pitch => renderPitchCard(pitch)).join('') : `
+              <div class="text-center py-16">
+                <div class="text-6xl mb-4 opacity-50">🦈</div>
+                <p class="text-lg text-zinc-400 mb-2">No pitches yet</p>
+                <p class="text-sm text-zinc-600">Pitches from daily Shark Tank sessions will appear here</p>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPitchCard(pitch) {
+      const verdict = pitchVerdictConfig[pitch.verdict] || pitchVerdictConfig.pending;
+      const date = new Date(pitch.pitch_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      const conversationCount = pitch.conversation?.length || 0;
+      const sources = pitch.research_sources?.length || 0;
+      
+      return \`
+        <div class="p-5 rounded-2xl bg-zinc-800/30 border border-zinc-700/50 hover:bg-zinc-800/50 transition-all cursor-pointer" onclick="showPitchDetail(\${pitch.id})">
+          <div class="flex items-start justify-between gap-4 mb-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-2xl">\${verdict.icon}</span>
+                <h3 class="text-lg font-semibold text-zinc-100">\${escapeHtml(pitch.idea_name)}</h3>
+              </div>
+              <p class="text-xs text-zinc-500 mb-2">\${date}</p>
+              <span class="px-2.5 py-1 text-xs rounded-full border \${verdict.color}">\${verdict.label}</span>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-zinc-500">
+              <span title="Research Sources">📚 \${sources}</span>
+              <span title="Messages">💬 \${conversationCount}</span>
+              \${pitch.starred ? '<span class="text-amber-400">⭐</span>' : ''}
+            </div>
+          </div>
+          
+          \${pitch.trend_signal ? \`
+            <div class="mb-3 p-3 rounded-lg bg-zinc-900/50 border border-zinc-700/30">
+              <div class="text-[10px] font-semibold text-indigo-400 uppercase tracking-wide mb-1">📡 Trend Signal</div>
+              <p class="text-xs text-zinc-400 line-clamp-2">\${escapeHtml(pitch.trend_signal)}</p>
+            </div>
+          \` : ''}
+          
+          <p class="text-sm text-zinc-400 line-clamp-3">\${escapeHtml(pitch.pitch_content || '')}</p>
+          
+          \${pitch.tags?.length ? \`
+            <div class="flex flex-wrap gap-1.5 mt-3">
+              \${pitch.tags.map(t => \`<span class="px-2 py-0.5 text-[10px] rounded-full bg-zinc-700/50 text-zinc-400">\${escapeHtml(t)}</span>\`).join('')}
+            </div>
+          \` : ''}
+        </div>
+      \`;
+    }
+
+    async function showPitchDetail(id) {
+      try {
+        const response = await fetch(\`/api/pitches/\${id}\`);
+        const pitch = await response.json();
+        const verdict = pitchVerdictConfig[pitch.verdict] || pitchVerdictConfig.pending;
+        const date = new Date(pitch.pitch_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+        
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        modal.innerHTML = \`
+          <div class="bg-surface-900 rounded-2xl border border-zinc-700/50 w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-fade-in">
+            <div class="p-5 border-b border-zinc-800 flex items-start justify-between shrink-0">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-2xl">\${verdict.icon}</span>
+                  <h2 class="text-xl font-bold text-zinc-100">\${escapeHtml(pitch.idea_name)}</h2>
+                </div>
+                <p class="text-sm text-zinc-500">\${date}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-3 py-1 text-xs rounded-full border \${verdict.color}">\${verdict.label}</span>
+                <button onclick="this.closest('.fixed').remove()" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-6">
+              \${pitch.trend_signal ? \`
+                <div>
+                  <h4 class="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2">📡 Trend Signal</h4>
+                  <p class="text-sm text-zinc-300">\${escapeHtml(pitch.trend_signal)}</p>
+                </div>
+              \` : ''}
+              
+              \${pitch.research_sources?.length ? \`
+                <div>
+                  <h4 class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">📚 Research Sources (\${pitch.research_sources.length})</h4>
+                  <div class="space-y-1">
+                    \${pitch.research_sources.map(url => \`<a href="\${url}" target="_blank" class="block text-xs text-indigo-400 hover:text-indigo-300 truncate">\${url}</a>\`).join('')}
+                  </div>
+                </div>
+              \` : ''}
+              
+              <div>
+                <h4 class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2">🦈 The Pitch</h4>
+                <div class="prose text-sm text-zinc-300 whitespace-pre-wrap">\${escapeHtml(pitch.pitch_content || '')}</div>
+              </div>
+              
+              \${pitch.conversation?.length ? \`
+                <div>
+                  <h4 class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">💬 Conversation (\${pitch.conversation.length})</h4>
+                  <div class="space-y-3">
+                    \${pitch.conversation.map(msg => \`
+                      <div class="p-3 rounded-lg \${msg.role === 'luna' ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-zinc-800/50 border border-zinc-700/30'}">
+                        <div class="text-[10px] font-semibold \${msg.role === 'luna' ? 'text-indigo-400' : 'text-zinc-500'} uppercase mb-1">\${msg.role === 'luna' ? '🌙 Luna' : '👤 Jimmy'}</div>
+                        <p class="text-sm text-zinc-300">\${escapeHtml(msg.content)}</p>
+                      </div>
+                    \`).join('')}
+                  </div>
+                </div>
+              \` : ''}
+              
+              \${pitch.verdict_reason ? \`
+                <div>
+                  <h4 class="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">📝 Verdict Reason</h4>
+                  <p class="text-sm text-zinc-400">\${escapeHtml(pitch.verdict_reason)}</p>
+                </div>
+              \` : ''}
+              
+              <div class="flex gap-3 pt-4 border-t border-zinc-800">
+                <button onclick="updatePitchVerdict(\${pitch.id}, 'approved'); this.closest('.fixed').remove();" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl transition-colors">✅ Approve</button>
+                <button onclick="updatePitchVerdict(\${pitch.id}, 'rejected'); this.closest('.fixed').remove();" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-xl transition-colors">❌ Reject</button>
+                <button onclick="updatePitchVerdict(\${pitch.id}, 'maybe'); this.closest('.fixed').remove();" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors">🤔 Maybe</button>
+              </div>
+            </div>
+          </div>
+        \`;
+        document.body.appendChild(modal);
+      } catch (err) {
+        console.error('Error loading pitch:', err);
+        alert('Failed to load pitch details');
+      }
+    }
+
+    async function updatePitchVerdict(id, verdict) {
+      try {
+        await fetch(\`/api/pitches/\${id}/verdict\`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ verdict })
+        });
+        loadPitches();
+      } catch (err) {
+        console.error('Error updating verdict:', err);
+        alert('Failed to update verdict');
+      }
+    }
+
+    async function togglePitchStar(id) {
+      try {
+        await fetch(\`/api/pitches/\${id}/star\`, { method: 'PATCH' });
+        loadPitches();
+      } catch (err) {
+        console.error('Error toggling star:', err);
+      }
+    }
 
     // ============================================
     // JOBS
