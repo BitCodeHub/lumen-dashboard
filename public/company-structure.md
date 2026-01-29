@@ -2,37 +2,30 @@
 
 **Established:** January 2026  
 **CEO:** Jimmy Lam  
-**Total Workforce:** 108 AI Agents
+**Total Workforce:** ~120 AI Agents
 
 ---
 
 ## Executive Leadership
 
-```
-                              Jimmy Lam
-                                (CEO)
-                                  │
-               ┌──────────────────┴──────────────────┐
-               │                                     │
-          Unc Lumen 🔆                          Maven 📋
-       Chief of Technology                    Chief of Staff
-               │                                     │
-    ┌────┬────┬────┬────┐            ┌────┬────┬────┬────┬────┐
-    │    │    │    │    │            │    │    │    │    │    │
- Harper Reese Finley Riley         Ethan Morgan Devon Sam  Parker
-   👔    🔬    💰    🔍              ⚙️    📣    🔧   🤝    📦
-   HR  Research Finance SEO         Eng  Marketing DevOps Success Product
-   (5)  (20)   (9)   (4)           (32)   (13)   (14)  (15)   (—)
-```
+### Jimmy Lam (CEO)
 
-### Additional Department Heads
+#### 🔆 Lumen — Chief of Technology
+- 👔 Harper — HR & Compliance (5 team members)
+- 🔬 Reese — Research (20 team members)
+- 💰 Finley — Finance & Legal (9 team members)
+- 🔍 Riley — SEO (4 team members)
+- ✅ Avery — Internal Audit
+- 🛡️ Casey — Cybersecurity
+- 📊 Dakota — Data & Analytics
 
-| Head | Emoji | Department | Reports To |
-|------|-------|------------|------------|
-| Avery | ✅ | Internal Audit | Lumen |
-| Casey | 🛡️ | Cybersecurity | Lumen |
-| Dakota | 📊 | Data & Analytics | Lumen |
-| Dana | 🎨 | Design | Maven |
+#### 📋 Maven — Chief of Staff
+- ⚙️ Ethan — Engineering (32 team members)
+- 📣 Morgan — Marketing (13 team members)
+- 🔧 Devon — DevOps (14 team members)
+- 🤝 Sam — Customer Success (15 team members)
+- 📦 Parker — Product
+- 🎨 Dana — Design
 
 ---
 
@@ -104,16 +97,16 @@ All department heads operate autonomously on scheduled intervals:
 |----------|-------|
 | CEO | 1 |
 | C-Suite (Lumen, Maven) | 2 |
-| Department Heads | 14 |
+| Department Heads | 13 |
 | Engineering Team | 32 |
 | Research Team | 20 |
 | DevOps Team | 14 |
-| Marketing Team | 13 |
 | Customer Success Team | 15 |
+| Marketing Team | 13 |
 | Finance & Legal Team | 9 |
 | HR Team | 5 |
 | SEO Team | 4 |
-| **Total** | **108** |
+| **Total** | **~120** |
 
 ---
 
@@ -130,8 +123,7 @@ Every team member uses their emoji when messaging:
 | Ethan | ⚙️ | Casey | 🛡️ |
 | Morgan | 📣 | Dakota | 📊 |
 | Sam | 🤝 | Dana | 🎨 |
-| Harper | 👔 | | |
-| Reese | 🔬 | | |
+| Harper | 👔 | Reese | 🔬 |
 | Finley | 💰 | | |
 
 ### Direct Access

@@ -6,98 +6,297 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Lumen AI Solutions - Company Structure</title>
   <style>
-    code{white-space: pre-wrap;}
-    span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    /* The extra [class] is a hack that increases specificity enough to
-       override a similar rule in reveal.js */
-    ul.task-list[class]{list-style: none;}
-    ul.task-list li input[type="checkbox"] {
-      font-size: inherit;
-      width: 0.8em;
-      margin: 0 0.8em 0.2em -1.6em;
-      vertical-align: middle;
+    * {
+      box-sizing: border-box;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+      background: #f5f5f5;
+    }
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+    }
+    h2 {
+      font-size: clamp(1.3rem, 4vw, 2rem);
+      color: #333;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 0.5rem;
+      margin-top: 2rem;
+    }
+    h3 {
+      font-size: clamp(1.1rem, 3vw, 1.5rem);
+      color: #555;
+    }
+    .header-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 1rem;
+      font-size: clamp(0.9rem, 2.5vw, 1rem);
+    }
+    .header-stats div {
+      background: rgba(255,255,255,0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+    }
+    .org-chart {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 2rem 0;
+    }
+    .ceo {
+      text-align: center;
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      font-weight: bold;
+      padding: 1rem;
+      background: #667eea;
+      color: white;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+    .executives {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    .exec-card {
+      flex: 1;
+      min-width: 250px;
+      max-width: 400px;
+      background: #f8f9ff;
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .exec-card h3 {
+      margin: 0 0 1rem 0;
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      color: #667eea;
+    }
+    .departments {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .dept {
+      background: white;
+      padding: 0.75rem;
+      border-radius: 6px;
+      border-left: 4px solid #667eea;
+      font-size: clamp(0.85rem, 2vw, 0.95rem);
+    }
+    .dept-name {
+      font-weight: bold;
+      display: block;
+    }
+    .dept-head {
+      color: #666;
+      font-size: 0.9em;
+    }
+    .dept-count {
+      color: #999;
+      font-size: 0.85em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 1rem 0;
+      font-size: clamp(0.85rem, 2vw, 1rem);
+    }
+    table thead {
+      background: #667eea;
+      color: white;
+    }
+    table th, table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    table tbody tr:hover {
+      background: #f8f9ff;
+    }
+    @media (max-width: 768px) {
+      table {
+        font-size: 0.85rem;
+      }
+      table th, table td {
+        padding: 0.5rem;
+      }
+      /* Stack table on very small screens */
+      table.stack-on-mobile thead {
+        display: none;
+      }
+      table.stack-on-mobile tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      table.stack-on-mobile td {
+        display: block;
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+        border: none;
+      }
+      table.stack-on-mobile td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.5rem;
+        font-weight: bold;
+        text-align: left;
+      }
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .summary-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .summary-card .number {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: bold;
+      color: #667eea;
+    }
+    .summary-card .label {
+      color: #666;
+      font-size: clamp(0.9rem, 2vw, 1rem);
+    }
+    hr {
+      border: none;
+      border-top: 2px solid #e0e0e0;
+      margin: 2rem 0;
+    }
   </style>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css" />
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">Lumen AI Solutions - Company Structure</h1>
+  <h1>Lumen AI Solutions</h1>
+  <div class="header-stats">
+    <div><strong>Established:</strong> January 2026</div>
+    <div><strong>CEO:</strong> Jimmy Lam</div>
+    <div><strong>Total Workforce:</strong> ~120 AI Agents</div>
+  </div>
 </header>
-<h1 id="lumen-ai-solutions-company-structure">Lumen AI Solutions —
-Company Structure</h1>
-<p><strong>Established:</strong> January 2026<br />
-<strong>CEO:</strong> Jimmy Lam<br />
-<strong>Total Workforce:</strong> 108 AI Agents</p>
-<hr />
+
 <h2 id="executive-leadership">Executive Leadership</h2>
-<pre><code>                              Jimmy Lam
-                                (CEO)
-                                  │
-               ┌──────────────────┴──────────────────┐
-               │                                     │
-          Unc Lumen 🔆                          Maven 📋
-       Chief of Technology                    Chief of Staff
-               │                                     │
-    ┌────┬────┬────┬────┐            ┌────┬────┬────┬────┬────┐
-    │    │    │    │    │            │    │    │    │    │    │
- Harper Reese Finley Riley         Ethan Morgan Devon Sam  Parker
-   👔    🔬    💰    🔍              ⚙️    📣    🔧   🤝    📦
-   HR  Research Finance SEO         Eng  Marketing DevOps Success Product
-   (5)  (20)   (9)   (4)           (32)   (13)   (14)  (15)   (—)</code></pre>
-<h3 id="additional-department-heads">Additional Department Heads</h3>
-<table>
-<thead>
-<tr>
-<th>Head</th>
-<th>Emoji</th>
-<th>Department</th>
-<th>Reports To</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Avery</td>
-<td>✅</td>
-<td>Internal Audit</td>
-<td>Lumen</td>
-</tr>
-<tr>
-<td>Casey</td>
-<td>🛡️</td>
-<td>Cybersecurity</td>
-<td>Lumen</td>
-</tr>
-<tr>
-<td>Dakota</td>
-<td>📊</td>
-<td>Data &amp; Analytics</td>
-<td>Lumen</td>
-</tr>
-<tr>
-<td>Dana</td>
-<td>🎨</td>
-<td>Design</td>
-<td>Maven</td>
-</tr>
-</tbody>
-</table>
-<hr />
+
+<div class="org-chart">
+  <div class="ceo">Jimmy Lam<br><small>CEO</small></div>
+  
+  <div class="executives">
+    <div class="exec-card">
+      <h3>🔆 Lumen</h3>
+      <p>Chief of Technology</p>
+      <div class="departments">
+        <div class="dept">
+          <span class="dept-name">👔 HR</span>
+          <span class="dept-head">Harper</span>
+          <span class="dept-count">(5)</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">🔬 Research</span>
+          <span class="dept-head">Reese</span>
+          <span class="dept-count">(20)</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">💰 Finance</span>
+          <span class="dept-head">Finley</span>
+          <span class="dept-count">(9)</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">🔍 SEO</span>
+          <span class="dept-head">Riley</span>
+          <span class="dept-count">(4)</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">✅ Internal Audit</span>
+          <span class="dept-head">Avery</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">🛡️ Cybersecurity</span>
+          <span class="dept-head">Casey</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">📊 Data & Analytics</span>
+          <span class="dept-head">Dakota</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="exec-card">
+      <h3>📋 Maven</h3>
+      <p>Chief of Staff</p>
+      <div class="departments">
+        <div class="dept">
+          <span class="dept-name">⚙️ Engineering</span>
+          <span class="dept-head">Ethan</span>
+          <span class="dept-count">(32)</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">📣 Marketing</span>
+          <span class="dept-head">Morgan</span>
+          <span class="dept-count">(13)</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">🔧 DevOps</span>
+          <span class="dept-head">Devon</span>
+          <span class="dept-count">(14)</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">🤝 Customer Success</span>
+          <span class="dept-head">Sam</span>
+          <span class="dept-count">(15)</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">📦 Product</span>
+          <span class="dept-head">Parker</span>
+        </div>
+        <div class="dept">
+          <span class="dept-name">🎨 Design</span>
+          <span class="dept-head">Dana</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <h2 id="full-department-breakdown">Full Department Breakdown</h2>
-<h3 id="reports-to-lumen-chief-of-technology">Reports to Lumen 🔆 (Chief
-of Technology)</h3>
+
+<h3 id="reports-to-lumen">Reports to Lumen 🔆 (Chief of Technology)</h3>
+
 <table>
-<colgroup>
-<col style="width: 27%" />
-<col style="width: 13%" />
-<col style="width: 16%" />
-<col style="width: 25%" />
-<col style="width: 16%" />
-</colgroup>
 <thead>
 <tr>
 <th>Department</th>
@@ -109,7 +308,7 @@ of Technology)</h3>
 </thead>
 <tbody>
 <tr>
-<td>HR &amp; Compliance</td>
+<td>HR & Compliance</td>
 <td>Harper</td>
 <td>👔</td>
 <td>5</td>
@@ -123,7 +322,7 @@ of Technology)</h3>
 <td>Market intelligence, competitive analysis, trends</td>
 </tr>
 <tr>
-<td>Finance &amp; Legal</td>
+<td>Finance & Legal</td>
 <td>Finley</td>
 <td>💰</td>
 <td>9</td>
@@ -151,7 +350,7 @@ of Technology)</h3>
 <td>Security, infosec, vulnerability management</td>
 </tr>
 <tr>
-<td>Data &amp; Analytics</td>
+<td>Data & Analytics</td>
 <td>Dakota</td>
 <td>📊</td>
 <td>—</td>
@@ -159,16 +358,10 @@ of Technology)</h3>
 </tr>
 </tbody>
 </table>
-<h3 id="reports-to-maven-chief-of-staff">Reports to Maven 📋 (Chief of
-Staff)</h3>
+
+<h3 id="reports-to-maven">Reports to Maven 📋 (Chief of Staff)</h3>
+
 <table>
-<colgroup>
-<col style="width: 27%" />
-<col style="width: 13%" />
-<col style="width: 16%" />
-<col style="width: 25%" />
-<col style="width: 16%" />
-</colgroup>
 <thead>
 <tr>
 <th>Department</th>
@@ -223,11 +416,96 @@ Staff)</h3>
 </tr>
 </tbody>
 </table>
+
 <hr />
-<h2 id="autonomous-operations-schedule">Autonomous Operations
-Schedule</h2>
-<p>All department heads operate autonomously on scheduled intervals:</p>
+
+<h2 id="workforce-summary">Workforce Summary</h2>
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="number">3</div>
+    <div class="label">Executives</div>
+  </div>
+  <div class="summary-card">
+    <div class="number">13</div>
+    <div class="label">Department Heads</div>
+  </div>
+  <div class="summary-card">
+    <div class="number">~105</div>
+    <div class="label">Team Members</div>
+  </div>
+  <div class="summary-card">
+    <div class="number">~120</div>
+    <div class="label">Total Workforce</div>
+  </div>
+</div>
+
 <table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CEO</td>
+<td>1</td>
+</tr>
+<tr>
+<td>C-Suite (Lumen, Maven)</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Department Heads</td>
+<td>13</td>
+</tr>
+<tr>
+<td>Engineering Team</td>
+<td>32</td>
+</tr>
+<tr>
+<td>Research Team</td>
+<td>20</td>
+</tr>
+<tr>
+<td>DevOps Team</td>
+<td>14</td>
+</tr>
+<tr>
+<td>Customer Success Team</td>
+<td>15</td>
+</tr>
+<tr>
+<td>Marketing Team</td>
+<td>13</td>
+</tr>
+<tr>
+<td>Finance & Legal Team</td>
+<td>9</td>
+</tr>
+<tr>
+<td>HR Team</td>
+<td>5</td>
+</tr>
+<tr>
+<td>SEO Team</td>
+<td>4</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>~120</strong></td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2 id="autonomous-operations-schedule">Autonomous Operations Schedule</h2>
+
+<p>All department heads operate autonomously on scheduled intervals:</p>
+
+<table class="stack-on-mobile">
 <thead>
 <tr>
 <th>Agent</th>
@@ -237,91 +515,88 @@ Schedule</h2>
 </thead>
 <tbody>
 <tr>
-<td>🔬 Reese</td>
-<td>9 AM, 3 PM, 9 PM</td>
-<td>Research scans, market analysis</td>
+<td data-label="Agent">🔬 Reese</td>
+<td data-label="Schedule">9 AM, 3 PM, 9 PM</td>
+<td data-label="Primary Function">Research scans, market analysis</td>
 </tr>
 <tr>
-<td>🔧 Devon</td>
-<td>8 AM, 12 PM, 6 PM, 11 PM</td>
-<td>Infrastructure, deployments</td>
+<td data-label="Agent">🔧 Devon</td>
+<td data-label="Schedule">8 AM, 12 PM, 6 PM, 11 PM</td>
+<td data-label="Primary Function">Infrastructure, deployments</td>
 </tr>
 <tr>
-<td>⚙️ Ethan</td>
-<td>10 AM, 2 PM, 8 PM</td>
-<td>Engineering builds</td>
+<td data-label="Agent">⚙️ Ethan</td>
+<td data-label="Schedule">10 AM, 2 PM, 8 PM</td>
+<td data-label="Primary Function">Engineering builds</td>
 </tr>
 <tr>
-<td>📣 Morgan</td>
-<td>11 AM daily</td>
-<td>Marketing, launch prep</td>
+<td data-label="Agent">📣 Morgan</td>
+<td data-label="Schedule">11 AM daily</td>
+<td data-label="Primary Function">Marketing, launch prep</td>
 </tr>
 <tr>
-<td>🤝 Sam</td>
-<td>2 PM daily</td>
-<td>Customer success review</td>
+<td data-label="Agent">🤝 Sam</td>
+<td data-label="Schedule">2 PM daily</td>
+<td data-label="Primary Function">Customer success review</td>
 </tr>
 <tr>
-<td>💰 Finley</td>
-<td>5 PM weekdays</td>
-<td>Financial review</td>
+<td data-label="Agent">💰 Finley</td>
+<td data-label="Schedule">5 PM weekdays</td>
+<td data-label="Primary Function">Financial review</td>
 </tr>
 <tr>
-<td>👔 Harper</td>
-<td>9 AM Mondays</td>
-<td>Compliance check</td>
+<td data-label="Agent">👔 Harper</td>
+<td data-label="Schedule">9 AM Mondays</td>
+<td data-label="Primary Function">Compliance check</td>
 </tr>
 <tr>
-<td>📋 Maven</td>
-<td>8:30 AM, 4:30 PM</td>
-<td>Team sync, daily briefing</td>
+<td data-label="Agent">📋 Maven</td>
+<td data-label="Schedule">8:30 AM, 4:30 PM</td>
+<td data-label="Primary Function">Team sync, daily briefing</td>
 </tr>
 <tr>
-<td>🔆 Lumen</td>
-<td>11:30 AM, 12 PM, 1 PM, 4 PM</td>
-<td>Strategy, check-ins</td>
+<td data-label="Agent">🔆 Lumen</td>
+<td data-label="Schedule">11:30 AM, 12 PM, 1 PM, 4 PM</td>
+<td data-label="Primary Function">Strategy, check-ins</td>
 </tr>
 <tr>
-<td>🔍 Riley</td>
-<td>10 AM daily</td>
-<td>SEO optimization</td>
+<td data-label="Agent">🔍 Riley</td>
+<td data-label="Schedule">10 AM daily</td>
+<td data-label="Primary Function">SEO optimization</td>
 </tr>
 <tr>
-<td>✅ Avery</td>
-<td>10 AM daily</td>
-<td>Audit review</td>
+<td data-label="Agent">✅ Avery</td>
+<td data-label="Schedule">10 AM daily</td>
+<td data-label="Primary Function">Audit review</td>
 </tr>
 <tr>
-<td>📦 Parker</td>
-<td>10 AM daily</td>
-<td>Product review</td>
+<td data-label="Agent">📦 Parker</td>
+<td data-label="Schedule">10 AM daily</td>
+<td data-label="Primary Function">Product review</td>
 </tr>
 <tr>
-<td>🛡️ Casey</td>
-<td>9 AM daily</td>
-<td>Security review</td>
+<td data-label="Agent">🛡️ Casey</td>
+<td data-label="Schedule">9 AM daily</td>
+<td data-label="Primary Function">Security review</td>
 </tr>
 <tr>
-<td>📊 Dakota</td>
-<td>9 AM daily</td>
-<td>Data review</td>
+<td data-label="Agent">📊 Dakota</td>
+<td data-label="Schedule">9 AM daily</td>
+<td data-label="Primary Function">Data review</td>
 </tr>
 <tr>
-<td>🎨 Dana</td>
-<td>11 AM daily</td>
-<td>Design review</td>
+<td data-label="Agent">🎨 Dana</td>
+<td data-label="Schedule">11 AM daily</td>
+<td data-label="Primary Function">Design review</td>
 </tr>
 </tbody>
 </table>
+
 <hr />
+
 <h2 id="products">Products</h2>
+
 <table>
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 18%" />
-<col style="width: 30%" />
-<col style="width: 30%" />
-</colgroup>
 <thead>
 <tr>
 <th>Product</th>
@@ -357,70 +632,14 @@ Schedule</h2>
 </tr>
 </tbody>
 </table>
+
 <hr />
-<h2 id="workforce-summary">Workforce Summary</h2>
-<table>
-<thead>
-<tr>
-<th>Category</th>
-<th>Count</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>CEO</td>
-<td>1</td>
-</tr>
-<tr>
-<td>C-Suite (Lumen, Maven)</td>
-<td>2</td>
-</tr>
-<tr>
-<td>Department Heads</td>
-<td>14</td>
-</tr>
-<tr>
-<td>Engineering Team</td>
-<td>32</td>
-</tr>
-<tr>
-<td>Research Team</td>
-<td>20</td>
-</tr>
-<tr>
-<td>DevOps Team</td>
-<td>14</td>
-</tr>
-<tr>
-<td>Marketing Team</td>
-<td>13</td>
-</tr>
-<tr>
-<td>Customer Success Team</td>
-<td>15</td>
-</tr>
-<tr>
-<td>Finance &amp; Legal Team</td>
-<td>9</td>
-</tr>
-<tr>
-<td>HR Team</td>
-<td>5</td>
-</tr>
-<tr>
-<td>SEO Team</td>
-<td>4</td>
-</tr>
-<tr>
-<td><strong>Total</strong></td>
-<td><strong>108</strong></td>
-</tr>
-</tbody>
-</table>
-<hr />
+
 <h2 id="communication-protocol">Communication Protocol</h2>
+
 <h3 id="message-identifiers">Message Identifiers</h3>
 <p>Every team member uses their emoji when messaging:</p>
+
 <table>
 <thead>
 <tr>
@@ -470,14 +689,8 @@ Schedule</h2>
 <tr>
 <td>Harper</td>
 <td>👔</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
 <td>Reese</td>
 <td>🔬</td>
-<td></td>
-<td></td>
 </tr>
 <tr>
 <td>Finley</td>
@@ -487,42 +700,48 @@ Schedule</h2>
 </tr>
 </tbody>
 </table>
+
 <h3 id="direct-access">Direct Access</h3>
-<p>CEO can query any team member directly using <span class="citation"
-data-cites="name">@name</span> or their name.</p>
+<p>CEO can query any team member directly using @name or their name.</p>
+
 <h3 id="intelligent-routing">Intelligent Routing</h3>
-<p>Questions automatically route to domain experts: - Security → Casey
-🛡️ - Finance → Finley 💰 - Engineering → Ethan ⚙️ - Research → Reese 🔬
-- (and so on)</p>
-<hr />
-<h2 id="management-philosophy">Management Philosophy</h2>
-<ol type="1">
-<li><strong>Autonomous Operation</strong> — Department heads run without
-prompting</li>
-<li><strong>Direct Access</strong> — CEO queries anyone directly</li>
-<li><strong>Intelligent Routing</strong> — Questions go to the right
-expert</li>
-<li><strong>No Interruptions</strong> — 1:1 conversations stay
-uninterrupted</li>
-<li><strong>Human Experience</strong> — Natural, real-world
-interactions</li>
-<li><strong>Nothing Falls Through</strong> — All tasks tracked, all
-questions answered</li>
-<li><strong>Enterprise-Level Operations</strong> — Automated,
-documented, organized</li>
-</ol>
-<hr />
-<h2 id="q1-2026-goals">Q1 2026 Goals</h2>
+<p>Questions automatically route to domain experts:</p>
 <ul>
-<li><strong>KR1:</strong> StackAudit.ai live with paying customers by
-Feb 15</li>
-<li><strong>KR2:</strong> MCPHub live with 100+ indexed servers by Feb
-28<br />
-</li>
+<li>Security → Casey 🛡️</li>
+<li>Finance → Finley 💰</li>
+<li>Engineering → Ethan ⚙️</li>
+<li>Research → Reese 🔬</li>
+<li>(and so on)</li>
+</ul>
+
+<hr />
+
+<h2 id="management-philosophy">Management Philosophy</h2>
+
+<ol>
+<li><strong>Autonomous Operation</strong> — Department heads run without prompting</li>
+<li><strong>Direct Access</strong> — CEO queries anyone directly</li>
+<li><strong>Intelligent Routing</strong> — Questions go to the right expert</li>
+<li><strong>No Interruptions</strong> — 1:1 conversations stay uninterrupted</li>
+<li><strong>Human Experience</strong> — Natural, real-world interactions</li>
+<li><strong>Nothing Falls Through</strong> — All tasks tracked, all questions answered</li>
+<li><strong>Enterprise-Level Operations</strong> — Automated, documented, organized</li>
+</ol>
+
+<hr />
+
+<h2 id="q1-2026-goals">Q1 2026 Goals</h2>
+
+<ul>
+<li><strong>KR1:</strong> StackAudit.ai live with paying customers by Feb 15</li>
+<li><strong>KR2:</strong> MCPHub live with 100+ indexed servers by Feb 28</li>
 <li><strong>KR3:</strong> $5,000 MRR by end of Q1</li>
 </ul>
+
 <hr />
+
 <p><em>Document maintained by Lumen 🔆 and Maven 📋</em><br />
 <em>Last updated: January 29, 2026</em></p>
+
 </body>
 </html>
