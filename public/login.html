@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Lumen Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', system-ui, sans-serif; }
+    body { background: #0c0c0e; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md animate-fade-in">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="text-6xl mb-3">🔆</div>
+      <h1 class="text-3xl font-bold text-white mb-2">Lumen Dashboard</h1>
+      <p class="text-zinc-400">Sign in to continue</p>
+    </div>
+
+    <!-- Login Form -->
+    <div class="bg-zinc-900 rounded-2xl p-8 shadow-xl border border-zinc-800">
+      <form id="loginForm" class="space-y-6">
+        <div>
+          <label for="username" class="block text-sm font-medium text-zinc-300 mb-2">Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            required
+            autocomplete="username"
+            class="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            placeholder="Enter your username"
+          >
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-zinc-300 mb-2">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            required
+            autocomplete="current-password"
+            class="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            placeholder="Enter your password"
+          >
+        </div>
+
+        <!-- Error message -->
+        <div id="errorMessage" class="hidden bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm"></div>
+
+        <!-- Submit button -->
+        <button 
+          type="submit" 
+          id="loginButton"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg transition duration-200 flex items-center justify-center"
+        >
+          <span id="loginButtonText">Sign In</span>
+          <span id="loginSpinner" class="hidden ml-2">
+            <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </span>
+        </button>
+      </form>
+
+      <!-- Register link -->
+      <div class="mt-6 text-center">
+        <p class="text-zinc-400 text-sm">
+          Don't have an account? 
+          <a href="/register.html" class="text-indigo-400 hover:text-indigo-300 font-medium">Create one</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-zinc-500 text-sm">
+      <p>Secure authentication powered by Lumen</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const errorMessage = document.getElementById('errorMessage');
+    const loginButton = document.getElementById('loginButton');
+    const loginButtonText = document.getElementById('loginButtonText');
+    const loginSpinner = document.getElementById('loginSpinner');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Hide error
+      errorMessage.classList.add('hidden');
+      
+      // Show loading state
+      loginButton.disabled = true;
+      loginButtonText.textContent = 'Signing in...';
+      loginSpinner.classList.remove('hidden');
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Success - redirect to dashboard
+          window.location.href = '/';
+        } else {
+          // Show error
+          errorMessage.textContent = data.error || 'Invalid credentials';
+          errorMessage.classList.remove('hidden');
+          
+          // Reset button
+          loginButton.disabled = false;
+          loginButtonText.textContent = 'Sign In';
+          loginSpinner.classList.add('hidden');
+        }
+      } catch (err) {
+        errorMessage.textContent = 'Network error. Please try again.';
+        errorMessage.classList.remove('hidden');
+        
+        // Reset button
+        loginButton.disabled = false;
+        loginButtonText.textContent = 'Sign In';
+        loginSpinner.classList.add('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -7,6 +7,9 @@ const { Pool } = require('pg');
 const cron = require('node-cron');
 const cheerio = require('cheerio');
 const { execSync } = require('child_process');
+const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
+const auth = require('./auth');
 const smartExpenses = require('./smart-expenses');
 const serendipity = require('./serendipity');
 const meetingPrep = require('./meeting-prep');
@@ -35,6 +38,25 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Session management
+app.use(session({
+  store: new pgSession({
+    pool: pool,
+    tableName: 'user_sessions'
+  }),
+  secret: process.env.SESSION_SECRET || 'lumen-dashboard-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  }
+}));
+
+// Serve static files (login/register pages are public)
 app.use(express.static('public'));
 app.use('/excel-files', express.static(EXCEL_UPLOAD_DIR));
 
@@ -707,6 +729,33 @@ async function performFullSync() {
 async function initDatabase() {
   const client = await pool.connect();
   try {
+    // Create users table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255),
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        last_login TIMESTAMP,
+        is_active BOOLEAN DEFAULT TRUE
+      )
+    `);
+
+    // Create session table for express-session
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        sid VARCHAR NOT NULL COLLATE "default",
+        sess JSON NOT NULL,
+        expire TIMESTAMP(6) NOT NULL,
+        PRIMARY KEY (sid)
+      )
+    `);
+    
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS IDX_session_expire ON user_sessions (expire)
+    `);
+
     // Create briefings table
     await client.query(`
       CREATE TABLE IF NOT EXISTS lumen_briefings (
@@ -1402,6 +1451,144 @@ const generateTemplateData = () => {
 
   return { skills, agents, commands, settings, hooks, mcps };
 };
+
+// ============================================
+// AUTHENTICATION ROUTES (PUBLIC)
+// ============================================
+
+// Register new user
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    
+    // Validate input
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+    
+    if (username.length < 3) {
+      return res.status(400).json({ error: 'Username must be at least 3 characters' });
+    }
+    
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    
+    // Register user
+    const user = await auth.registerUser(pool, username, email, password);
+    
+    res.json({
+      success: true,
+      message: 'Account created successfully',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } catch (err) {
+    console.error('[Auth] Registration error:', err);
+    res.status(400).json({ error: err.message || 'Registration failed' });
+  }
+});
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    // Validate input
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+    
+    // Authenticate user
+    const user = await auth.loginUser(pool, username, password);
+    
+    // Set session
+    req.session.userId = user.id;
+    req.session.username = user.username;
+    
+    res.json({
+      success: true,
+      message: 'Logged in successfully',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } catch (err) {
+    console.error('[Auth] Login error:', err);
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+// Logout
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('[Auth] Logout error:', err);
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    res.json({ success: true, message: 'Logged out successfully' });
+  });
+});
+
+// Check session
+app.get('/api/auth/me', async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  try {
+    const user = await auth.getUserById(pool, req.session.userId);
+    
+    if (!user) {
+      req.session.destroy();
+      return res.status(401).json({ error: 'User not found' });
+    }
+    
+    res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      created_at: user.created_at,
+      last_login: user.last_login
+    });
+  } catch (err) {
+    console.error('[Auth] Session check error:', err);
+    res.status(500).json({ error: 'Failed to get user info' });
+  }
+});
+
+// Redirect root to login if not authenticated
+app.get('/', (req, res, next) => {
+  if (!req.session.userId) {
+    return res.redirect('/login.html');
+  }
+  next();
+});
+
+// ============================================
+// PROTECTED API ROUTES
+// ============================================
+
+// Apply authentication middleware to all /api/* routes (except auth routes)
+app.use('/api', (req, res, next) => {
+  // Skip auth for authentication endpoints
+  if (req.path.startsWith('/auth/')) {
+    return next();
+  }
+  
+  // Skip auth for public share links
+  if (req.path.startsWith('/share/')) {
+    return next();
+  }
+  
+  // Require authentication for all other API routes
+  auth.requireAuth(req, res, next);
+});
 
 // ============================================
 // BRIEFINGS API
