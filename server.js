@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 const cron = require('node-cron');
 const cheerio = require('cheerio');
 const { execSync } = require('child_process');
+const smartExpenses = require('./smart-expenses');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -919,6 +920,94 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_templates_downloads ON lumen_synced_templates(downloads DESC)
     `);
 
+    // ============================================
+    // SMART EXPENSES MIGRATION
+    // ============================================
+    
+    // Add smart expense columns to existing table
+    await client.query(`
+      ALTER TABLE lumen_expenses 
+      ADD COLUMN IF NOT EXISTS meal_type VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS food_type VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS cuisine VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS merchant_type VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS who_for VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS source VARCHAR(50) DEFAULT 'manual',
+      ADD COLUMN IF NOT EXISTS confidence DECIMAL(3,2),
+      ADD COLUMN IF NOT EXISTS raw_input TEXT
+    `);
+
+    // Create food types reference table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_food_types (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) UNIQUE NOT NULL,
+        category VARCHAR(50),
+        cuisine VARCHAR(50),
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create merchant profiles table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_merchant_profiles (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        aliases TEXT[],
+        merchant_type VARCHAR(50),
+        default_category VARCHAR(50),
+        default_food_type VARCHAR(100),
+        default_cuisine VARCHAR(50),
+        default_meal_type VARCHAR(50),
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Seed food types
+    const foodTypes = [
+      ['hamburgers', 'fast_food', 'American'], ['chicken', 'fast_food', 'American'],
+      ['chicken tenders', 'fast_food', 'American'], ['pizza', 'fast_food', 'Italian'],
+      ['tacos', 'fast_food', 'Mexican'], ['burritos', 'fast_food', 'Mexican'],
+      ['sushi', 'casual_dining', 'Japanese'], ['chinese', 'casual_dining', 'Chinese'],
+      ['coffee', 'cafe', 'American'], ['sandwiches', 'fast_food', 'American'],
+      ['salads', 'casual_dining', 'American'], ['bbq', 'casual_dining', 'American']
+    ];
+    for (const [name, cat, cuisine] of foodTypes) {
+      await client.query(
+        'INSERT INTO lumen_food_types (name, category, cuisine) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING',
+        [name, cat, cuisine]
+      );
+    }
+
+    // Seed known merchants
+    const merchants = [
+      ["Raising Cane's", ['Raising Cane', 'Canes'], 'fast_food', 'Food', 'chicken tenders', 'American', null],
+      ['Costco', ['Costco Wholesale'], 'grocery', 'Groceries', null, null, null],
+      ['Chipotle', ['Chipotle Mexican Grill'], 'fast_food', 'Food', 'burritos', 'Mexican', null],
+      ['Starbucks', ['Starbucks Coffee'], 'cafe', 'Food', 'coffee', 'American', 'breakfast'],
+      ["McDonald's", ['McDonalds', 'Mcd'], 'fast_food', 'Food', 'hamburgers', 'American', null],
+      ['Chick-fil-A', ['Chick fil A', 'CFA'], 'fast_food', 'Food', 'chicken', 'American', null],
+      ['In-N-Out', ['In N Out', 'InNOut'], 'fast_food', 'Food', 'hamburgers', 'American', null],
+      ['Taco Bell', ['TacoBell'], 'fast_food', 'Food', 'tacos', 'Mexican', null],
+      ['Panda Express', ['Panda'], 'fast_food', 'Food', 'chinese', 'Chinese', null],
+      ['Shell', ['Shell Gas'], 'gas_station', 'Gas', null, null, null],
+      ['Chevron', ['Chevron Gas'], 'gas_station', 'Gas', null, null, null]
+    ];
+    for (const [name, aliases, type, cat, food, cuisine, meal] of merchants) {
+      await client.query(`
+        INSERT INTO lumen_merchant_profiles (name, aliases, merchant_type, default_category, default_food_type, default_cuisine, default_meal_type)
+        VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (name) DO NOTHING
+      `, [name, aliases, type, cat, food, cuisine, meal]);
+    }
+
+    // Create indexes for smart expense queries
+    await client.query('CREATE INDEX IF NOT EXISTS idx_expenses_meal_type ON lumen_expenses(meal_type)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_expenses_food_type ON lumen_expenses(food_type)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_expenses_who_for ON lumen_expenses(who_for)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_merchant_profiles_name ON lumen_merchant_profiles(LOWER(name))');
+
+    console.log('[DB] Smart expenses migration complete');
     console.log('[DB] PostgreSQL tables initialized');
   } finally {
     client.release();
@@ -1906,6 +1995,167 @@ app.get('/api/expenses/categories', async (req, res) => {
     res.json(result.rows.map(r => r.name));
   } catch (err) {
     console.error('Error getting categories:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// ============================================
+// SMART EXPENSE API - AI-Powered Expense Parsing
+// ============================================
+
+// Parse and log expense from natural language or receipt photo
+app.post('/api/expenses/smart', async (req, res) => {
+  try {
+    const { input, image, source = 'api' } = req.body;
+    
+    if (!input && !image) {
+      return res.status(400).json({ error: 'Either input text or image is required' });
+    }
+
+    let parsed;
+    
+    if (image) {
+      // Parse receipt image
+      parsed = await smartExpenses.parseReceiptImage(image);
+      parsed.source = 'receipt_photo';
+    } else {
+      // Parse natural language input
+      parsed = smartExpenses.parseExpenseText(input);
+      parsed.source = source === 'voice' ? 'voice' : 'text';
+    }
+
+    // Enrich with merchant profile data
+    parsed = await smartExpenses.enrichWithMerchantProfile(parsed, pool);
+
+    // Validate we have minimum required data
+    if (!parsed.amount) {
+      return res.status(400).json({ 
+        error: 'Could not extract amount from input',
+        parsed,
+        suggestion: 'Try including a dollar amount like "$12.50" or "12 dollars"'
+      });
+    }
+
+    if (!parsed.category) {
+      parsed.category = 'Other';
+    }
+
+    // Insert the expense with all smart fields
+    const result = await pool.query(`
+      INSERT INTO lumen_expenses (
+        amount, category, description, vendor, date,
+        meal_type, food_type, cuisine, merchant_type, who_for,
+        custom_fields, source, confidence, raw_input
+      ) VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING *
+    `, [
+      parsed.amount,
+      parsed.category,
+      parsed.description,
+      parsed.vendor,
+      parsed.meal_type,
+      parsed.food_type,
+      parsed.cuisine,
+      parsed.merchant_type,
+      parsed.who_for,
+      JSON.stringify(parsed.custom_fields || {}),
+      parsed.source,
+      parsed.confidence,
+      parsed.raw_input
+    ]);
+
+    // Learn from this expense for future parsing
+    await smartExpenses.learnMerchant(parsed, pool);
+
+    // Ensure category exists
+    if (parsed.category) {
+      await pool.query(
+        'INSERT INTO lumen_categories (name) VALUES ($1) ON CONFLICT (name) DO NOTHING',
+        [parsed.category]
+      );
+    }
+
+    const expense = { ...result.rows[0], amount: parseFloat(result.rows[0].amount) };
+    
+    res.json({
+      id: expense.id,
+      message: 'Expense logged successfully',
+      expense,
+      parsed: {
+        confidence: parsed.confidence,
+        detected: {
+          amount: parsed.amount,
+          vendor: parsed.vendor,
+          category: parsed.category,
+          meal_type: parsed.meal_type,
+          food_type: parsed.food_type,
+          who_for: parsed.who_for
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error('Error in smart expense:', err);
+    res.status(500).json({ error: 'Failed to process expense', details: err.message });
+  }
+});
+
+// Get merchant profiles for autocomplete/learning
+app.get('/api/expenses/merchants', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT name, merchant_type, default_category, default_food_type, default_cuisine
+      FROM lumen_merchant_profiles
+      ORDER BY name
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error getting merchants:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Get food types for reference
+app.get('/api/expenses/food-types', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT name, category, cuisine
+      FROM lumen_food_types
+      ORDER BY name
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error getting food types:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Add or update merchant profile
+app.post('/api/expenses/merchants', async (req, res) => {
+  try {
+    const { name, aliases, merchant_type, default_category, default_food_type, default_cuisine, default_meal_type } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ error: 'Merchant name is required' });
+    }
+
+    const result = await pool.query(`
+      INSERT INTO lumen_merchant_profiles 
+      (name, aliases, merchant_type, default_category, default_food_type, default_cuisine, default_meal_type)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (name) DO UPDATE SET
+        aliases = EXCLUDED.aliases,
+        merchant_type = EXCLUDED.merchant_type,
+        default_category = EXCLUDED.default_category,
+        default_food_type = EXCLUDED.default_food_type,
+        default_cuisine = EXCLUDED.default_cuisine,
+        default_meal_type = EXCLUDED.default_meal_type
+      RETURNING *
+    `, [name, aliases || [], merchant_type, default_category, default_food_type, default_cuisine, default_meal_type]);
+
+    res.json({ message: 'Merchant profile saved', merchant: result.rows[0] });
+  } catch (err) {
+    console.error('Error saving merchant:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
