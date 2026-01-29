@@ -8,6 +8,16 @@ const cron = require('node-cron');
 const cheerio = require('cheerio');
 const { execSync } = require('child_process');
 const smartExpenses = require('./smart-expenses');
+const serendipity = require('./serendipity');
+const meetingPrep = require('./meeting-prep');
+const moneyOracle = require('./money-oracle');
+const lifeDashboard = require('./life-dashboard');
+const dealRadar = require('./deal-radar');
+const smartCapture = require('./smart-capture');
+const automationBuilder = require('./automation-builder');
+const contextResurrection = require('./context-resurrection');
+const proactiveNotifications = require('./proactive-notifications');
+const voiceClone = require('./voice-clone');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1008,10 +1018,112 @@ async function initDatabase() {
     await client.query('CREATE INDEX IF NOT EXISTS idx_merchant_profiles_name ON lumen_merchant_profiles(LOWER(name))');
 
     console.log('[DB] Smart expenses migration complete');
+
+    // ============================================
+    // PROACTIVE NOTIFICATIONS TABLES
+    // ============================================
+    
+    // Notification rules table - defines trigger conditions
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_notification_rules (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        rule_type VARCHAR(50) NOT NULL,
+        config JSONB NOT NULL DEFAULT '{}',
+        enabled BOOLEAN DEFAULT TRUE,
+        priority INTEGER DEFAULT 0,
+        cooldown_hours INTEGER DEFAULT 24,
+        last_triggered_at TIMESTAMP,
+        times_triggered INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP
+      )
+    `);
+
+    // Sent notifications table - tracks what was sent
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_notifications (
+        id SERIAL PRIMARY KEY,
+        rule_id INTEGER REFERENCES lumen_notification_rules(id) ON DELETE SET NULL,
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        severity VARCHAR(50) DEFAULT 'medium',
+        data JSONB DEFAULT '{}',
+        status VARCHAR(50) DEFAULT 'pending',
+        read BOOLEAN DEFAULT FALSE,
+        read_at TIMESTAMP,
+        dismissed BOOLEAN DEFAULT FALSE,
+        dismissed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create indexes for notification queries
+    await client.query('CREATE INDEX IF NOT EXISTS idx_notifications_status ON lumen_notifications(status)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_notifications_created ON lumen_notifications(created_at DESC)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_notification_rules_type ON lumen_notification_rules(rule_type)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_notification_rules_enabled ON lumen_notification_rules(enabled)');
+
+    console.log('[DB] Proactive notifications tables initialized');
+
+    // ============================================
+    // AUTOMATION BUILDER TABLES
+    // ============================================
+    
+    // Automations table - stores natural language automation rules
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_automations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        trigger_type VARCHAR(100) NOT NULL,
+        trigger_event VARCHAR(100) NOT NULL,
+        trigger_config JSONB DEFAULT '{}',
+        condition_str TEXT,
+        conditions JSONB DEFAULT '[]',
+        action_type VARCHAR(100) NOT NULL,
+        action_config JSONB DEFAULT '{}',
+        schedule VARCHAR(100),
+        schedule_human VARCHAR(255),
+        confidence DECIMAL(3,2) DEFAULT 0,
+        raw_input TEXT,
+        enabled BOOLEAN DEFAULT TRUE,
+        run_count INTEGER DEFAULT 0,
+        last_run_at TIMESTAMP,
+        last_run_result JSONB,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP
+      )
+    `);
+
+    // Automation run history
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lumen_automation_runs (
+        id SERIAL PRIMARY KEY,
+        automation_id INTEGER REFERENCES lumen_automations(id) ON DELETE CASCADE,
+        trigger_data JSONB,
+        result JSONB,
+        success BOOLEAN,
+        error TEXT,
+        executed_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create indexes for automation queries
+    await client.query('CREATE INDEX IF NOT EXISTS idx_automations_trigger_type ON lumen_automations(trigger_type)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_automations_enabled ON lumen_automations(enabled)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_automation_runs_automation_id ON lumen_automation_runs(automation_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_automation_runs_executed ON lumen_automation_runs(executed_at DESC)');
+
+    console.log('[DB] Automation builder tables initialized');
     console.log('[DB] PostgreSQL tables initialized');
   } finally {
     client.release();
   }
+  
+  // Initialize Deal Radar tables (after client release since it manages its own connection)
+  await dealRadar.initDealRadarTables(pool);
 }
 
 // Initialize database and excel directory
@@ -1486,6 +1598,373 @@ app.delete('/api/briefings/:id', async (req, res) => {
 });
 
 // ============================================
+// MEETING PREP AUTOPILOT API
+// ============================================
+
+/**
+ * POST /api/meetings/prep
+ * Generate a comprehensive meeting prep briefing
+ * 
+ * Request body:
+ * {
+ *   "person_name": "Jane Smith" (required),
+ *   "company": "Acme Corp" (optional),
+ *   "meeting_topic": "Partnership discussion" (optional),
+ *   "date": "2024-02-01T14:00:00Z" (optional),
+ *   "role": "VP of Engineering" (optional),
+ *   "save": true (optional, default: true)
+ * }
+ * 
+ * Response:
+ * {
+ *   "id": 123 (if saved),
+ *   "briefing": { type, title, content, summary, tags, metadata },
+ *   "message": "Meeting prep generated successfully"
+ * }
+ */
+app.post('/api/meetings/prep', async (req, res) => {
+  try {
+    const { person_name, company, meeting_topic, date, role, save = true } = req.body;
+    
+    // Validate required fields
+    if (!person_name) {
+      return res.status(400).json({ 
+        error: 'Missing required field: person_name',
+        hint: 'Provide the name of the person you are meeting with'
+      });
+    }
+    
+    if (person_name.trim().length < 2) {
+      return res.status(400).json({ 
+        error: 'Person name too short',
+        hint: 'Name must be at least 2 characters'
+      });
+    }
+    
+    console.log(`[MeetingPrep API] Generating prep for: ${person_name}${company ? ` @ ${company}` : ''}`);
+    
+    // Generate the meeting prep briefing
+    const briefing = await meetingPrep.generateMeetingPrep(pool, {
+      person_name: person_name.trim(),
+      company: company?.trim() || null,
+      meeting_topic: meeting_topic?.trim() || null,
+      date: date || null,
+      role: role?.trim() || null
+    });
+    
+    let briefingId = null;
+    
+    // Save to database if requested
+    if (save) {
+      briefingId = await meetingPrep.saveMeetingPrep(pool, briefing);
+      console.log(`[MeetingPrep API] Saved briefing with id: ${briefingId}`);
+    }
+    
+    res.json({
+      id: briefingId,
+      briefing,
+      message: 'Meeting prep generated successfully',
+      saved: save
+    });
+    
+  } catch (err) {
+    console.error('[MeetingPrep API] Error:', err);
+    res.status(500).json({ 
+      error: 'Failed to generate meeting prep',
+      details: err.message 
+    });
+  }
+});
+
+/**
+ * GET /api/meetings/prep
+ * Get all meeting prep briefings
+ */
+app.get('/api/meetings/prep', async (req, res) => {
+  try {
+    const { limit = 20, upcoming = 'false' } = req.query;
+    
+    let query = `
+      SELECT * FROM lumen_briefings 
+      WHERE type = 'meeting-prep' 
+      AND (archived = FALSE OR archived IS NULL)
+    `;
+    
+    // For upcoming meetings, try to parse date from content
+    if (upcoming === 'true') {
+      query += ` AND content LIKE '%Timeline:%'`;
+    }
+    
+    query += ` ORDER BY created_at DESC LIMIT $1`;
+    
+    const result = await pool.query(query, [parseInt(limit)]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('[MeetingPrep API] Error listing preps:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+/**
+ * GET /api/meetings/prep/search
+ * Search your history for a person/company (preview without creating briefing)
+ */
+app.get('/api/meetings/prep/search', async (req, res) => {
+  try {
+    const { person_name, company } = req.query;
+    
+    if (!person_name && !company) {
+      return res.status(400).json({ 
+        error: 'Provide at least person_name or company to search'
+      });
+    }
+    
+    const [briefings, expenses, jobs, ideas] = await Promise.all([
+      meetingPrep.searchBriefingsHistory(pool, person_name, company),
+      meetingPrep.searchExpensesHistory(pool, person_name, company),
+      meetingPrep.searchJobsHistory(pool, company),
+      meetingPrep.searchIdeasHistory(pool, person_name, company)
+    ]);
+    
+    res.json({
+      person_name,
+      company,
+      found: {
+        briefings: briefings.length,
+        expenses: expenses.length,
+        jobs: jobs.length,
+        ideas: ideas.length,
+        total: briefings.length + expenses.length + jobs.length + ideas.length
+      },
+      history: { briefings, expenses, jobs, ideas }
+    });
+  } catch (err) {
+    console.error('[MeetingPrep API] Error searching:', err);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// ============================================
+// SMART CAPTURE API - Everything Inbox
+// ============================================
+
+/**
+ * POST /api/capture
+ * Smart capture endpoint - drop in any content, get it auto-categorized and stored
+ * 
+ * Request body:
+ * {
+ *   "content": "string" (required) - raw text, URL, voice transcript, etc.
+ *   "type_hint": "expense|idea|job|resource|briefing" (optional) - override auto-detection
+ *   "source": "string" (optional) - where the capture came from (api, voice, web, etc.)
+ * }
+ * 
+ * Response:
+ * {
+ *   "type": "detected type",
+ *   "confidence": 0.0-1.0,
+ *   "item": { id, table },
+ *   "data": { extracted structured data },
+ *   "related": { briefings, expenses, ideas, jobs, resources }
+ * }
+ */
+app.post('/api/capture', async (req, res) => {
+  try {
+    const { content, type_hint, source } = req.body;
+    
+    // Validate required fields
+    if (!content) {
+      return res.status(400).json({ 
+        error: 'Missing required field: content',
+        hint: 'Provide the text content you want to capture'
+      });
+    }
+    
+    if (typeof content !== 'string' || content.trim().length === 0) {
+      return res.status(400).json({ 
+        error: 'Invalid content',
+        hint: 'Content must be a non-empty string'
+      });
+    }
+    
+    // Validate type_hint if provided
+    const validTypes = ['expense', 'idea', 'job', 'resource', 'briefing'];
+    if (type_hint && !validTypes.includes(type_hint.toLowerCase())) {
+      return res.status(400).json({ 
+        error: 'Invalid type_hint',
+        hint: `Valid types are: ${validTypes.join(', ')}`
+      });
+    }
+    
+    console.log(`[SmartCapture API] Processing capture (${content.length} chars)${type_hint ? ` with hint: ${type_hint}` : ''}`);
+    
+    // Process the capture
+    const result = await smartCapture.capture(pool, {
+      content,
+      type_hint,
+      source: source || 'api'
+    });
+    
+    res.json({
+      success: true,
+      message: `Captured as ${result.type} (${(result.confidence * 100).toFixed(0)}% confidence)`,
+      ...result
+    });
+    
+  } catch (err) {
+    console.error('[SmartCapture API] Error:', err);
+    res.status(500).json({ 
+      error: 'Failed to process capture',
+      details: err.message 
+    });
+  }
+});
+
+/**
+ * POST /api/capture/detect
+ * Preview what type would be detected without storing
+ * 
+ * Request body:
+ * {
+ *   "content": "string" (required)
+ *   "type_hint": "string" (optional)
+ * }
+ */
+app.post('/api/capture/detect', async (req, res) => {
+  try {
+    const { content, type_hint } = req.body;
+    
+    if (!content) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+    
+    const detection = smartCapture.detectType(content, type_hint);
+    const data = smartCapture.extractData(content, detection.type);
+    
+    res.json({
+      type: detection.type,
+      confidence: detection.confidence,
+      method: detection.method,
+      scores: detection.scores,
+      extracted_data: data,
+      would_store_in: `lumen_${detection.type === 'briefing' ? 'briefings' : detection.type + 's'}`
+    });
+    
+  } catch (err) {
+    console.error('[SmartCapture API] Error in detect:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/capture/types
+ * List supported capture types with descriptions
+ */
+app.get('/api/capture/types', (req, res) => {
+  res.json({
+    types: [
+      {
+        type: 'expense',
+        description: 'Financial transactions, purchases, receipts',
+        examples: ['$25 at Chipotle for lunch', 'Spent 50 bucks on gas at Shell', 'Uber ride $15.50'],
+        stored_in: 'lumen_expenses',
+        fields: ['amount', 'vendor', 'category', 'description', 'merchant_type']
+      },
+      {
+        type: 'idea',
+        description: 'Business ideas, product concepts, startup thoughts',
+        examples: ['AI app that summarizes meetings', 'SaaS for expense tracking', 'Mobile app for habit tracking'],
+        stored_in: 'lumen_ideas',
+        fields: ['name', 'description', 'category', 'type', 'revenue_potential', 'tech_stack', 'tags']
+      },
+      {
+        type: 'job',
+        description: 'Job postings, career opportunities, positions',
+        examples: ['Senior Engineer at Google $150k-200k remote', 'Frontend developer role at startup'],
+        stored_in: 'lumen_jobs',
+        fields: ['title', 'company', 'location', 'salary_min', 'salary_max', 'job_type', 'url', 'tags']
+      },
+      {
+        type: 'resource',
+        description: 'Links, articles, tools, references',
+        examples: ['https://github.com/cool-project', 'Great tutorial on React hooks', 'Useful API documentation'],
+        stored_in: 'lumen_resources',
+        fields: ['title', 'url', 'description', 'type', 'category', 'tags']
+      },
+      {
+        type: 'briefing',
+        description: 'Notes, meeting summaries, research, general text',
+        examples: ['Meeting with John about Q2 goals', 'Research notes on market trends', 'Daily standup notes'],
+        stored_in: 'lumen_briefings',
+        fields: ['title', 'type', 'content', 'summary', 'tags']
+      }
+    ],
+    hint: 'Use type_hint to override auto-detection'
+  });
+});
+
+/**
+ * GET /api/capture/recent
+ * Get recently captured items across all types
+ */
+app.get('/api/capture/recent', async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    const limitNum = Math.min(parseInt(limit) || 20, 100);
+    
+    // Query all tables and combine results
+    const [briefings, expenses, ideas, jobs, resources] = await Promise.all([
+      pool.query(`
+        SELECT id, title, type, 'briefing' as capture_type, created_at 
+        FROM lumen_briefings 
+        WHERE (archived = FALSE OR archived IS NULL)
+        ORDER BY created_at DESC LIMIT $1
+      `, [limitNum]),
+      pool.query(`
+        SELECT id, description as title, category as type, 'expense' as capture_type, created_at 
+        FROM lumen_expenses 
+        ORDER BY created_at DESC LIMIT $1
+      `, [limitNum]),
+      pool.query(`
+        SELECT id, name as title, category as type, 'idea' as capture_type, created_at 
+        FROM lumen_ideas 
+        ORDER BY created_at DESC LIMIT $1
+      `, [limitNum]),
+      pool.query(`
+        SELECT id, title, status as type, 'job' as capture_type, created_at 
+        FROM lumen_jobs 
+        WHERE (archived = FALSE OR archived IS NULL)
+        ORDER BY created_at DESC LIMIT $1
+      `, [limitNum]),
+      pool.query(`
+        SELECT id, title, type, 'resource' as capture_type, created_at 
+        FROM lumen_resources 
+        WHERE (archived = FALSE OR archived IS NULL)
+        ORDER BY created_at DESC LIMIT $1
+      `, [limitNum])
+    ]);
+    
+    // Combine and sort by created_at
+    const allItems = [
+      ...briefings.rows,
+      ...expenses.rows,
+      ...ideas.rows,
+      ...jobs.rows,
+      ...resources.rows
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, limitNum);
+    
+    res.json({
+      count: allItems.length,
+      items: allItems
+    });
+    
+  } catch (err) {
+    console.error('[SmartCapture API] Error getting recent:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// ============================================
 // TAGS API
 // ============================================
 
@@ -1709,6 +2188,194 @@ app.get('/api/analytics', async (req, res) => {
   }
 });
 
+// ============================================
+// 🌟 LIFE DASHBOARD API - Unified Life Analytics
+// ============================================
+
+/**
+ * GET /api/analytics/life-dashboard
+ * 
+ * Returns comprehensive life analytics across ALL user data.
+ * Cross-references expenses, briefings, jobs, ideas, resources, and pitches
+ * to provide a 30,000 foot view of your life.
+ * 
+ * Query Parameters:
+ * - days: Time window in days (default: 90)
+ * - correlations: Include correlation analysis (default: true)
+ * - insights: Include AI-generated insights (default: true)
+ * 
+ * Response includes:
+ * - Summary stats across all data types
+ * - Detailed breakdowns for each category
+ * - Daily activity timeline
+ * - Correlation analysis (spending vs productivity, etc.)
+ * - Actionable insights
+ * - Life scores (financial, knowledge, career, creative)
+ * - Activity streaks
+ */
+app.get('/api/analytics/life-dashboard', async (req, res) => {
+  try {
+    const {
+      days = 90,
+      correlations = 'true',
+      insights = 'true'
+    } = req.query;
+
+    console.log(`[Life Dashboard] Generating analytics for ${days} days...`);
+    const startTime = Date.now();
+
+    const result = await lifeDashboard.generateLifeDashboard(pool, {
+      timeWindowDays: parseInt(days),
+      includeCorrelations: correlations === 'true',
+      includeInsights: insights === 'true'
+    });
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`[Life Dashboard] Generated in ${duration}s - ${result.summary.dataPoints} data points analyzed`);
+
+    res.json(result);
+  } catch (err) {
+    console.error('[Life Dashboard] Error:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to generate life dashboard',
+      message: err.message 
+    });
+  }
+});
+
+/**
+ * GET /api/analytics/life-dashboard/quick
+ * 
+ * Lightweight version for dashboard widgets.
+ * Returns only key metrics and top insights.
+ */
+app.get('/api/analytics/life-dashboard/quick', async (req, res) => {
+  try {
+    const result = await lifeDashboard.generateLifeDashboard(pool, {
+      timeWindowDays: 30,
+      includeCorrelations: true,
+      includeInsights: true
+    });
+
+    // Return condensed version
+    res.json({
+      success: true,
+      summary: result.summary,
+      lifeScores: result.lifeScores,
+      topInsights: result.insights.slice(0, 3),
+      streaks: result.streaks,
+      quickStats: {
+        monthlySpending: result.expenses.monthly[result.expenses.monthly.length - 1]?.total || 0,
+        unreadBriefings: result.briefings.unread,
+        activeJobs: result.jobs.byStatus.applied + result.jobs.byStatus.interviewing,
+        ideasInProgress: result.ideas.byStatus.exploring + result.ideas.byStatus.building
+      },
+      generatedAt: result.generatedAt
+    });
+  } catch (err) {
+    console.error('[Life Dashboard Quick] Error:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get quick stats' 
+    });
+  }
+});
+
+/**
+ * GET /api/analytics/life-dashboard/scores
+ * 
+ * Returns only the life scores for quick status checks.
+ */
+app.get('/api/analytics/life-dashboard/scores', async (req, res) => {
+  try {
+    const result = await lifeDashboard.generateLifeDashboard(pool, {
+      timeWindowDays: 30,
+      includeCorrelations: false,
+      includeInsights: false
+    });
+
+    res.json({
+      success: true,
+      scores: result.lifeScores,
+      generatedAt: result.generatedAt
+    });
+  } catch (err) {
+    console.error('[Life Dashboard Scores] Error:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to calculate scores' 
+    });
+  }
+});
+
+/**
+ * GET /api/analytics/life-dashboard/correlations
+ * 
+ * Returns only correlation analysis.
+ */
+app.get('/api/analytics/life-dashboard/correlations', async (req, res) => {
+  try {
+    const { days = 90 } = req.query;
+    
+    const result = await lifeDashboard.generateLifeDashboard(pool, {
+      timeWindowDays: parseInt(days),
+      includeCorrelations: true,
+      includeInsights: false
+    });
+
+    res.json({
+      success: true,
+      correlations: result.correlations,
+      dailyActivity: result.dailyActivity,
+      patterns: lifeDashboard.CORRELATION_PATTERNS,
+      generatedAt: result.generatedAt
+    });
+  } catch (err) {
+    console.error('[Life Dashboard Correlations] Error:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to analyze correlations' 
+    });
+  }
+});
+
+/**
+ * GET /api/analytics/life-dashboard/timeline
+ * 
+ * Returns daily activity timeline for charting.
+ */
+app.get('/api/analytics/life-dashboard/timeline', async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    
+    const result = await lifeDashboard.generateLifeDashboard(pool, {
+      timeWindowDays: parseInt(days),
+      includeCorrelations: false,
+      includeInsights: false
+    });
+
+    res.json({
+      success: true,
+      timeline: result.dailyActivity,
+      summary: {
+        totalDays: result.dailyActivity.length,
+        activeDays: result.dailyActivity.filter(d => d.totalActivity > 0).length,
+        avgDailyActivity: result.dailyActivity.length > 0 
+          ? Math.round(result.dailyActivity.reduce((sum, d) => sum + d.totalActivity, 0) / result.dailyActivity.length * 10) / 10
+          : 0
+      },
+      generatedAt: result.generatedAt
+    });
+  } catch (err) {
+    console.error('[Life Dashboard Timeline] Error:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get timeline' 
+    });
+  }
+});
+
 app.get('/api/stats', async (req, res) => {
   try {
     const stats = await pool.query(`
@@ -1843,6 +2510,72 @@ app.get('/api/expenses/summary', async (req, res) => {
   } catch (err) {
     console.error('Error getting expense summary:', err);
     res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// ============================================
+// MONEY ORACLE - PREDICTIVE FINANCIAL INTELLIGENCE
+// ============================================
+
+app.get('/api/expenses/oracle', async (req, res) => {
+  try {
+    console.log('[Money Oracle] Running financial analysis...');
+    const result = await moneyOracle.analyze(pool);
+    console.log(`[Money Oracle] Analysis complete in ${result.processingTimeMs}ms - ${result.insights?.length || 0} insights generated`);
+    res.json(result);
+  } catch (err) {
+    console.error('[Money Oracle] Error running analysis:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to analyze expenses',
+      message: err.message 
+    });
+  }
+});
+
+// Oracle quick insights - lightweight version for dashboard widgets
+app.get('/api/expenses/oracle/quick', async (req, res) => {
+  try {
+    const result = await moneyOracle.analyze(pool);
+    
+    // Return only top 3 insights and key predictions
+    res.json({
+      success: true,
+      insights: result.insights?.slice(0, 3) || [],
+      predictions: {
+        nextMonth: result.predictions?.nextMonth || 0,
+        confidence: result.predictions?.confidence || 'low'
+      },
+      patterns: result.patterns || {},
+      summary: {
+        totalSpent: result.summary?.totalSpent || 0,
+        spendingTrend: result.patterns?.spendingTrend || 'stable'
+      }
+    });
+  } catch (err) {
+    console.error('[Money Oracle Quick] Error:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get quick insights' 
+    });
+  }
+});
+
+// Oracle savings opportunities endpoint
+app.get('/api/expenses/oracle/savings', async (req, res) => {
+  try {
+    const result = await moneyOracle.analyze(pool);
+    res.json({
+      success: true,
+      opportunities: result.savings || [],
+      totalPotential: (result.savings || []).reduce((sum, s) => sum + (s.potential || 0), 0)
+    });
+  } catch (err) {
+    console.error('[Money Oracle Savings] Error:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to identify savings' 
+    });
   }
 });
 
@@ -3267,6 +4000,539 @@ app.post('/api/lumen-tools/plugins/:id/install', async (req, res) => {
 });
 
 // ============================================
+// 🎲 SERENDIPITY ENGINE API
+// ============================================
+
+/**
+ * POST /api/serendipity/discover
+ * 
+ * Discovers unexpected connections across all user data.
+ * Analyzes expenses, briefings, jobs, ideas, and resources
+ * to find non-obvious, valuable connections.
+ * 
+ * Request Body:
+ * {
+ *   "limit": 10,              // Max discoveries to return (default: 10)
+ *   "minScore": 0.5,          // Minimum relevance score 0-1 (default: 0.5)
+ *   "includeTypes": [...],    // Data types to analyze (default: all)
+ *   "timeWindowDays": 90      // How far back to look (default: 90)
+ * }
+ * 
+ * Response:
+ * {
+ *   "discoveries": [...],     // Array of discovered connections
+ *   "stats": {...},           // Statistics about the discovery process
+ *   "generatedAt": "..."      // Timestamp
+ * }
+ */
+app.post('/api/serendipity/discover', async (req, res) => {
+  try {
+    const options = {
+      limit: parseInt(req.body.limit) || 10,
+      minScore: parseFloat(req.body.minScore) || 0.5,
+      includeTypes: req.body.includeTypes || ['expenses', 'briefings', 'jobs', 'ideas', 'resources'],
+      timeWindowDays: parseInt(req.body.timeWindowDays) || 90
+    };
+
+    console.log('[Serendipity] Starting discovery with options:', options);
+    const startTime = Date.now();
+    
+    const result = await serendipity.discoverConnections(pool, options);
+    
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`[Serendipity] Found ${result.discoveries.length} connections in ${duration}s`);
+    
+    res.json({
+      success: true,
+      ...result,
+      processingTime: `${duration}s`
+    });
+  } catch (err) {
+    console.error('[Serendipity] Discovery error:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to discover connections',
+      message: err.message 
+    });
+  }
+});
+
+/**
+ * GET /api/serendipity/patterns
+ * 
+ * Returns the available connection patterns that the engine looks for.
+ */
+app.get('/api/serendipity/patterns', (req, res) => {
+  res.json({
+    patterns: serendipity.CONNECTION_PATTERNS,
+    seedConnections: serendipity.SEED_CONNECTIONS.map(s => ({
+      id: s.id,
+      name: s.name,
+      sources: s.sources
+    }))
+  });
+});
+
+/**
+ * POST /api/serendipity/analyze
+ * 
+ * Analyzes a specific item to find its connections.
+ * 
+ * Request Body:
+ * {
+ *   "type": "jobs|ideas|expenses|briefings|resources",
+ *   "id": 123
+ * }
+ */
+app.post('/api/serendipity/analyze', async (req, res) => {
+  try {
+    const { type, id } = req.body;
+    
+    if (!type || !id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: type and id' 
+      });
+    }
+    
+    const validTypes = ['expenses', 'briefings', 'jobs', 'ideas', 'resources'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: `Invalid type. Must be one of: ${validTypes.join(', ')}` 
+      });
+    }
+
+    // Get connections that include this specific item
+    const result = await serendipity.discoverConnections(pool, {
+      limit: 20,
+      minScore: 0.4,
+      includeTypes: validTypes
+    });
+    
+    // Filter to only connections involving the specified item
+    const relevantDiscoveries = result.discoveries.filter(d => 
+      d.sources.some(s => s.type === type && s.id === parseInt(id))
+    );
+    
+    res.json({
+      success: true,
+      item: { type, id },
+      connections: relevantDiscoveries,
+      totalConnections: relevantDiscoveries.length,
+      generatedAt: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('[Serendipity] Analysis error:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to analyze item',
+      message: err.message 
+    });
+  }
+});
+
+/**
+ * GET /api/serendipity/stats
+ * 
+ * Returns statistics about the serendipity engine's coverage.
+ */
+app.get('/api/serendipity/stats', async (req, res) => {
+  try {
+    const counts = {};
+    
+    const tables = [
+      { name: 'expenses', table: 'lumen_expenses' },
+      { name: 'briefings', table: 'lumen_briefings' },
+      { name: 'jobs', table: 'lumen_jobs' },
+      { name: 'ideas', table: 'lumen_ideas' },
+      { name: 'resources', table: 'lumen_resources' }
+    ];
+    
+    for (const { name, table } of tables) {
+      const result = await pool.query(`SELECT COUNT(*) FROM ${table}`);
+      counts[name] = parseInt(result.rows[0].count);
+    }
+    
+    const totalItems = Object.values(counts).reduce((a, b) => a + b, 0);
+    const potentialConnections = totalItems * (totalItems - 1) / 2;
+    
+    res.json({
+      success: true,
+      dataCounts: counts,
+      totalItems,
+      potentialConnections,
+      patternsAvailable: Object.keys(serendipity.CONNECTION_PATTERNS).length,
+      seedDetectors: serendipity.SEED_CONNECTIONS.length,
+      status: totalItems > 10 ? 'ready' : 'needs_more_data',
+      recommendation: totalItems < 10 
+        ? 'Add more data to get better connections. Try adding briefings, tracking expenses, or saving job listings.'
+        : 'Good data coverage! Run discovery to find connections.'
+    });
+  } catch (err) {
+    console.error('[Serendipity] Stats error:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get stats',
+      message: err.message 
+    });
+  }
+});
+
+// ============================================
+// PROACTIVE NOTIFICATIONS API
+// ============================================
+
+/**
+ * GET /api/notifications
+ * Get all notifications with optional filters
+ * 
+ * Query params:
+ * - status: pending|sent|read|dismissed
+ * - unread: true (only unread)
+ * - limit: number
+ */
+app.get('/api/notifications', async (req, res) => {
+  try {
+    const { status, unread, limit = 50 } = req.query;
+    
+    let query = 'SELECT n.*, r.name as rule_name, r.rule_type FROM lumen_notifications n LEFT JOIN lumen_notification_rules r ON n.rule_id = r.id WHERE 1=1';
+    const params = [];
+    let paramIdx = 1;
+
+    if (status) {
+      query += ` AND n.status = $${paramIdx}`;
+      params.push(status);
+      paramIdx++;
+    }
+
+    if (unread === 'true') {
+      query += ' AND n.read = FALSE AND n.dismissed = FALSE';
+    }
+
+    query += ` ORDER BY n.created_at DESC LIMIT $${paramIdx}`;
+    params.push(parseInt(limit));
+
+    const result = await pool.query(query, params);
+
+    res.json({
+      success: true,
+      notifications: result.rows,
+      count: result.rows.length,
+      unread_count: result.rows.filter(n => !n.read && !n.dismissed).length
+    });
+  } catch (err) {
+    console.error('[Notifications] Error fetching:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/notifications/rules
+ * Get all notification rules
+ */
+app.get('/api/notifications/rules', async (req, res) => {
+  try {
+    const { enabled } = req.query;
+    
+    let query = 'SELECT * FROM lumen_notification_rules';
+    const params = [];
+
+    if (enabled === 'true') {
+      query += ' WHERE enabled = TRUE';
+    } else if (enabled === 'false') {
+      query += ' WHERE enabled = FALSE';
+    }
+
+    query += ' ORDER BY priority DESC, created_at DESC';
+
+    const result = await pool.query(query, params);
+
+    res.json({
+      success: true,
+      rules: result.rows,
+      count: result.rows.length,
+      rule_types: Object.keys(proactiveNotifications.RULE_EVALUATORS),
+      examples: proactiveNotifications.EXAMPLE_RULES
+    });
+  } catch (err) {
+    console.error('[Notifications] Error fetching rules:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/notifications/rules
+ * Create a new notification rule
+ * 
+ * Body:
+ * {
+ *   "name": "Weekly Food Budget",
+ *   "description": "Alert if Food spending exceeds $200/week",
+ *   "rule_type": "spending_threshold",
+ *   "config": { "category": "Food", "amount": 200, "period": "week" },
+ *   "priority": 1,
+ *   "cooldown_hours": 24
+ * }
+ */
+app.post('/api/notifications/rules', async (req, res) => {
+  try {
+    const { name, description, rule_type, config, priority = 0, cooldown_hours = 24, enabled = true } = req.body;
+
+    if (!name || !rule_type || !config) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: name, rule_type, config' 
+      });
+    }
+
+    // Validate rule type
+    const validTypes = Object.keys(proactiveNotifications.RULE_EVALUATORS);
+    if (!validTypes.includes(rule_type)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: `Invalid rule_type. Must be one of: ${validTypes.join(', ')}` 
+      });
+    }
+
+    const result = await pool.query(`
+      INSERT INTO lumen_notification_rules (name, description, rule_type, config, priority, cooldown_hours, enabled)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `, [name, description, rule_type, JSON.stringify(config), priority, cooldown_hours, enabled]);
+
+    console.log(`[Notifications] Created rule: ${name} (${rule_type})`);
+
+    res.status(201).json({
+      success: true,
+      rule: result.rows[0],
+      message: `Rule "${name}" created successfully`
+    });
+  } catch (err) {
+    console.error('[Notifications] Error creating rule:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * PUT /api/notifications/rules/:id
+ * Update a notification rule
+ */
+app.put('/api/notifications/rules/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, rule_type, config, priority, cooldown_hours, enabled } = req.body;
+
+    const updates = [];
+    const params = [];
+    let paramIdx = 1;
+
+    if (name !== undefined) { updates.push(`name = $${paramIdx}`); params.push(name); paramIdx++; }
+    if (description !== undefined) { updates.push(`description = $${paramIdx}`); params.push(description); paramIdx++; }
+    if (rule_type !== undefined) { updates.push(`rule_type = $${paramIdx}`); params.push(rule_type); paramIdx++; }
+    if (config !== undefined) { updates.push(`config = $${paramIdx}`); params.push(JSON.stringify(config)); paramIdx++; }
+    if (priority !== undefined) { updates.push(`priority = $${paramIdx}`); params.push(priority); paramIdx++; }
+    if (cooldown_hours !== undefined) { updates.push(`cooldown_hours = $${paramIdx}`); params.push(cooldown_hours); paramIdx++; }
+    if (enabled !== undefined) { updates.push(`enabled = $${paramIdx}`); params.push(enabled); paramIdx++; }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, error: 'No fields to update' });
+    }
+
+    updates.push(`updated_at = NOW()`);
+    params.push(id);
+
+    const result = await pool.query(`
+      UPDATE lumen_notification_rules 
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIdx}
+      RETURNING *
+    `, params);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Rule not found' });
+    }
+
+    res.json({ success: true, rule: result.rows[0] });
+  } catch (err) {
+    console.error('[Notifications] Error updating rule:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * DELETE /api/notifications/rules/:id
+ * Delete a notification rule
+ */
+app.delete('/api/notifications/rules/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query('DELETE FROM lumen_notification_rules WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Rule not found' });
+    }
+
+    res.json({ success: true, message: 'Rule deleted', rule: result.rows[0] });
+  } catch (err) {
+    console.error('[Notifications] Error deleting rule:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/notifications/check
+ * Run all notification rules and generate alerts
+ * This is the "heartbeat" - call it periodically or on-demand
+ */
+app.post('/api/notifications/check', async (req, res) => {
+  try {
+    console.log('[Notifications] Running rule check...');
+    const startTime = Date.now();
+
+    const result = await proactiveNotifications.runAllRules(pool);
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`[Notifications] Check complete: ${result.triggered}/${result.checked} rules triggered in ${duration}s`);
+
+    res.json({
+      success: true,
+      ...result,
+      processingTime: `${duration}s`,
+      checkedAt: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('[Notifications] Error running check:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/notifications/:id/read
+ * Mark a notification as read
+ */
+app.post('/api/notifications/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(`
+      UPDATE lumen_notifications 
+      SET read = TRUE, read_at = NOW(), status = 'read'
+      WHERE id = $1
+      RETURNING *
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Notification not found' });
+    }
+
+    res.json({ success: true, notification: result.rows[0] });
+  } catch (err) {
+    console.error('[Notifications] Error marking read:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/notifications/:id/dismiss
+ * Dismiss a notification
+ */
+app.post('/api/notifications/:id/dismiss', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(`
+      UPDATE lumen_notifications 
+      SET dismissed = TRUE, dismissed_at = NOW(), status = 'dismissed'
+      WHERE id = $1
+      RETURNING *
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Notification not found' });
+    }
+
+    res.json({ success: true, notification: result.rows[0] });
+  } catch (err) {
+    console.error('[Notifications] Error dismissing:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/notifications/seed-examples
+ * Seed the database with example rules
+ */
+app.post('/api/notifications/seed-examples', async (req, res) => {
+  try {
+    const examples = proactiveNotifications.EXAMPLE_RULES;
+    const created = [];
+
+    for (const rule of examples) {
+      const exists = await pool.query(
+        'SELECT id FROM lumen_notification_rules WHERE name = $1',
+        [rule.name]
+      );
+
+      if (exists.rows.length === 0) {
+        const result = await pool.query(`
+          INSERT INTO lumen_notification_rules (name, description, rule_type, config, priority)
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING *
+        `, [rule.name, rule.description, rule.rule_type, JSON.stringify(rule.config), rule.priority]);
+        
+        created.push(result.rows[0]);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Created ${created.length} example rules`,
+      rules: created
+    });
+  } catch (err) {
+    console.error('[Notifications] Error seeding examples:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/notifications/stats
+ * Get notification statistics
+ */
+app.get('/api/notifications/stats', async (req, res) => {
+  try {
+    const [rulesResult, notificationsResult, triggeredResult] = await Promise.all([
+      pool.query('SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE enabled = TRUE) as active FROM lumen_notification_rules'),
+      pool.query('SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE read = FALSE AND dismissed = FALSE) as unread FROM lumen_notifications'),
+      pool.query('SELECT COUNT(*) as count FROM lumen_notifications WHERE created_at > NOW() - INTERVAL \'24 hours\'')
+    ]);
+
+    res.json({
+      success: true,
+      stats: {
+        rules: {
+          total: parseInt(rulesResult.rows[0].total),
+          active: parseInt(rulesResult.rows[0].active)
+        },
+        notifications: {
+          total: parseInt(notificationsResult.rows[0].total),
+          unread: parseInt(notificationsResult.rows[0].unread)
+        },
+        last_24h: {
+          triggered: parseInt(triggeredResult.rows[0].count)
+        }
+      },
+      rule_types: Object.keys(proactiveNotifications.RULE_EVALUATORS)
+    });
+  } catch (err) {
+    console.error('[Notifications] Error getting stats:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================================
 // HEALTH & MISC
 // ============================================
 
@@ -3301,6 +4567,945 @@ app.get('/manifest.json', (req, res) => {
 });
 
 // Catch-all for SPA
+// ============================================
+// VOICE CLONE API - ElevenLabs TTS Integration
+// ============================================
+
+/**
+ * GET /api/voice/status
+ * Check voice service status and configuration
+ */
+app.get('/api/voice/status', async (req, res) => {
+  try {
+    const isConfigured = voiceClone.isApiConfigured();
+    const audioFiles = voiceClone.listAudioFiles();
+    
+    res.json({
+      service: 'Voice Clone Assistant',
+      version: '1.0.0',
+      status: 'operational',
+      api_configured: isConfigured,
+      mode: isConfigured ? 'live' : 'mock',
+      audio_files_count: audioFiles.length,
+      default_voice_settings: voiceClone.DEFAULT_VOICE_SETTINGS,
+      endpoints: {
+        speak: 'POST /api/voice/speak',
+        voices: 'GET /api/voice/voices',
+        audio: 'GET /api/voice/audio/:audioId',
+        usage: 'GET /api/voice/usage',
+        briefing: 'POST /api/voice/briefing/:briefingId/speak'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/voice/voices
+ * List all available voices (real or mock)
+ */
+app.get('/api/voice/voices', async (req, res) => {
+  try {
+    const result = await voiceClone.getVoices();
+    res.json(result);
+  } catch (error) {
+    console.error('[Voice API] Error listing voices:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/voice/voices/:voiceId
+ * Get details for a specific voice
+ */
+app.get('/api/voice/voices/:voiceId', async (req, res) => {
+  try {
+    const result = await voiceClone.getVoice(req.params.voiceId);
+    res.json(result);
+  } catch (error) {
+    console.error('[Voice API] Error getting voice:', error);
+    res.status(404).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/voice/speak
+ * Generate speech from text
+ * 
+ * Body: {
+ *   text: string (required) - Text to convert to speech
+ *   voice_id?: string - Voice ID to use (default: mock-rachel)
+ *   speed?: number - Speed multiplier 0.5-2.0 (default: 1.0)
+ *   stability?: number - Voice stability 0-1 (default: 0.5)
+ *   similarity_boost?: number - Voice similarity 0-1 (default: 0.75)
+ *   briefing_id?: number - Associated briefing ID
+ * }
+ */
+app.post('/api/voice/speak', async (req, res) => {
+  try {
+    const { text, voice_id, speed, stability, similarity_boost, briefing_id } = req.body;
+    
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+    
+    const result = await voiceClone.generateSpeech({
+      text,
+      voice_id,
+      speed,
+      stability,
+      similarity_boost,
+      briefing_id
+    });
+    
+    res.json(result);
+  } catch (error) {
+    console.error('[Voice API] Error generating speech:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/voice/briefing/:briefingId/speak
+ * Generate speech for a specific briefing
+ * 
+ * Body: {
+ *   voice_id?: string - Voice ID to use
+ *   speed?: number - Speed multiplier 0.5-2.0
+ * }
+ */
+app.post('/api/voice/briefing/:briefingId/speak', async (req, res) => {
+  try {
+    const briefingId = parseInt(req.params.briefingId);
+    const { voice_id, speed } = req.body;
+    
+    if (isNaN(briefingId)) {
+      return res.status(400).json({ error: 'Invalid briefing ID' });
+    }
+    
+    const result = await voiceClone.speakBriefing(pool, briefingId, voice_id, speed);
+    res.json(result);
+  } catch (error) {
+    console.error('[Voice API] Error speaking briefing:', error);
+    
+    if (error.message.includes('not found')) {
+      return res.status(404).json({ error: error.message });
+    }
+    
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/voice/audio/:audioId
+ * Retrieve generated audio file
+ */
+app.get('/api/voice/audio/:audioId', (req, res) => {
+  try {
+    const audioFile = voiceClone.getAudioFile(req.params.audioId);
+    
+    if (!audioFile) {
+      return res.status(404).json({ error: 'Audio file not found' });
+    }
+    
+    res.setHeader('Content-Type', audioFile.contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${req.params.audioId}.mp3"`);
+    res.send(audioFile.buffer);
+  } catch (error) {
+    console.error('[Voice API] Error retrieving audio:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/voice/audio/:audioId
+ * Delete a generated audio file
+ */
+app.delete('/api/voice/audio/:audioId', (req, res) => {
+  try {
+    const deleted = voiceClone.deleteAudioFile(req.params.audioId);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'Audio file not found' });
+    }
+    
+    res.json({ success: true, message: 'Audio file deleted' });
+  } catch (error) {
+    console.error('[Voice API] Error deleting audio:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/voice/audio
+ * List all stored audio files
+ */
+app.get('/api/voice/audio', (req, res) => {
+  try {
+    const files = voiceClone.listAudioFiles();
+    res.json({
+      count: files.length,
+      files
+    });
+  } catch (error) {
+    console.error('[Voice API] Error listing audio files:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/voice/usage
+ * Get ElevenLabs usage statistics
+ */
+app.get('/api/voice/usage', async (req, res) => {
+  try {
+    const usage = await voiceClone.getUsage();
+    res.json(usage);
+  } catch (error) {
+    console.error('[Voice API] Error getting usage:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// CONTEXT RESURRECTION API - Time Travel for Decisions
+// ============================================
+
+/**
+ * GET /api/context/status
+ * Get status and available date range for context resurrection
+ */
+app.get('/api/context/status', async (req, res) => {
+  try {
+    const dateRange = await contextResurrection.getAvailableDateRange(pool);
+    
+    res.json({
+      service: 'Context Resurrection Engine',
+      version: '1.0.0',
+      status: 'operational',
+      description: 'Time travel through your data - recreate the context of any past decision',
+      date_range: dateRange,
+      categories: Object.entries(contextResurrection.CONTEXT_CATEGORIES).map(([key, cat]) => ({
+        key,
+        name: cat.name,
+        icon: cat.icon,
+        description: cat.description
+      })),
+      endpoints: {
+        resurrect: 'POST /api/context/resurrect',
+        timeline: 'GET /api/context/timeline',
+        status: 'GET /api/context/status'
+      }
+    });
+  } catch (err) {
+    console.error('[ContextResurrection API] Error getting status:', err);
+    res.status(500).json({ error: 'Service error' });
+  }
+});
+
+/**
+ * POST /api/context/resurrect
+ * Resurrect the full context around a specific date or event
+ * 
+ * Request body:
+ * {
+ *   "date": "2024-01-15" (required) - Target date to resurrect
+ *   "event_description": "When I decided to switch jobs" (optional)
+ *   "keywords": ["startup", "offer"] (optional) - Keywords to boost relevance
+ *   "window_days": 7 (optional, default: 7) - Days before/after to search
+ *   "categories": ["briefings", "expenses", "jobs"] (optional) - Specific categories
+ * }
+ * 
+ * Response:
+ * {
+ *   "target_date": "2024-01-15T00:00:00.000Z",
+ *   "window": { "start": "...", "end": "...", "days": 7 },
+ *   "event_description": "...",
+ *   "keywords": [...],
+ *   "categories": { 
+ *     "briefings": { items: [...], count: N, high_relevance_count: M },
+ *     "expenses": { ... },
+ *     ...
+ *   },
+ *   "snapshot": "# Context Snapshot: Monday, January 15, 2024\n...",
+ *   "meta": { "total_items": N, "high_relevance_items": M, "generated_at": "..." }
+ * }
+ */
+app.post('/api/context/resurrect', async (req, res) => {
+  try {
+    const { date, event_description, keywords, window_days, categories } = req.body;
+    
+    // Validate required fields
+    if (!date) {
+      return res.status(400).json({ 
+        error: 'Missing required field: date',
+        hint: 'Provide a date in ISO format (YYYY-MM-DD) or any parseable date string',
+        examples: ['2024-01-15', '2024-01-15T14:30:00Z', 'January 15, 2024']
+      });
+    }
+    
+    // Validate date format
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ 
+        error: 'Invalid date format',
+        received: date,
+        hint: 'Use ISO format (YYYY-MM-DD) or a standard date string'
+      });
+    }
+    
+    // Validate window_days
+    const windowDays = parseInt(window_days) || 7;
+    if (windowDays < 1 || windowDays > 90) {
+      return res.status(400).json({ 
+        error: 'window_days must be between 1 and 90',
+        received: window_days
+      });
+    }
+    
+    // Validate categories if provided
+    const validCategories = Object.keys(contextResurrection.CONTEXT_CATEGORIES);
+    if (categories && Array.isArray(categories)) {
+      const invalidCats = categories.filter(c => !validCategories.includes(c));
+      if (invalidCats.length > 0) {
+        return res.status(400).json({ 
+          error: 'Invalid categories',
+          invalid: invalidCats,
+          valid_categories: validCategories
+        });
+      }
+    }
+    
+    console.log(`[ContextResurrection API] Resurrecting context for: ${date}${event_description ? ` (${event_description})` : ''}`);
+    
+    // Perform resurrection
+    const result = await contextResurrection.resurrectContext(pool, {
+      date,
+      event_description,
+      keywords: keywords || [],
+      window_days: windowDays,
+      categories: categories || validCategories
+    });
+    
+    console.log(`[ContextResurrection API] Found ${result.meta.total_items} items (${result.meta.high_relevance_items} highly relevant)`);
+    
+    res.json(result);
+    
+  } catch (err) {
+    console.error('[ContextResurrection API] Error:', err);
+    res.status(500).json({ 
+      error: 'Failed to resurrect context',
+      details: err.message 
+    });
+  }
+});
+
+/**
+ * GET /api/context/timeline
+ * Get activity timeline for visualization
+ * 
+ * Query params:
+ *   start_date - Start of range (optional)
+ *   end_date - End of range (optional)
+ *   granularity - 'day', 'week', or 'month' (default: 'day')
+ */
+app.get('/api/context/timeline', async (req, res) => {
+  try {
+    const { start_date, end_date, granularity = 'day' } = req.query;
+    
+    // Validate granularity
+    if (!['day', 'week', 'month'].includes(granularity)) {
+      return res.status(400).json({ 
+        error: 'Invalid granularity',
+        valid: ['day', 'week', 'month']
+      });
+    }
+    
+    const timeline = await contextResurrection.getActivityTimeline(pool, {
+      start_date,
+      end_date,
+      granularity
+    });
+    
+    res.json({
+      granularity,
+      start_date: start_date || 'all time',
+      end_date: end_date || 'present',
+      periods: timeline.length,
+      timeline
+    });
+    
+  } catch (err) {
+    console.error('[ContextResurrection API] Error getting timeline:', err);
+    res.status(500).json({ error: 'Failed to generate timeline' });
+  }
+});
+
+/**
+ * POST /api/context/compare
+ * Compare context between two dates (useful for before/after analysis)
+ */
+app.post('/api/context/compare', async (req, res) => {
+  try {
+    const { date1, date2, window_days = 7 } = req.body;
+    
+    if (!date1 || !date2) {
+      return res.status(400).json({ 
+        error: 'Both date1 and date2 are required',
+        hint: 'Provide two dates to compare context between'
+      });
+    }
+    
+    // Resurrect both periods in parallel
+    const [context1, context2] = await Promise.all([
+      contextResurrection.resurrectContext(pool, { date: date1, window_days }),
+      contextResurrection.resurrectContext(pool, { date: date2, window_days })
+    ]);
+    
+    // Generate comparison insights
+    const comparison = {
+      date1: context1.target_date,
+      date2: context2.target_date,
+      window_days,
+      changes: {
+        total_items: context2.meta.total_items - context1.meta.total_items,
+        high_relevance: context2.meta.high_relevance_items - context1.meta.high_relevance_items
+      },
+      by_category: {}
+    };
+    
+    // Compare each category
+    for (const key of Object.keys(contextResurrection.CONTEXT_CATEGORIES)) {
+      const cat1 = context1.categories[key] || { count: 0 };
+      const cat2 = context2.categories[key] || { count: 0 };
+      comparison.by_category[key] = {
+        before: cat1.count,
+        after: cat2.count,
+        change: cat2.count - cat1.count
+      };
+    }
+    
+    res.json({
+      comparison,
+      before: context1,
+      after: context2
+    });
+    
+  } catch (err) {
+    console.error('[ContextResurrection API] Error comparing:', err);
+    res.status(500).json({ error: 'Failed to compare contexts' });
+  }
+});
+
+// ============================================
+// AUTOMATION BUILDER API
+// ============================================
+
+/**
+ * POST /api/automations
+ * Create automation from natural language
+ * 
+ * Body: {
+ *   description: string (required) - Natural language automation description
+ *   name?: string - Optional custom name
+ *   enabled?: boolean - Whether to enable immediately (default: true)
+ * }
+ * 
+ * Example:
+ *   { "description": "When Food spending exceeds $500, alert me" }
+ */
+app.post('/api/automations', async (req, res) => {
+  try {
+    const { description, name, enabled = true } = req.body;
+    
+    if (!description) {
+      return res.status(400).json({ 
+        error: 'Missing required field: description',
+        hint: 'Describe your automation in plain English',
+        examples: [
+          'When Food spending exceeds $500, alert me',
+          'Every Monday at 9am, send me a spending summary',
+          'If I spend more than $100 at restaurants in a day, notify me'
+        ]
+      });
+    }
+
+    console.log(`[Automation] Parsing: "${description}"`);
+    
+    // Parse natural language
+    const parsed = automationBuilder.parseNaturalLanguage(description);
+    
+    // Convert to database record
+    const record = automationBuilder.toAutomationRecord(parsed, name);
+    record.enabled = enabled;
+    
+    // Warn if low confidence
+    if (parsed.confidence < 0.5) {
+      console.log(`[Automation] Low confidence parse (${parsed.confidence}), storing anyway`);
+    }
+    
+    // Insert into database
+    const result = await pool.query(`
+      INSERT INTO lumen_automations (
+        name, description, trigger_type, trigger_event, trigger_config,
+        condition_str, conditions, action_type, action_config,
+        schedule, schedule_human, confidence, raw_input, enabled
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      RETURNING *
+    `, [
+      record.name, record.description, record.trigger_type, record.trigger_event,
+      record.trigger_config, record.condition_str, record.conditions,
+      record.action_type, record.action_config, record.schedule, record.schedule_human,
+      record.confidence, record.raw_input, record.enabled
+    ]);
+
+    const automation = result.rows[0];
+    
+    console.log(`[Automation] Created: ${automation.name} (id: ${automation.id}, confidence: ${record.confidence})`);
+
+    res.json({
+      success: true,
+      automation: {
+        ...automation,
+        parsed: {
+          trigger: parsed.trigger,
+          conditions: parsed.conditions,
+          action: parsed.action,
+          schedule: parsed.schedule
+        }
+      },
+      message: 'Automation created successfully',
+      confidence: record.confidence,
+      confidence_explanation: record.confidence >= 0.7 
+        ? 'High confidence - automation will work as expected'
+        : record.confidence >= 0.5 
+          ? 'Medium confidence - automation should work but may need refinement'
+          : 'Low confidence - please verify the parsed automation matches your intent'
+    });
+    
+  } catch (err) {
+    console.error('[Automation API] Error creating automation:', err);
+    res.status(500).json({ error: 'Failed to create automation', details: err.message });
+  }
+});
+
+/**
+ * GET /api/automations
+ * List all automations
+ * 
+ * Query params:
+ *   enabled - Filter by enabled status (true/false)
+ *   trigger_type - Filter by trigger type
+ *   limit - Max results (default: 50)
+ */
+app.get('/api/automations', async (req, res) => {
+  try {
+    const { enabled, trigger_type, limit = 50 } = req.query;
+    
+    let query = 'SELECT * FROM lumen_automations WHERE 1=1';
+    const params = [];
+    let paramCount = 0;
+
+    if (enabled !== undefined) {
+      paramCount++;
+      query += ` AND enabled = $${paramCount}`;
+      params.push(enabled === 'true');
+    }
+
+    if (trigger_type) {
+      paramCount++;
+      query += ` AND trigger_type = $${paramCount}`;
+      params.push(trigger_type);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    params.push(parseInt(limit));
+
+    const result = await pool.query(query, params);
+    
+    res.json({
+      automations: result.rows,
+      count: result.rows.length,
+      trigger_types: Object.keys(automationBuilder.TRIGGER_PATTERNS),
+      action_types: Object.keys(automationBuilder.ACTION_PATTERNS)
+    });
+  } catch (err) {
+    console.error('[Automation API] Error listing automations:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+/**
+ * GET /api/automations/:id
+ * Get a single automation with run history
+ */
+app.get('/api/automations/:id', async (req, res) => {
+  try {
+    const automation = await pool.query(
+      'SELECT * FROM lumen_automations WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (automation.rows.length === 0) {
+      return res.status(404).json({ error: 'Automation not found' });
+    }
+
+    // Get recent runs
+    const runs = await pool.query(
+      'SELECT * FROM lumen_automation_runs WHERE automation_id = $1 ORDER BY executed_at DESC LIMIT 10',
+      [req.params.id]
+    );
+
+    res.json({
+      automation: automation.rows[0],
+      recent_runs: runs.rows,
+      run_count: automation.rows[0].run_count
+    });
+  } catch (err) {
+    console.error('[Automation API] Error getting automation:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+/**
+ * PATCH /api/automations/:id
+ * Update an automation
+ */
+app.patch('/api/automations/:id', async (req, res) => {
+  try {
+    const { name, enabled, description } = req.body;
+    const updates = [];
+    const params = [];
+    let paramCount = 0;
+
+    if (name !== undefined) {
+      paramCount++;
+      updates.push(`name = $${paramCount}`);
+      params.push(name);
+    }
+    
+    if (enabled !== undefined) {
+      paramCount++;
+      updates.push(`enabled = $${paramCount}`);
+      params.push(enabled);
+    }
+
+    if (description !== undefined) {
+      // Re-parse the description
+      const parsed = automationBuilder.parseNaturalLanguage(description);
+      const record = automationBuilder.toAutomationRecord(parsed, name);
+      
+      paramCount++;
+      updates.push(`description = $${paramCount}`);
+      params.push(description);
+      
+      paramCount++;
+      updates.push(`trigger_type = $${paramCount}`);
+      params.push(record.trigger_type);
+      
+      paramCount++;
+      updates.push(`trigger_event = $${paramCount}`);
+      params.push(record.trigger_event);
+      
+      paramCount++;
+      updates.push(`trigger_config = $${paramCount}`);
+      params.push(record.trigger_config);
+      
+      paramCount++;
+      updates.push(`condition_str = $${paramCount}`);
+      params.push(record.condition_str);
+      
+      paramCount++;
+      updates.push(`conditions = $${paramCount}`);
+      params.push(record.conditions);
+      
+      paramCount++;
+      updates.push(`action_type = $${paramCount}`);
+      params.push(record.action_type);
+      
+      paramCount++;
+      updates.push(`action_config = $${paramCount}`);
+      params.push(record.action_config);
+      
+      paramCount++;
+      updates.push(`confidence = $${paramCount}`);
+      params.push(record.confidence);
+      
+      paramCount++;
+      updates.push(`raw_input = $${paramCount}`);
+      params.push(description);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updates.push('updated_at = NOW()');
+    paramCount++;
+    params.push(req.params.id);
+
+    const result = await pool.query(
+      `UPDATE lumen_automations SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+      params
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Automation not found' });
+    }
+
+    res.json({ automation: result.rows[0], message: 'Automation updated' });
+  } catch (err) {
+    console.error('[Automation API] Error updating automation:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+/**
+ * POST /api/automations/:id/run
+ * Manually trigger an automation
+ * 
+ * Body: {
+ *   test_data?: object - Mock expense data for testing
+ *   dry_run?: boolean - If true, don't record the run
+ * }
+ */
+app.post('/api/automations/:id/run', async (req, res) => {
+  try {
+    const { test_data, dry_run = false } = req.body;
+    
+    // Get the automation
+    const automationResult = await pool.query(
+      'SELECT * FROM lumen_automations WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (automationResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Automation not found' });
+    }
+
+    const automation = automationResult.rows[0];
+    
+    // Create test context
+    const context = {
+      expense: test_data || {
+        id: 0,
+        amount: 100,
+        category: 'Food',
+        vendor: 'Test Vendor',
+        description: 'Manual trigger test'
+      },
+      expense_id: test_data?.id || 0,
+      manual_trigger: true,
+      dry_run
+    };
+
+    console.log(`[Automation] Manual trigger: ${automation.name} (id: ${automation.id})`);
+
+    // Execute the action
+    const result = await automationBuilder.executeAction(automation, context, pool);
+
+    if (!dry_run) {
+      // Record the run
+      await pool.query(`
+        INSERT INTO lumen_automation_runs (automation_id, trigger_data, result, success)
+        VALUES ($1, $2, $3, $4)
+      `, [automation.id, JSON.stringify(context), JSON.stringify(result), result.success]);
+
+      // Update automation stats
+      await pool.query(`
+        UPDATE lumen_automations 
+        SET last_run_at = NOW(), 
+            run_count = run_count + 1,
+            last_run_result = $2
+        WHERE id = $1
+      `, [automation.id, JSON.stringify(result)]);
+    }
+
+    res.json({
+      automation_id: automation.id,
+      automation_name: automation.name,
+      result,
+      dry_run,
+      message: dry_run ? 'Dry run completed (not recorded)' : 'Automation triggered successfully'
+    });
+    
+  } catch (err) {
+    console.error('[Automation API] Error running automation:', err);
+    res.status(500).json({ error: 'Failed to run automation', details: err.message });
+  }
+});
+
+/**
+ * POST /api/automations/:id/toggle
+ * Toggle automation enabled/disabled
+ */
+app.post('/api/automations/:id/toggle', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE lumen_automations SET enabled = NOT enabled, updated_at = NOW() WHERE id = $1 RETURNING id, name, enabled',
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Automation not found' });
+    }
+
+    const automation = result.rows[0];
+    res.json({ 
+      automation,
+      message: `Automation ${automation.enabled ? 'enabled' : 'disabled'}`
+    });
+  } catch (err) {
+    console.error('[Automation API] Error toggling automation:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+/**
+ * DELETE /api/automations/:id
+ * Delete an automation
+ */
+app.delete('/api/automations/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM lumen_automations WHERE id = $1 RETURNING id, name',
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Automation not found' });
+    }
+
+    console.log(`[Automation] Deleted: ${result.rows[0].name} (id: ${result.rows[0].id})`);
+    res.json({ message: 'Automation deleted', deleted: result.rows[0] });
+  } catch (err) {
+    console.error('[Automation API] Error deleting automation:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+/**
+ * POST /api/automations/parse
+ * Parse natural language without creating (preview)
+ */
+app.post('/api/automations/parse', async (req, res) => {
+  try {
+    const { description } = req.body;
+    
+    if (!description) {
+      return res.status(400).json({ error: 'description is required' });
+    }
+
+    const parsed = automationBuilder.parseNaturalLanguage(description);
+    const record = automationBuilder.toAutomationRecord(parsed);
+
+    res.json({
+      input: description,
+      parsed,
+      would_create: record,
+      confidence: parsed.confidence,
+      ready_to_create: parsed.confidence >= 0.5
+    });
+  } catch (err) {
+    console.error('[Automation API] Error parsing:', err);
+    res.status(500).json({ error: 'Failed to parse automation' });
+  }
+});
+
+/**
+ * GET /api/automations/runs
+ * Get recent automation run history
+ */
+app.get('/api/automations/runs', async (req, res) => {
+  try {
+    const { limit = 50, automation_id } = req.query;
+    
+    let query = `
+      SELECT r.*, a.name as automation_name 
+      FROM lumen_automation_runs r 
+      LEFT JOIN lumen_automations a ON r.automation_id = a.id
+    `;
+    const params = [];
+    let paramCount = 0;
+
+    if (automation_id) {
+      paramCount++;
+      query += ` WHERE r.automation_id = $${paramCount}`;
+      params.push(automation_id);
+    }
+
+    query += ' ORDER BY r.executed_at DESC';
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    params.push(parseInt(limit));
+
+    const result = await pool.query(query, params);
+    
+    res.json({
+      runs: result.rows,
+      count: result.rows.length
+    });
+  } catch (err) {
+    console.error('[Automation API] Error getting runs:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+/**
+ * GET /api/automations/examples
+ * Get example automations for inspiration
+ */
+app.get('/api/automations/examples', (req, res) => {
+  res.json({
+    examples: [
+      {
+        description: "When Food spending exceeds $500, alert me",
+        explanation: "Triggers when your total Food category spending for the month goes over $500"
+      },
+      {
+        description: "Every Monday at 9am, send me a spending summary",
+        explanation: "Weekly scheduled automation that generates a spending report"
+      },
+      {
+        description: "If I spend more than $100 at restaurants, notify me",
+        explanation: "Triggers on any single restaurant expense over $100"
+      },
+      {
+        description: "When I add an expense over $200, tag it for review",
+        explanation: "Automatically tags large expenses for manual review"
+      },
+      {
+        description: "If Gas spending exceeds $300 this month, alert me",
+        explanation: "Budget alert for gas expenses"
+      },
+      {
+        description: "When I spend at Costco, categorize as Groceries",
+        explanation: "Pattern-based auto-categorization"
+      },
+      {
+        description: "Daily at 6pm, summarize my spending",
+        explanation: "End-of-day spending summary notification"
+      },
+      {
+        description: "When Entertainment exceeds $200, flag for review",
+        explanation: "Budget monitoring with flagging action"
+      }
+    ],
+    trigger_types: Object.keys(automationBuilder.TRIGGER_PATTERNS),
+    action_types: Object.keys(automationBuilder.ACTION_PATTERNS),
+    tips: [
+      "Use 'when' or 'if' to define triggers",
+      "Mention dollar amounts with $ symbol",
+      "Categories: Food, Transport, Shopping, Entertainment, Bills, Health, Gas, Groceries",
+      "Actions: alert me, notify me, tag it, flag for review, send summary"
+    ]
+  });
+});
+
+// Catch-all route for SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -3343,11 +5548,16 @@ setTimeout(async () => {
   }
 }, 30000);
 
+// Register Deal Radar routes
+dealRadar.registerRoutes(app, pool);
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`🔆 Lumen Dashboard v3.4 running on port ${PORT}`);
+  console.log(`🔆 Lumen Dashboard v3.5 running on port ${PORT}`);
+  console.log(`   📡 Deal Radar: enabled (24/7 opportunity scanner)`);
   console.log(`   🔄 Hourly scrape sync: enabled (every hour at :00)`);
   console.log(`   📡 GitHub polling: enabled (every 15 min at :05, :20, :35, :50)`);
   console.log(`   📊 Rate limit: 4 req/hr (limit: 60/hr unauthenticated)`);
   console.log(`   🎯 Watching: davila7/claude-code-templates`);
+  console.log(`   🎙️ Voice Clone: ${voiceClone.isApiConfigured() ? 'LIVE (ElevenLabs)' : 'MOCK mode'}`);
 });

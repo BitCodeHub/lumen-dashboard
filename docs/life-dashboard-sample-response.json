@@ -1,0 +1,448 @@
+{
+  "success": true,
+  "generatedAt": "2024-01-29T10:30:00.000Z",
+  "timeWindow": {
+    "days": 90,
+    "start": "2023-10-31T10:30:00.000Z",
+    "end": "2024-01-29T10:30:00.000Z"
+  },
+  "summary": {
+    "totalExpenses": 287,
+    "totalBriefings": 156,
+    "totalJobs": 45,
+    "totalIdeas": 23,
+    "totalResources": 67,
+    "totalPitches": 8,
+    "dataPoints": 578
+  },
+  "expenses": {
+    "total": 287,
+    "totalAmount": 5892.45,
+    "avgAmount": 20.53,
+    "maxAmount": 256.99,
+    "minAmount": 1.25,
+    "byCategory": [
+      { "category": "Food", "count": 124, "total": 1847.50, "average": 14.90, "percentage": 31 },
+      { "category": "Transport", "count": 45, "total": 892.00, "average": 19.82, "percentage": 15 },
+      { "category": "Shopping", "count": 38, "total": 1256.80, "average": 33.07, "percentage": 21 },
+      { "category": "Bills", "count": 12, "total": 1045.00, "average": 87.08, "percentage": 18 },
+      { "category": "Entertainment", "count": 34, "total": 456.15, "average": 13.42, "percentage": 8 },
+      { "category": "Gas", "count": 18, "total": 245.00, "average": 13.61, "percentage": 4 },
+      { "category": "Health", "count": 16, "total": 150.00, "average": 9.38, "percentage": 3 }
+    ],
+    "daily": [
+      { "date": "2024-01-28", "total": 67.45, "count": 4 },
+      { "date": "2024-01-27", "total": 23.99, "count": 2 },
+      { "date": "2024-01-26", "total": 89.50, "count": 5 }
+    ],
+    "weekly": [
+      { "week": "2024-01-22", "total": 456.78, "count": 23 },
+      { "week": "2024-01-15", "total": 512.34, "count": 27 },
+      { "week": "2024-01-08", "total": 389.99, "count": 19 }
+    ],
+    "monthly": [
+      { "month": "2024-01", "total": 2156.78, "count": 98 },
+      { "month": "2023-12", "total": 2489.34, "count": 112 },
+      { "month": "2023-11", "total": 1246.33, "count": 77 }
+    ],
+    "byMealType": [
+      { "mealType": "lunch", "count": 45, "total": 567.80 },
+      { "mealType": "dinner", "count": 38, "total": 712.50 },
+      { "mealType": "breakfast", "count": 22, "total": 198.40 },
+      { "mealType": "snack", "count": 12, "total": 67.30 },
+      { "mealType": "unspecified", "count": 7, "total": 301.50 }
+    ],
+    "topVendors": [
+      { "vendor": "Chipotle", "visits": 12, "totalSpent": 168.00, "avgSpent": 14.00 },
+      { "vendor": "Costco", "visits": 8, "totalSpent": 456.78, "avgSpent": 57.10 },
+      { "vendor": "Shell", "visits": 18, "totalSpent": 245.00, "avgSpent": 13.61 },
+      { "vendor": "Starbucks", "visits": 15, "totalSpent": 89.25, "avgSpent": 5.95 },
+      { "vendor": "Amazon", "visits": 9, "totalSpent": 234.56, "avgSpent": 26.06 },
+      { "vendor": "Raising Cane's", "visits": 7, "totalSpent": 78.40, "avgSpent": 11.20 },
+      { "vendor": "Target", "visits": 6, "totalSpent": 189.99, "avgSpent": 31.67 },
+      { "vendor": "In-N-Out", "visits": 5, "totalSpent": 56.25, "avgSpent": 11.25 },
+      { "vendor": "Netflix", "visits": 3, "totalSpent": 45.99, "avgSpent": 15.33 },
+      { "vendor": "Spotify", "visits": 3, "totalSpent": 32.97, "avgSpent": 10.99 }
+    ],
+    "byDayOfWeek": [
+      { "dayOfWeek": 0, "dayName": "Sunday", "count": 34, "total": 678.90, "average": 19.97 },
+      { "dayOfWeek": 1, "dayName": "Monday", "count": 42, "total": 789.45, "average": 18.80 },
+      { "dayOfWeek": 2, "dayName": "Tuesday", "count": 38, "total": 712.30, "average": 18.75 },
+      { "dayOfWeek": 3, "dayName": "Wednesday", "count": 45, "total": 923.50, "average": 20.52 },
+      { "dayOfWeek": 4, "dayName": "Thursday", "count": 41, "total": 867.20, "average": 21.15 },
+      { "dayOfWeek": 5, "dayName": "Friday", "count": 52, "total": 1156.80, "average": 22.25 },
+      { "dayOfWeek": 6, "dayName": "Saturday", "count": 35, "total": 764.30, "average": 21.84 }
+    ]
+  },
+  "briefings": {
+    "total": 156,
+    "read": 128,
+    "unread": 28,
+    "starred": 23,
+    "archived": 12,
+    "readRate": 82,
+    "avgReadTimeHours": 4.2,
+    "byType": [
+      { "type": "news", "count": 67, "readCount": 58, "readRate": 87 },
+      { "type": "research", "count": 34, "readCount": 29, "readRate": 85 },
+      { "type": "meeting-prep", "count": 23, "readCount": 21, "readRate": 91 },
+      { "type": "summary", "count": 18, "readCount": 12, "readRate": 67 },
+      { "type": "analysis", "count": 14, "readCount": 8, "readRate": 57 }
+    ],
+    "daily": [
+      { "date": "2024-01-28", "created": 5, "read": 4 },
+      { "date": "2024-01-27", "created": 3, "read": 3 },
+      { "date": "2024-01-26", "created": 7, "read": 5 }
+    ],
+    "topTags": [
+      { "tag": "tech", "count": 45 },
+      { "tag": "ai", "count": 38 },
+      { "tag": "business", "count": 28 },
+      { "tag": "startup", "count": 23 },
+      { "tag": "programming", "count": 19 },
+      { "tag": "finance", "count": 15 },
+      { "tag": "productivity", "count": 12 },
+      { "tag": "career", "count": 11 },
+      { "tag": "design", "count": 9 },
+      { "tag": "marketing", "count": 8 }
+    ]
+  },
+  "jobs": {
+    "total": 45,
+    "byStatus": {
+      "new": 12,
+      "applied": 23,
+      "interviewing": 6,
+      "offered": 2,
+      "rejected": 2
+    },
+    "starred": 8,
+    "avgSalaryRange": {
+      "min": 145000,
+      "max": 195000
+    },
+    "conversionRates": {
+      "applyRate": 69,
+      "interviewRate": 26,
+      "offerRate": 33
+    },
+    "statusBreakdown": [
+      { "status": "applied", "count": 23 },
+      { "status": "new", "count": 12 },
+      { "status": "interviewing", "count": 6 },
+      { "status": "offered", "count": 2 },
+      { "status": "rejected", "count": 2 }
+    ],
+    "topCompanies": [
+      { "company": "Anthropic", "total": 3, "applied": 2 },
+      { "company": "OpenAI", "total": 2, "applied": 2 },
+      { "company": "Google", "total": 4, "applied": 3 },
+      { "company": "Meta", "total": 3, "applied": 2 },
+      { "company": "Stripe", "total": 2, "applied": 1 },
+      { "company": "Netflix", "total": 2, "applied": 2 },
+      { "company": "Apple", "total": 3, "applied": 2 },
+      { "company": "Microsoft", "total": 2, "applied": 1 }
+    ],
+    "applicationTimeline": [
+      { "date": "2024-01-28", "applications": 2 },
+      { "date": "2024-01-25", "applications": 3 },
+      { "date": "2024-01-22", "applications": 1 },
+      { "date": "2024-01-20", "applications": 4 },
+      { "date": "2024-01-18", "applications": 2 }
+    ],
+    "byJobType": [
+      { "type": "full-time", "count": 38 },
+      { "type": "contract", "count": 5 },
+      { "type": "remote", "count": 2 }
+    ],
+    "bySource": [
+      { "source": "LinkedIn", "count": 18 },
+      { "source": "Company Website", "count": 12 },
+      { "source": "Referral", "count": 8 },
+      { "source": "Indeed", "count": 4 },
+      { "source": "AngelList", "count": 3 }
+    ]
+  },
+  "ideas": {
+    "total": 23,
+    "byStatus": {
+      "idea": 10,
+      "exploring": 6,
+      "building": 4,
+      "launched": 2,
+      "paused": 1
+    },
+    "avgPriority": 6.8,
+    "executionRate": 26,
+    "byCategory": [
+      { "category": "SaaS", "count": 8 },
+      { "category": "AI/ML", "count": 6 },
+      { "category": "Developer Tools", "count": 4 },
+      { "category": "Mobile App", "count": 3 },
+      { "category": "Content", "count": 2 }
+    ],
+    "byRevenuePotential": [
+      { "potential": "high", "count": 8 },
+      { "potential": "medium", "count": 10 },
+      { "potential": "low", "count": 3 },
+      { "potential": "unknown", "count": 2 }
+    ],
+    "byBuildTime": [
+      { "buildTime": "1-2 weeks", "count": 6 },
+      { "buildTime": "1 month", "count": 8 },
+      { "buildTime": "2-3 months", "count": 5 },
+      { "buildTime": "6+ months", "count": 4 }
+    ],
+    "timeline": [
+      { "date": "2024-01-27", "count": 2 },
+      { "date": "2024-01-20", "count": 1 },
+      { "date": "2024-01-15", "count": 3 },
+      { "date": "2024-01-08", "count": 1 }
+    ],
+    "activeIdeas": [
+      {
+        "name": "Lumen Dashboard",
+        "category": "SaaS",
+        "status": "building",
+        "revenuePotential": "high",
+        "priority": 9,
+        "createdAt": "2024-01-05T10:00:00.000Z"
+      },
+      {
+        "name": "AI Meeting Assistant",
+        "category": "AI/ML",
+        "status": "building",
+        "revenuePotential": "high",
+        "priority": 8,
+        "createdAt": "2024-01-10T14:30:00.000Z"
+      },
+      {
+        "name": "Code Review Bot",
+        "category": "Developer Tools",
+        "status": "exploring",
+        "revenuePotential": "medium",
+        "priority": 7,
+        "createdAt": "2024-01-18T09:15:00.000Z"
+      }
+    ]
+  },
+  "resources": {
+    "total": 67,
+    "starred": 15,
+    "archived": 8,
+    "byType": [
+      { "type": "link", "count": 45 },
+      { "type": "article", "count": 12 },
+      { "type": "tool", "count": 7 },
+      { "type": "book", "count": 3 }
+    ],
+    "byCategory": [
+      { "category": "AI Tools", "count": 18 },
+      { "category": "Programming", "count": 15 },
+      { "category": "Business", "count": 12 },
+      { "category": "Design", "count": 9 },
+      { "category": "Productivity", "count": 8 },
+      { "category": "uncategorized", "count": 5 }
+    ]
+  },
+  "pitches": {
+    "total": 8,
+    "byVerdict": {
+      "approved": 3,
+      "rejected": 2,
+      "maybe": 2,
+      "pending": 1
+    },
+    "starred": 4,
+    "approvalRate": 38
+  },
+  "categories": {
+    "expenseCategories": [
+      { "name": "Food", "count": 124, "value": 1847.50 },
+      { "name": "Shopping", "count": 38, "value": 1256.80 },
+      { "name": "Bills", "count": 12, "value": 1045.00 },
+      { "name": "Transport", "count": 45, "value": 892.00 }
+    ],
+    "ideaCategories": [
+      { "name": "SaaS", "count": 8 },
+      { "name": "AI/ML", "count": 6 },
+      { "name": "Developer Tools", "count": 4 }
+    ],
+    "briefingTypes": [
+      { "name": "news", "count": 67 },
+      { "name": "research", "count": 34 },
+      { "name": "meeting-prep", "count": 23 }
+    ],
+    "jobTypes": [
+      { "name": "full-time", "count": 38 },
+      { "name": "contract", "count": 5 },
+      { "name": "remote", "count": 2 }
+    ]
+  },
+  "dailyActivity": [
+    {
+      "date": "2024-01-28",
+      "expenses": 4,
+      "expenseTotal": 67.45,
+      "briefings": 5,
+      "ideas": 2,
+      "jobs": 3,
+      "resources": 1,
+      "totalActivity": 15
+    },
+    {
+      "date": "2024-01-27",
+      "expenses": 2,
+      "expenseTotal": 23.99,
+      "briefings": 3,
+      "ideas": 0,
+      "jobs": 1,
+      "resources": 2,
+      "totalActivity": 8
+    },
+    {
+      "date": "2024-01-26",
+      "expenses": 5,
+      "expenseTotal": 89.50,
+      "briefings": 7,
+      "ideas": 1,
+      "jobs": 4,
+      "resources": 0,
+      "totalActivity": 17
+    }
+  ],
+  "correlations": [
+    {
+      "id": "spending_vs_ideas",
+      "type": "spending_vs_productivity",
+      "title": "Spending & Idea Generation",
+      "description": "Days with new ideas have lower spending (avg $21 vs $48)",
+      "strength": "strong",
+      "insight": "Less spending seems to correlate with more creative thinking. Consider low-spend creative days.",
+      "data": {
+        "avgSpendingIdeaDays": 21.34,
+        "avgSpendingNoIdeaDays": 48.67,
+        "ideaDayCount": 18,
+        "noIdeaDayCount": 72
+      }
+    },
+    {
+      "id": "productive_day",
+      "type": "productive_days",
+      "title": "Most Productive Day",
+      "description": "Tuesday is your most productive day",
+      "strength": "moderate",
+      "insight": "You tend to generate more ideas, read more briefings, and track more jobs on Tuesdays. Schedule important creative work for Tuesdays.",
+      "data": {
+        "dayOfWeek": 2,
+        "dayName": "Tuesday",
+        "avgActivity": 8.3,
+        "breakdown": {
+          "ideas": 7,
+          "briefings": 34,
+          "jobs": 12,
+          "count": 13
+        }
+      }
+    },
+    {
+      "id": "high_activity_spending",
+      "type": "productive_days",
+      "title": "High Activity Days",
+      "description": "23 days with 5+ activities",
+      "strength": "strong",
+      "insight": "On highly active days, you spend an average of $35",
+      "data": {
+        "highActivityDayCount": 23,
+        "avgSpending": 35.20
+      }
+    }
+  ],
+  "insights": [
+    {
+      "id": "spending_trend",
+      "category": "finance",
+      "title": "📉 Spending Down",
+      "description": "Your spending is down 13% from last month ($2156 vs $2489)",
+      "priority": "medium",
+      "actionable": "Great job managing expenses! Keep up the good habits."
+    },
+    {
+      "id": "reading_backlog",
+      "category": "productivity",
+      "title": "📚 Reading Backlog",
+      "description": "You have 28 unread briefings waiting",
+      "priority": "medium",
+      "actionable": "Set aside 30 minutes to catch up on important briefings"
+    },
+    {
+      "id": "job_momentum_positive",
+      "category": "career",
+      "title": "🚀 Great Job Search Momentum",
+      "description": "12 applications in the last week!",
+      "priority": "low",
+      "actionable": "Keep up the pace - follow up on pending applications"
+    },
+    {
+      "id": "ideas_in_motion",
+      "category": "creative",
+      "title": "💡 Ideas In Motion",
+      "description": "10 ideas actively being worked on",
+      "priority": "low",
+      "actionable": "Consider focusing on fewer ideas for better progress"
+    },
+    {
+      "id": "corr_spending_vs_ideas",
+      "category": "pattern",
+      "title": "🔮 Spending & Idea Generation",
+      "description": "Days with new ideas have lower spending (avg $21 vs $48)",
+      "priority": "medium",
+      "actionable": "Less spending seems to correlate with more creative thinking. Consider low-spend creative days."
+    }
+  ],
+  "lifeScores": {
+    "financial": {
+      "score": 80,
+      "label": "Excellent",
+      "factors": [
+        { "name": "Diversified spending", "impact": "+10" },
+        { "name": "Regular expense tracking", "impact": "+10" }
+      ]
+    },
+    "knowledge": {
+      "score": 82,
+      "label": "Excellent",
+      "factors": [
+        { "name": "High read rate", "impact": "+20" },
+        { "name": "Active consumption", "impact": "+10" }
+      ]
+    },
+    "career": {
+      "score": 90,
+      "label": "Excellent",
+      "factors": [
+        { "name": "Active applications", "impact": "+15" },
+        { "name": "Good interview rate", "impact": "+15" },
+        { "name": "Received offers", "impact": "+20" }
+      ]
+    },
+    "creative": {
+      "score": 85,
+      "label": "Excellent",
+      "factors": [
+        { "name": "Prolific ideation", "impact": "+15" },
+        { "name": "High execution rate", "impact": "+20" },
+        { "name": "Building projects", "impact": "+10" }
+      ]
+    },
+    "overall": 84
+  },
+  "streaks": {
+    "currentActivityStreak": 8,
+    "longestActivityStreak": 21,
+    "currentIdeaStreak": 0,
+    "currentExpenseStreak": 0,
+    "lastActiveDate": "2024-01-28"
+  },
+  "processingTimeMs": 187
+}
