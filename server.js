@@ -28,10 +28,18 @@ const PORT = process.env.PORT || 3000;
 // Excel file storage (still uses filesystem for actual files)
 const EXCEL_UPLOAD_DIR = process.env.EXCEL_UPLOAD_DIR || './data/excel-files';
 
-// PostgreSQL connection
+// PostgreSQL connection with timeout
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  connectionTimeoutMillis: 5000, // 5 second timeout
+  idleTimeoutMillis: 30000,
+  max: 20
+});
+
+// Test database connection
+pool.on('error', (err) => {
+  console.error('[DB] Unexpected database error:', err);
 });
 
 // Middleware
@@ -39,22 +47,49 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Session management
-app.use(session({
-  store: new pgSession({
+// Session management with error handling
+try {
+  const sessionStore = new pgSession({
     pool: pool,
-    tableName: 'user_sessions'
-  }),
-  secret: process.env.SESSION_SECRET || 'lumen-dashboard-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
-  }
-}));
+    tableName: 'user_sessions',
+    createTableIfMissing: true,
+    ttl: 30 * 24 * 60 * 60, // 30 days in seconds
+    errorLog: (...args) => {
+      console.error('[Session Store]', ...args);
+    }
+  });
+
+  app.use(session({
+    store: sessionStore,
+    secret: process.env.SESSION_SECRET || 'lumen-dashboard-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    }
+  }));
+
+  console.log('[Session] Session store initialized with PostgreSQL');
+} catch (err) {
+  console.error('[Session] Failed to initialize PostgreSQL session store:', err.message);
+  console.error('[Session] Using memory store fallback (sessions will not persist across restarts)');
+  
+  // Fallback to memory store
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'lumen-dashboard-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    }
+  }));
+}
 
 // Serve static files (login/register pages are public)
 app.use(express.static('public'));
