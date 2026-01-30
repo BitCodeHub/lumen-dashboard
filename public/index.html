@@ -534,6 +534,11 @@
             <span>Org Structure</span>
             <span class="ml-auto text-xs text-zinc-600 tabular-nums">🏢</span>
           </a>
+          <button onclick="showLiveActivity(); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+            <span>Live Activity</span>
+            <span id="live-activity-count" class="ml-auto text-xs text-emerald-500 tabular-nums animate-pulse">⚡</span>
+          </button>
         </div>
         
         <!-- Tags -->
@@ -887,6 +892,31 @@
         </div>
         <div class="p-4 md:p-6 overflow-y-auto" id="analytics-content">
           <div class="flex items-center justify-center py-12"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Live Activity Modal -->
+  <template id="live-activity-modal-template">
+    <div class="modal-backdrop fixed inset-0 flex items-center justify-center p-4" onclick="closeModal(event)">
+      <div class="modal rounded-xl shadow-2xl w-full max-w-2xl animate-fade-in max-h-[90vh] overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+        <div class="p-4 border-b border-zinc-800 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-3">
+            <h2 class="text-lg font-semibold text-zinc-100">⚡ Live Team Activity</h2>
+            <span class="text-xs text-emerald-500 flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Auto-refreshing
+            </span>
+          </div>
+          <button onclick="closeModal()" class="p-1 hover:bg-zinc-800 rounded-md text-zinc-400 hover:text-zinc-200"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+        </div>
+        <div class="p-4 overflow-y-auto space-y-2" id="live-activity-content">
+          <div class="flex items-center justify-center py-12"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>
+        </div>
+        <div class="p-3 border-t border-zinc-800 flex justify-between items-center shrink-0 text-xs text-zinc-500">
+          <span>Updates every 10 seconds</span>
+          <button onclick="refreshLiveActivity()" class="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-300">Refresh Now</button>
         </div>
       </div>
     </div>
@@ -2689,6 +2719,74 @@
     }
 
     function showShortcuts() { showModal('shortcuts-modal-template'); }
+
+    // Live Activity Feed
+    let liveActivityInterval = null;
+    
+    async function showLiveActivity() {
+      showModal('live-activity-modal-template');
+      await refreshLiveActivity();
+      // Auto-refresh every 10 seconds
+      if (liveActivityInterval) clearInterval(liveActivityInterval);
+      liveActivityInterval = setInterval(refreshLiveActivity, 10000);
+    }
+    
+    async function refreshLiveActivity() {
+      try {
+        const res = await authFetch('/api/team-activity?limit=30');
+        const data = await res.json();
+        const container = document.getElementById('live-activity-content');
+        if (!container) return;
+        
+        if (!data.activities || data.activities.length === 0) {
+          container.innerHTML = '<div class="text-center text-zinc-500 py-8">No recent activity</div>';
+          return;
+        }
+        
+        const statusColors = {
+          'working': 'bg-amber-500',
+          'completed': 'bg-emerald-500',
+          'blocked': 'bg-red-500'
+        };
+        
+        container.innerHTML = data.activities.map(a => `
+          <div class="flex items-start gap-3 p-3 rounded-lg hover:bg-zinc-800/30 transition-colors animate-fade-in">
+            <div class="text-2xl">${a.emoji || '🤖'}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-zinc-200">${a.agent}</span>
+                <span class="text-xs text-zinc-500">${a.department || ''}</span>
+                <span class="w-2 h-2 rounded-full ${statusColors[a.status] || 'bg-zinc-500'}"></span>
+              </div>
+              <div class="text-sm text-zinc-400 mt-0.5">${a.action}</div>
+              ${a.details ? `<div class="text-xs text-zinc-500 mt-1">${a.details}</div>` : ''}
+              <div class="text-xs text-zinc-600 mt-1">${formatRelativeTime(a.timestamp)}</div>
+            </div>
+          </div>
+        `).join('');
+        
+        // Update count in sidebar
+        const countEl = document.getElementById('live-activity-count');
+        if (countEl) {
+          const working = data.activities.filter(a => a.status === 'working').length;
+          countEl.textContent = working > 0 ? `${working} ⚡` : '⚡';
+        }
+      } catch (err) {
+        console.error('Failed to fetch live activity:', err);
+      }
+    }
+    
+    // Stop auto-refresh when modal closes
+    const origCloseModal = typeof closeModal === 'function' ? closeModal : () => {};
+    function closeModal() {
+      if (liveActivityInterval) {
+        clearInterval(liveActivityInterval);
+        liveActivityInterval = null;
+      }
+      origCloseModal();
+      document.getElementById('modal-backdrop')?.classList.add('hidden');
+      document.getElementById('modal-content')?.classList.add('hidden');
+    }
 
     async function showAnalytics() {
       showModal('analytics-modal-template');
