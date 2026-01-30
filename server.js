@@ -1205,6 +1205,32 @@ async function initDatabase() {
     await client.query('CREATE INDEX IF NOT EXISTS idx_automation_runs_executed ON lumen_automation_runs(executed_at DESC)');
 
     console.log('[DB] Automation builder tables initialized');
+    
+    // Company status table - persists team status across restarts
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS company_status (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        status_data JSONB,
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    
+    // Team activity table - persists activity feed across restarts
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS team_activity (
+        id SERIAL PRIMARY KEY,
+        agent VARCHAR(100) NOT NULL,
+        emoji VARCHAR(10),
+        department VARCHAR(100),
+        action TEXT NOT NULL,
+        status VARCHAR(50) DEFAULT 'working',
+        details TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await client.query('CREATE INDEX IF NOT EXISTS idx_team_activity_created ON team_activity(created_at DESC)');
+    
+    console.log('[DB] Company status and team activity tables initialized');
     console.log('[DB] PostgreSQL tables initialized');
   } finally {
     client.release();
@@ -2079,20 +2105,39 @@ app.get('/api/team-activity/live', (req, res) => {
 });
 
 // GET /public/team-activity - Public access to activity feed (no auth)
-app.get('/public/team-activity', (req, res) => {
+app.get('/public/team-activity', async (req, res) => {
   const { limit = 30 } = req.query;
   const limitNum = Math.min(parseInt(limit) || 30, 100);
   
-  res.json({
-    success: true,
-    count: teamActivityFeed.length,
-    activities: teamActivityFeed.slice(0, limitNum),
-    refreshedAt: new Date().toISOString()
-  });
+  try {
+    // Try database first
+    const result = await pool.query(
+      'SELECT id, agent, emoji, department, action, status, details, created_at as timestamp FROM team_activity ORDER BY created_at DESC LIMIT $1',
+      [limitNum]
+    );
+    
+    res.json({
+      success: true,
+      source: 'database',
+      count: result.rows.length,
+      activities: result.rows,
+      refreshedAt: new Date().toISOString()
+    });
+  } catch (dbErr) {
+    console.warn('[Team Activity] DB read failed, using cache:', dbErr.message);
+    // Fallback to in-memory cache
+    res.json({
+      success: true,
+      source: 'cache',
+      count: teamActivityFeed.length,
+      activities: teamActivityFeed.slice(0, limitNum),
+      refreshedAt: new Date().toISOString()
+    });
+  }
 });
 
 // POST /public/team-activity - Push activity with API key
-app.post('/public/team-activity', (req, res) => {
+app.post('/public/team-activity', async (req, res) => {
   // Verify API key
   const apiKey = req.headers['x-api-key'] || req.query.apiKey;
   if (!apiKey || apiKey !== process.env.DASHBOARD_API_KEY) {
@@ -2115,9 +2160,22 @@ app.post('/public/team-activity', (req, res) => {
     details: details || null
   };
   
+  // Save to in-memory cache
   teamActivityFeed.unshift(activity);
   if (teamActivityFeed.length > MAX_ACTIVITY_ENTRIES) {
     teamActivityFeed = teamActivityFeed.slice(0, MAX_ACTIVITY_ENTRIES);
+  }
+  
+  // Persist to database
+  try {
+    const result = await pool.query(
+      'INSERT INTO team_activity (agent, emoji, department, action, status, details) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at',
+      [agent, emoji || '🤖', department || 'Unknown', action, status || 'working', details || null]
+    );
+    activity.id = result.rows[0].id;
+    activity.timestamp = result.rows[0].created_at;
+  } catch (dbErr) {
+    console.warn('[Team Activity] DB write failed:', dbErr.message);
   }
   
   console.log(`[Public Activity] ${activity.emoji} ${activity.agent}: ${activity.action}`);
