@@ -1506,8 +1506,8 @@
             </div>
           `).join('')}
           <div class="pt-4 flex gap-2">
-            <button onclick="closeModal()" class="flex-1 px-4 py-2 rounded-lg bg-zinc-700 text-zinc-200 hover:bg-zinc-600 transition-colors">Close</button>
-            <button onclick="closeModal(); deleteExpense(${exp.id})" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">Delete</button>
+            <button onclick="this.closest('.fixed').remove()" class="flex-1 px-4 py-2 rounded-lg bg-zinc-700 text-zinc-200 hover:bg-zinc-600 transition-colors">Close</button>
+            <button onclick="this.closest('.fixed').remove(); deleteExpense(${exp.id})" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">Delete</button>
           </div>
         </div>
       `;
