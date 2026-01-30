@@ -1728,6 +1728,10 @@ app.post('/public/company-status', async (req, res) => {
     }
     
     console.log(`[Company Status] Updated at ${companyStatusCache.lastUpdated}`);
+    
+    // Broadcast to all SSE clients for real-time updates
+    broadcastCompanyStatus(companyStatusCache);
+    
     res.json({ success: true, lastUpdated: companyStatusCache.lastUpdated });
   } catch (err) {
     console.error('[Company Status] Error updating:', err);
@@ -2034,6 +2038,41 @@ const MAX_ACTIVITY_ENTRIES = 100;
 
 // SSE clients for real-time activity updates
 const sseClients = new Set();
+
+// SSE clients for real-time company status updates
+const statusSseClients = new Set();
+
+// SSE endpoint for real-time company status
+app.get('/public/company-status/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders();
+  
+  res.write(`data: ${JSON.stringify({ type: 'connected', message: 'Company status stream connected' })}\n\n`);
+  statusSseClients.add(res);
+  console.log(`[SSE Status] Client connected. Total: ${statusSseClients.size}`);
+  
+  const heartbeat = setInterval(() => res.write(`: heartbeat\n\n`), 30000);
+  
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    statusSseClients.delete(res);
+    console.log(`[SSE Status] Client disconnected. Total: ${statusSseClients.size}`);
+  });
+});
+
+function broadcastCompanyStatus(status) {
+  const message = JSON.stringify({ type: 'status', data: status });
+  statusSseClients.forEach(client => {
+    try {
+      client.write(`data: ${message}\n\n`);
+    } catch (err) {
+      statusSseClients.delete(client);
+    }
+  });
+}
 
 // SSE endpoint for real-time team activity
 app.get('/public/team-activity/stream', (req, res) => {
