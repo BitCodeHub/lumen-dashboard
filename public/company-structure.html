@@ -52,6 +52,7 @@
       align-items: center;
       gap: 0.5rem;
     }
+    h3 { color: #c7d2fe; margin: 1.5rem 0 1rem 0; }
     
     .exec-grid {
       display: grid;
@@ -76,6 +77,99 @@
     .exec-role { font-size: 0.85rem; color: #a1a1aa; margin-top: 0.25rem; }
     .exec-location { font-size: 0.75rem; color: #6366f1; margin-top: 0.5rem; }
     
+    /* Department Heads Table */
+    .dept-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      background: #18181b;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .dept-table th {
+      background: #27272a;
+      color: #c7d2fe;
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+    }
+    .dept-table td {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid #27272a;
+    }
+    .dept-table tr:last-child td { border-bottom: none; }
+    .dept-table tr:hover { background: rgba(99, 102, 241, 0.05); }
+    .dept-name { font-weight: 600; color: #fff; }
+    .dept-focus { color: #a1a1aa; font-size: 0.85rem; }
+    .schedule-badge {
+      background: rgba(99, 102, 241, 0.2);
+      color: #c7d2fe;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+    
+    /* Product Timeline */
+    .timeline {
+      position: relative;
+      margin: 2rem 0;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #3f3f46;
+    }
+    .timeline-item {
+      position: relative;
+      padding-left: 50px;
+      margin-bottom: 2rem;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: 12px;
+      top: 5px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #6366f1;
+      border: 3px solid #0c0c0e;
+    }
+    .timeline-dot.live { background: #22c55e; }
+    .timeline-dot.dev { background: #f59e0b; }
+    .timeline-dot.planned { background: #3b82f6; }
+    .timeline-date {
+      font-size: 0.85rem;
+      color: #6366f1;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .timeline-title {
+      font-size: 1.1rem;
+      color: #fff;
+      font-weight: 600;
+    }
+    .timeline-desc {
+      color: #a1a1aa;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+    .status-live { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .status-dev { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .status-planned { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+
     .team-section {
       background: #18181b;
       border: 1px solid #27272a;
@@ -96,6 +190,13 @@
       padding: 0.25rem 0.75rem;
       border-radius: 20px;
       font-size: 0.85rem;
+    }
+    .team-desc {
+      color: #a1a1aa;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #27272a;
     }
     .agent-grid {
       display: flex;
@@ -140,6 +241,61 @@
     .division-title { font-size: 1.3rem; font-weight: 600; margin: 0; }
     .division-count { font-size: 1.5rem; font-weight: bold; }
     
+    /* Product Cards */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .product-card {
+      background: linear-gradient(135deg, #18181b 0%, #1f1f26 100%);
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .product-card h4 {
+      color: #fff;
+      margin: 0 0 0.5rem 0;
+      font-size: 1.2rem;
+    }
+    .product-card .tagline {
+      color: #a1a1aa;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .product-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .product-meta span {
+      background: #27272a;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: #a1a1aa;
+    }
+    .progress-bar {
+      height: 6px;
+      background: #27272a;
+      border-radius: 3px;
+      margin: 1rem 0;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      border-radius: 3px;
+    }
+    .progress-label {
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      display: flex;
+      justify-content: space-between;
+    }
+    
     footer {
       text-align: center;
       padding: 2rem;
@@ -157,7 +313,7 @@
     <div class="header-stats">
       <div class="stat">
         <div class="stat-value">147</div>
-        <div class="stat-label">Total Employees</div>
+        <div class="stat-label">Total Workforce</div>
       </div>
       <div class="stat">
         <div class="stat-value">81</div>
@@ -168,18 +324,19 @@
         <div class="stat-label">Luna Labs (VPS)</div>
       </div>
       <div class="stat">
-        <div class="stat-value">2</div>
-        <div class="stat-label">Data Centers</div>
+        <div class="stat-value">4</div>
+        <div class="stat-label">Products</div>
       </div>
     </div>
   </header>
 
+  <!-- Executive Leadership -->
   <section class="section">
     <h2>👔 Executive Leadership</h2>
     <div class="exec-grid">
       <div class="exec-card">
         <div class="exec-emoji">👤</div>
-        <div class="exec-name">Jimmy</div>
+        <div class="exec-name">Jimmy Lam</div>
         <div class="exec-role">Chief Executive Officer</div>
         <div class="exec-location">Human</div>
       </div>
@@ -204,6 +361,193 @@
     </div>
   </section>
 
+  <!-- Department Heads -->
+  <section class="section">
+    <h2>🏢 Department Heads</h2>
+    <table class="dept-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Department</th>
+          <th>Focus Area</th>
+          <th>Schedule</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="dept-name">👔 Harper</span></td>
+          <td>HR & Compliance</td>
+          <td class="dept-focus">Employment, policies, AI governance, compliance</td>
+          <td><span class="schedule-badge">Mon 9 AM</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">🔬 Reese</span></td>
+          <td>Research</td>
+          <td class="dept-focus">Market intel, competitive analysis, trends</td>
+          <td><span class="schedule-badge">9 AM, 3 PM, 9 PM</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">💰 Finley</span></td>
+          <td>Finance & Legal</td>
+          <td class="dept-focus">Revenue, costs, pricing, contracts</td>
+          <td><span class="schedule-badge">5 PM weekdays</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">⚙️ Ethan</span></td>
+          <td>Engineering</td>
+          <td class="dept-focus">Product development, architecture, builds</td>
+          <td><span class="schedule-badge">10 AM, 2 PM, 8 PM</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">📣 Morgan</span></td>
+          <td>Marketing</td>
+          <td class="dept-focus">Campaigns, content, social, launches</td>
+          <td><span class="schedule-badge">11 AM daily</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">🔧 Devon</span></td>
+          <td>DevOps</td>
+          <td class="dept-focus">Infrastructure, deployments, CI/CD</td>
+          <td><span class="schedule-badge">8 AM, 12 PM, 6 PM, 11 PM</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">🤝 Sam</span></td>
+          <td>Customer Success</td>
+          <td class="dept-focus">Support, onboarding, documentation</td>
+          <td><span class="schedule-badge">2 PM daily</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">🔍 Riley</span></td>
+          <td>SEO</td>
+          <td class="dept-focus">Search optimization, keywords, rankings</td>
+          <td><span class="schedule-badge">10 AM daily</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">🛡️ Casey</span></td>
+          <td>Cybersecurity</td>
+          <td class="dept-focus">InfoSec, vulnerability mgmt, threat intel</td>
+          <td><span class="schedule-badge">9 AM daily</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">✅ Avery</span></td>
+          <td>Internal Audit</td>
+          <td class="dept-focus">Quality assurance, compliance, SOC 2</td>
+          <td><span class="schedule-badge">10 AM daily</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">📦 Parker</span></td>
+          <td>Product</td>
+          <td class="dept-focus">Roadmap, PRDs, feature prioritization</td>
+          <td><span class="schedule-badge">10 AM daily</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">🎨 Dana</span></td>
+          <td>Design</td>
+          <td class="dept-focus">UI/UX, wireframes, visual design</td>
+          <td><span class="schedule-badge">11 AM daily</span></td>
+        </tr>
+        <tr>
+          <td><span class="dept-name">📊 Dakota</span></td>
+          <td>Data & AI</td>
+          <td class="dept-focus">Analytics, dashboards, ML models</td>
+          <td><span class="schedule-badge">9 AM daily</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Products & Roadmap -->
+  <section class="section">
+    <h2>🚀 Products & Roadmap</h2>
+    
+    <div class="product-grid">
+      <div class="product-card">
+        <h4>🔍 StackAudit.ai <span class="status-badge status-dev">In Development</span></h4>
+        <p class="tagline">AI-Powered Tech Stack Analysis for GitHub Repositories</p>
+        <div class="progress-bar"><div class="progress-fill" style="width: 75%"></div></div>
+        <div class="progress-label"><span>MVP Progress</span><span>75%</span></div>
+        <div class="product-meta">
+          <span>React</span>
+          <span>FastAPI</span>
+          <span>PostgreSQL</span>
+          <span>15 agents</span>
+        </div>
+      </div>
+      
+      <div class="product-card">
+        <h4>🔌 MCPHub <span class="status-badge status-dev">In Development</span></h4>
+        <p class="tagline">The App Store for MCP Servers — Discover, Install, Compare</p>
+        <div class="progress-bar"><div class="progress-fill" style="width: 60%"></div></div>
+        <div class="progress-label"><span>MVP Progress</span><span>60%</span></div>
+        <div class="product-meta">
+          <span>React</span>
+          <span>FastAPI</span>
+          <span>CLI</span>
+          <span>VS Code Ext</span>
+          <span>15 agents</span>
+        </div>
+      </div>
+      
+      <div class="product-card">
+        <h4>🔐 AIKeyVault <span class="status-badge status-planned">Planning</span></h4>
+        <p class="tagline">AI API Key Management — Secure, Monitor, Control Spend</p>
+        <div class="progress-bar"><div class="progress-fill" style="width: 10%"></div></div>
+        <div class="progress-label"><span>Planning</span><span>10%</span></div>
+        <div class="product-meta">
+          <span>TBD</span>
+          <span>Q2 2026</span>
+        </div>
+      </div>
+      
+      <div class="product-card">
+        <h4>📊 Lumen Dashboard <span class="status-badge status-live">Live</span></h4>
+        <p class="tagline">Internal Operations Dashboard — Company Intelligence Hub</p>
+        <div class="progress-bar"><div class="progress-fill" style="width: 100%"></div></div>
+        <div class="progress-label"><span>Production</span><span>100%</span></div>
+        <div class="product-meta">
+          <span>Node.js</span>
+          <span>PostgreSQL</span>
+          <span>Render</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>📅 Product Timeline</h3>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot dev"></div>
+        <div class="timeline-date">February 7, 2026</div>
+        <div class="timeline-title">StackAudit MVP Launch</div>
+        <div class="timeline-desc">GitHub OAuth, repo analysis, dependency extraction, security scan, basic reports</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot dev"></div>
+        <div class="timeline-date">February 15, 2026</div>
+        <div class="timeline-title">StackAudit Beta</div>
+        <div class="timeline-desc">AI insights, PDF export, shareable links, email notifications</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot planned"></div>
+        <div class="timeline-date">February 28, 2026</div>
+        <div class="timeline-title">StackAudit Public Launch + MCPHub Beta</div>
+        <div class="timeline-desc">Stripe billing, Pro/Team tiers, MCPHub server directory live</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot planned"></div>
+        <div class="timeline-date">March 2026</div>
+        <div class="timeline-title">MCPHub Full Launch</div>
+        <div class="timeline-desc">Publisher accounts, verification program, CLI & VS Code extension</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot planned"></div>
+        <div class="timeline-date">Q1 2026 Goal</div>
+        <div class="timeline-title">$5,000 MRR</div>
+        <div class="timeline-desc">Combined revenue from StackAudit and MCPHub subscriptions</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Teams -->
   <div class="two-col">
     <div>
       <div class="division-header">
@@ -213,31 +557,10 @@
 
       <div class="team-section">
         <div class="team-header">
-          <h3 class="team-title">Department Heads</h3>
-          <span class="team-count">13 agents</span>
-        </div>
-        <div class="agent-grid">
-          <span class="agent-chip">👔 Harper</span>
-          <span class="agent-chip">🔬 Reese</span>
-          <span class="agent-chip">💰 Finley</span>
-          <span class="agent-chip">⚙️ Ethan</span>
-          <span class="agent-chip">📣 Morgan</span>
-          <span class="agent-chip">🔧 Devon</span>
-          <span class="agent-chip">🤝 Sam</span>
-          <span class="agent-chip">🔍 Riley</span>
-          <span class="agent-chip">🛡️ Casey</span>
-          <span class="agent-chip">✅ Avery</span>
-          <span class="agent-chip">📦 Parker</span>
-          <span class="agent-chip">🎨 Dana</span>
-          <span class="agent-chip">📊 Dakota</span>
-        </div>
-      </div>
-
-      <div class="team-section">
-        <div class="team-header">
           <h3 class="team-title">StackAudit Team</h3>
           <span class="team-count">15 agents</span>
         </div>
+        <p class="team-desc">Building the AI-powered tech stack analyzer. Focus: GitHub integration, code analysis engine, security scanning, ROI calculations.</p>
         <div class="agent-grid">
           <span class="agent-chip">🎯 SA Lead</span>
           <span class="agent-chip">🔧 Backend Lead</span>
@@ -262,6 +585,7 @@
           <h3 class="team-title">MCPHub Team</h3>
           <span class="team-count">15 agents</span>
         </div>
+        <p class="team-desc">Creating the MCP server marketplace. Focus: server directory, search/filters, security scoring, one-click install configs.</p>
         <div class="agent-grid">
           <span class="agent-chip">🎯 MH Lead</span>
           <span class="agent-chip">🔧 Backend Lead</span>
@@ -286,6 +610,7 @@
           <h3 class="team-title">Research Team</h3>
           <span class="team-count">15 agents</span>
         </div>
+        <p class="team-desc">Market intelligence and competitive analysis. Tracking AI ecosystem, developer tools trends, and customer insights.</p>
         <div class="agent-grid">
           <span class="agent-chip">🔬 Lead</span>
           <span class="agent-chip">📈 Market</span>
@@ -310,6 +635,7 @@
           <h3 class="team-title">Marketing Team</h3>
           <span class="team-count">10 agents</span>
         </div>
+        <p class="team-desc">Launch campaigns and growth. Preparing Product Hunt launch, content marketing, SEO optimization.</p>
         <div class="agent-grid">
           <span class="agent-chip">📢 Lead</span>
           <span class="agent-chip">✍️ Content</span>
@@ -329,6 +655,7 @@
           <h3 class="team-title">Customer Success</h3>
           <span class="team-count">5 agents</span>
         </div>
+        <p class="team-desc">User support and onboarding. Help center, documentation, feedback collection, and user success tracking.</p>
         <div class="agent-grid">
           <span class="agent-chip">🤝 Lead</span>
           <span class="agent-chip">💬 Support 1</span>
@@ -350,6 +677,7 @@
           <h3 class="team-title">Core Ops Team</h3>
           <span class="team-count">20 agents</span>
         </div>
+        <p class="team-desc">Central operations and automation. Monitoring, build engineering, security ops, and task automation.</p>
         <div class="agent-grid">
           <span class="agent-chip">⭐ Nova</span>
           <span class="agent-chip">📡 Echo</span>
@@ -379,6 +707,7 @@
           <h3 class="team-title">Dev Tools Team</h3>
           <span class="team-count">10 agents</span>
         </div>
+        <p class="team-desc">Internal developer tools. Changelog generator, PR automation, linting, testing, and code quality.</p>
         <div class="agent-grid">
           <span class="agent-chip">🛠️ Lead</span>
           <span class="agent-chip">📜 Changelog</span>
@@ -398,6 +727,7 @@
           <h3 class="team-title">Freelancer Tools</h3>
           <span class="team-count">8 agents</span>
         </div>
+        <p class="team-desc">Tools for indie developers. Invoice generation, proposals, contracts, time tracking, CRM.</p>
         <div class="agent-grid">
           <span class="agent-chip">💼 Lead</span>
           <span class="agent-chip">🧾 Invoice</span>
@@ -415,6 +745,7 @@
           <h3 class="team-title">Infrastructure</h3>
           <span class="team-count">6 agents</span>
         </div>
+        <p class="team-desc">Platform reliability. Deployments, monitoring, backups, auto-scaling, and log aggregation.</p>
         <div class="agent-grid">
           <span class="agent-chip">🏗️ Lead</span>
           <span class="agent-chip">🚀 Deploy</span>
@@ -430,6 +761,7 @@
           <h3 class="team-title">Operations</h3>
           <span class="team-count">10 agents</span>
         </div>
+        <p class="team-desc">Business operations. Project management, documentation, reporting, process improvement.</p>
         <div class="agent-grid">
           <span class="agent-chip">⚡ Lead</span>
           <span class="agent-chip">📅 PM</span>
@@ -449,6 +781,7 @@
           <h3 class="team-title">QA Team</h3>
           <span class="team-count">6 agents</span>
         </div>
+        <p class="team-desc">Quality assurance. Automated testing, manual QA, performance testing, security testing.</p>
         <div class="agent-grid">
           <span class="agent-chip">✅ Lead</span>
           <span class="agent-chip">🤖 Auto</span>
@@ -464,6 +797,7 @@
           <h3 class="team-title">Utility Agents</h3>
           <span class="team-count">4 agents</span>
         </div>
+        <p class="team-desc">Shared services. Notifications, caching, search indexing, and report generation.</p>
         <div class="agent-grid">
           <span class="agent-chip">🔔 Notify</span>
           <span class="agent-chip">💾 Cache</span>
@@ -473,6 +807,113 @@
       </div>
     </div>
   </div>
+
+  <!-- Summary -->
+  <section class="section">
+    <h2>📊 Workforce Summary</h2>
+    <table class="dept-table">
+      <thead>
+        <tr>
+          <th>Division</th>
+          <th>Mac Studio</th>
+          <th>VPS</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Executive Leadership</td>
+          <td>3</td>
+          <td>1</td>
+          <td><strong>4</strong></td>
+        </tr>
+        <tr>
+          <td>Department Heads</td>
+          <td>13</td>
+          <td>—</td>
+          <td><strong>13</strong></td>
+        </tr>
+        <tr>
+          <td>StackAudit Team</td>
+          <td>15</td>
+          <td>—</td>
+          <td><strong>15</strong></td>
+        </tr>
+        <tr>
+          <td>MCPHub Team</td>
+          <td>15</td>
+          <td>—</td>
+          <td><strong>15</strong></td>
+        </tr>
+        <tr>
+          <td>Research Team</td>
+          <td>15</td>
+          <td>—</td>
+          <td><strong>15</strong></td>
+        </tr>
+        <tr>
+          <td>Marketing Team</td>
+          <td>10</td>
+          <td>—</td>
+          <td><strong>10</strong></td>
+        </tr>
+        <tr>
+          <td>Customer Success</td>
+          <td>5</td>
+          <td>—</td>
+          <td><strong>5</strong></td>
+        </tr>
+        <tr>
+          <td>Luna Labs Core Ops</td>
+          <td>—</td>
+          <td>20</td>
+          <td><strong>20</strong></td>
+        </tr>
+        <tr>
+          <td>Dev Tools</td>
+          <td>—</td>
+          <td>10</td>
+          <td><strong>10</strong></td>
+        </tr>
+        <tr>
+          <td>Freelancer Tools</td>
+          <td>—</td>
+          <td>8</td>
+          <td><strong>8</strong></td>
+        </tr>
+        <tr>
+          <td>Infrastructure</td>
+          <td>—</td>
+          <td>6</td>
+          <td><strong>6</strong></td>
+        </tr>
+        <tr>
+          <td>Operations</td>
+          <td>—</td>
+          <td>10</td>
+          <td><strong>10</strong></td>
+        </tr>
+        <tr>
+          <td>QA</td>
+          <td>—</td>
+          <td>6</td>
+          <td><strong>6</strong></td>
+        </tr>
+        <tr>
+          <td>Utility</td>
+          <td>—</td>
+          <td>4</td>
+          <td><strong>4</strong></td>
+        </tr>
+        <tr style="background: #27272a;">
+          <td><strong>TOTAL</strong></td>
+          <td><strong>81</strong></td>
+          <td><strong>65</strong></td>
+          <td><strong>146 + 1 Human = 147</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
 
   <footer>
     <div class="tagline">🔆 Lumen AI Solutions — featuring Luna Labs 🌙</div>
