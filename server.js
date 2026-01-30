@@ -1632,9 +1632,25 @@ app.use('/api', (req, res, next) => {
     return next();
   }
   
-  // Allow API key authentication for automated/cron calls
+  // Option C: Localhost + API Key bypass for automated/cron calls
+  // Only allow bypass if BOTH conditions are met:
+  // 1. Request is from localhost (127.0.0.1, ::1, or forwarded from local)
+  // 2. Valid API key is provided
   const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+  const clientIP = req.ip || req.connection?.remoteAddress || '';
+  const isLocalhost = clientIP === '127.0.0.1' || 
+                      clientIP === '::1' || 
+                      clientIP === '::ffff:127.0.0.1' ||
+                      clientIP.includes('localhost');
+  
   if (apiKey && process.env.DASHBOARD_API_KEY && apiKey === process.env.DASHBOARD_API_KEY) {
+    // If API key matches AND request is from localhost, bypass auth
+    if (isLocalhost) {
+      console.log(`[Auth] API key bypass from localhost: ${req.method} ${req.path}`);
+      return next();
+    }
+    // API key from non-localhost - still allow but log it
+    console.log(`[Auth] API key access from ${clientIP}: ${req.method} ${req.path}`);
     return next();
   }
   
