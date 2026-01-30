@@ -1800,19 +1800,6 @@ app.get('/public/company-status', async (req, res) => {
   }
 });
 
-// Public team activity endpoint - no auth required
-app.get('/public/team-activity', (req, res) => {
-  const { limit = 30 } = req.query;
-  const limitNum = Math.min(parseInt(limit) || 30, 100);
-  
-  res.json({
-    success: true,
-    count: teamActivityFeed.length,
-    activities: teamActivityFeed.slice(0, limitNum),
-    refreshedAt: new Date().toISOString()
-  });
-});
-
 // Parse team status from standup content
 function parseTeamStatus(content) {
   const teams = [
@@ -2088,6 +2075,19 @@ app.get('/api/team-activity/live', (req, res) => {
   res.json({
     activeAgents: Object.keys(agentStatus).length,
     agents: Object.values(agentStatus)
+  });
+});
+
+// GET /public/team-activity - Public access to activity feed (no auth)
+app.get('/public/team-activity', (req, res) => {
+  const { limit = 30 } = req.query;
+  const limitNum = Math.min(parseInt(limit) || 30, 100);
+  
+  res.json({
+    success: true,
+    count: teamActivityFeed.length,
+    activities: teamActivityFeed.slice(0, limitNum),
+    refreshedAt: new Date().toISOString()
   });
 });
 
