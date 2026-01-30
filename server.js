@@ -1993,6 +1993,86 @@ app.use('/api', (req, res, next) => {
 });
 
 // ============================================
+// TEAM ACTIVITY FEED (Real-time)
+// ============================================
+
+// In-memory activity feed (last 100 entries)
+let teamActivityFeed = [];
+const MAX_ACTIVITY_ENTRIES = 100;
+
+// POST /api/team-activity - Log agent activity
+app.post('/api/team-activity', async (req, res) => {
+  try {
+    const { agent, emoji, action, status, details, department } = req.body;
+    if (!agent || !action) {
+      return res.status(400).json({ error: 'Agent and action are required' });
+    }
+    
+    const activity = {
+      id: Date.now(),
+      timestamp: new Date().toISOString(),
+      agent: agent,
+      emoji: emoji || '🤖',
+      department: department || 'Unknown',
+      action: action,
+      status: status || 'working', // working, completed, blocked
+      details: details || null
+    };
+    
+    // Add to beginning of feed
+    teamActivityFeed.unshift(activity);
+    
+    // Trim to max entries
+    if (teamActivityFeed.length > MAX_ACTIVITY_ENTRIES) {
+      teamActivityFeed = teamActivityFeed.slice(0, MAX_ACTIVITY_ENTRIES);
+    }
+    
+    console.log(`[Team Activity] ${activity.emoji} ${activity.agent}: ${activity.action} (${activity.status})`);
+    res.status(201).json(activity);
+  } catch (err) {
+    console.error('[Team Activity] Error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/team-activity - Get activity feed
+app.get('/api/team-activity', (req, res) => {
+  const { limit = 50, agent, status } = req.query;
+  let feed = [...teamActivityFeed];
+  
+  if (agent) {
+    feed = feed.filter(a => a.agent.toLowerCase().includes(agent.toLowerCase()));
+  }
+  if (status) {
+    feed = feed.filter(a => a.status === status);
+  }
+  
+  res.json({
+    count: feed.length,
+    activities: feed.slice(0, parseInt(limit))
+  });
+});
+
+// GET /api/team-activity/live - Get who's working right now
+app.get('/api/team-activity/live', (req, res) => {
+  const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+  const recentActivity = teamActivityFeed.filter(a => new Date(a.timestamp).getTime() > fiveMinutesAgo);
+  
+  // Group by agent, show most recent status
+  const agentStatus = {};
+  for (const activity of recentActivity) {
+    if (!agentStatus[activity.agent]) {
+      agentStatus[activity.agent] = activity;
+    }
+  }
+  
+  res.json({
+    activeAgents: Object.keys(agentStatus).length,
+    agents: Object.values(agentStatus)
+  });
+});
+
+// ============================================
 // BRIEFINGS API
 // ============================================
 
