@@ -529,6 +529,100 @@
     .live-product-item .progress-label {
       font-size: 0.75rem;
     }
+    
+    /* Activity Feed Styles */
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      transition: all 0.2s;
+    }
+    .activity-item:hover {
+      border-color: var(--luna-border);
+      background: var(--bg-elevated);
+    }
+    .activity-item.new-activity {
+      animation: slide-in 0.3s ease-out;
+    }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .activity-emoji {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      width: 2rem;
+      text-align: center;
+    }
+    .activity-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .activity-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .activity-agent {
+      font-weight: 600;
+      color: #fff;
+    }
+    .activity-dept {
+      font-size: 0.75rem;
+      color: var(--luna-primary);
+      background: var(--luna-glow);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
+    .activity-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+    .activity-action {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+      line-height: 1.4;
+    }
+    .activity-status {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      margin-left: 0.5rem;
+    }
+    .activity-status.working {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--lumen-primary);
+    }
+    .activity-status.completed {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--status-live);
+    }
+    .activity-status.blocked {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+    .activity-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+    .activity-empty-emoji {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -572,6 +666,23 @@
           <p style="color: var(--text-muted);">Loading progress...</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Live Activity Feed -->
+  <section class="live-status-section" id="activity-feed-section" style="border-color: var(--luna-border);">
+    <div class="live-header">
+      <div class="live-indicator">
+        <div class="live-dot" style="background: var(--luna-primary);"></div>
+        <h3 class="live-title">⚡ Live Activity Feed</h3>
+      </div>
+      <div class="live-timestamp">
+        <span id="activity-count">0</span> activities • Updated <span id="activity-update-time">just now</span>
+      </div>
+    </div>
+    
+    <div id="activity-feed-content" style="max-height: 400px; overflow-y: auto;">
+      <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Loading activity feed...</p>
     </div>
   </section>
 
@@ -1348,10 +1459,110 @@
       }
     }
     
+    // ============================================
+    // LIVE ACTIVITY FEED
+    // ============================================
+    
+    const ACTIVITY_POLL_INTERVAL = 15000; // 15 seconds
+    let lastActivityIds = new Set();
+    
+    function formatActivityTime(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
+      
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+      if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    
+    function renderActivityFeed(data) {
+      const container = document.getElementById('activity-feed-content');
+      const countEl = document.getElementById('activity-count');
+      const timeEl = document.getElementById('activity-update-time');
+      
+      if (!data.success || !data.activities || data.activities.length === 0) {
+        container.innerHTML = `
+          <div class="activity-empty">
+            <div class="activity-empty-emoji">🌙</div>
+            <p>No recent activity</p>
+            <p style="font-size: 0.85rem;">Agents are resting or working in stealth mode</p>
+          </div>
+        `;
+        countEl.textContent = '0';
+        return;
+      }
+      
+      countEl.textContent = data.count;
+      timeEl.textContent = 'just now';
+      
+      let html = '<div class="activity-list">';
+      const newIds = new Set();
+      
+      for (const activity of data.activities) {
+        const isNew = !lastActivityIds.has(activity.id);
+        newIds.add(activity.id);
+        
+        const statusClass = activity.status === 'completed' ? 'completed' : 
+                           activity.status === 'blocked' ? 'blocked' : 'working';
+        const statusLabel = activity.status === 'completed' ? '✓ Done' : 
+                           activity.status === 'blocked' ? '⚠ Blocked' : '⚡ Working';
+        
+        html += `
+          <div class="activity-item ${isNew ? 'new-activity' : ''}">
+            <div class="activity-emoji">${activity.emoji || '🤖'}</div>
+            <div class="activity-content">
+              <div class="activity-header">
+                <span class="activity-agent">${activity.agent}</span>
+                ${activity.department ? `<span class="activity-dept">${activity.department}</span>` : ''}
+                <span class="activity-time">${formatActivityTime(activity.timestamp)}</span>
+              </div>
+              <div class="activity-action">
+                ${activity.action}
+                <span class="activity-status ${statusClass}">${statusLabel}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      html += '</div>';
+      container.innerHTML = html;
+      lastActivityIds = newIds;
+      
+      // Flash section on new activity
+      if (data.activities.some(a => !lastActivityIds.has(a.id))) {
+        document.getElementById('activity-feed-section').classList.add('just-updated');
+        setTimeout(() => {
+          document.getElementById('activity-feed-section').classList.remove('just-updated');
+        }, 1000);
+      }
+    }
+    
+    async function fetchActivityFeed() {
+      try {
+        const response = await fetch('/public/team-activity?limit=30');
+        const data = await response.json();
+        renderActivityFeed(data);
+      } catch (err) {
+        console.error('Failed to fetch activity feed:', err);
+        document.getElementById('activity-feed-content').innerHTML = `
+          <div class="activity-empty">
+            <div class="activity-empty-emoji">⚠️</div>
+            <p>Could not load activity feed</p>
+            <p style="font-size: 0.85rem;">Will retry in ${ACTIVITY_POLL_INTERVAL/1000} seconds</p>
+          </div>
+        `;
+      }
+    }
+    
     // Initial fetch and set up polling
     document.addEventListener('DOMContentLoaded', () => {
       fetchStatus();
+      fetchActivityFeed();
       setInterval(fetchStatus, POLL_INTERVAL);
+      setInterval(fetchActivityFeed, ACTIVITY_POLL_INTERVAL);
     });
   </script>
 </body>
