@@ -5,6 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lumen AI Solutions - Company Structure</title>
   <style>
+    /* 
+     * Lumen AI Solutions - Company Structure
+     * Theme: Amber/Gold (Lumen ☀️) + Silver/Slate (Luna 🌙)
+     */
+    :root {
+      /* Lumen colors - warm amber/gold */
+      --lumen-primary: #f59e0b;
+      --lumen-light: #fbbf24;
+      --lumen-dark: #d97706;
+      --lumen-glow: rgba(245, 158, 11, 0.15);
+      --lumen-border: rgba(245, 158, 11, 0.3);
+      
+      /* Luna colors - cool silver/slate */
+      --luna-primary: #94a3b8;
+      --luna-light: #cbd5e1;
+      --luna-dark: #64748b;
+      --luna-glow: rgba(148, 163, 184, 0.15);
+      --luna-border: rgba(148, 163, 184, 0.3);
+      
+      /* Neutral dark */
+      --bg-dark: #09090b;
+      --bg-card: #131316;
+      --bg-elevated: #1a1a1f;
+      --border: #27272a;
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      
+      /* Status colors */
+      --status-live: #22c55e;
+      --status-dev: #f59e0b;
+      --status-planned: #94a3b8;
+    }
+    
     * { box-sizing: border-box; }
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -12,19 +46,30 @@
       max-width: 1400px;
       margin: 0 auto;
       padding: 1rem;
-      background: #0c0c0e;
-      color: #e4e4e7;
+      background: var(--bg-dark);
+      color: var(--text-primary);
     }
     header {
-      background: linear-gradient(135deg, #18181b 0%, #1e1e24 100%);
-      border: 1px solid #27272a;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
       padding: 2rem;
       border-radius: 16px;
       margin-bottom: 2rem;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--lumen-dark), var(--lumen-primary), var(--lumen-light));
     }
     h1 { margin: 0; font-size: 2.5rem; color: #fff; }
-    .subtitle { color: #a1a1aa; font-size: 1.2rem; margin-top: 0.5rem; }
+    .subtitle { color: var(--text-secondary); font-size: 1.2rem; margin-top: 0.5rem; }
     .header-stats {
       display: flex;
       flex-wrap: wrap;
@@ -33,26 +78,26 @@
       margin-top: 1.5rem;
     }
     .stat {
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px solid rgba(99, 102, 241, 0.3);
+      background: var(--lumen-glow);
+      border: 1px solid var(--lumen-border);
       padding: 1rem 1.5rem;
       border-radius: 12px;
       text-align: center;
     }
-    .stat-value { font-size: 2rem; font-weight: bold; color: #818cf8; }
-    .stat-label { font-size: 0.9rem; color: #a1a1aa; }
+    .stat-value { font-size: 2rem; font-weight: bold; color: var(--lumen-primary); }
+    .stat-label { font-size: 0.9rem; color: var(--text-secondary); }
     
     .section { margin: 2rem 0; }
     h2 {
       font-size: 1.5rem;
       color: #fff;
-      border-bottom: 2px solid #6366f1;
+      border-bottom: 2px solid var(--lumen-primary);
       padding-bottom: 0.5rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
-    h3 { color: #c7d2fe; margin: 1.5rem 0 1rem 0; }
+    h3 { color: var(--lumen-light); margin: 1.5rem 0 1rem 0; }
     
     .exec-grid {
       display: grid;
@@ -61,49 +106,50 @@
       margin: 1rem 0;
     }
     .exec-card {
-      background: linear-gradient(135deg, #18181b 0%, #1f1f26 100%);
-      border: 1px solid #27272a;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 1.5rem;
       text-align: center;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     }
     .exec-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.15);
+      border-color: var(--lumen-border);
     }
     .exec-emoji { font-size: 2.5rem; margin-bottom: 0.5rem; }
     .exec-name { font-size: 1.1rem; font-weight: 600; color: #fff; }
-    .exec-role { font-size: 0.85rem; color: #a1a1aa; margin-top: 0.25rem; }
-    .exec-location { font-size: 0.75rem; color: #6366f1; margin-top: 0.5rem; }
+    .exec-role { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
+    .exec-location { font-size: 0.75rem; color: var(--lumen-primary); margin-top: 0.5rem; }
     
     /* Department Heads Table */
     .dept-table {
       width: 100%;
       border-collapse: collapse;
       margin: 1rem 0;
-      background: #18181b;
+      background: var(--bg-card);
       border-radius: 12px;
       overflow: hidden;
     }
     .dept-table th {
-      background: #27272a;
-      color: #c7d2fe;
+      background: var(--bg-elevated);
+      color: var(--lumen-light);
       padding: 1rem;
       text-align: left;
       font-weight: 600;
     }
     .dept-table td {
       padding: 0.875rem 1rem;
-      border-bottom: 1px solid #27272a;
+      border-bottom: 1px solid var(--border);
     }
     .dept-table tr:last-child td { border-bottom: none; }
-    .dept-table tr:hover { background: rgba(99, 102, 241, 0.05); }
+    .dept-table tr:hover { background: var(--lumen-glow); }
     .dept-name { font-weight: 600; color: #fff; }
-    .dept-focus { color: #a1a1aa; font-size: 0.85rem; }
+    .dept-focus { color: var(--text-secondary); font-size: 0.85rem; }
     .schedule-badge {
-      background: rgba(99, 102, 241, 0.2);
-      color: #c7d2fe;
+      background: var(--lumen-glow);
+      color: var(--lumen-light);
       padding: 0.25rem 0.5rem;
       border-radius: 6px;
       font-size: 0.75rem;
@@ -122,7 +168,7 @@
       top: 0;
       bottom: 0;
       width: 2px;
-      background: #3f3f46;
+      background: var(--border);
     }
     .timeline-item {
       position: relative;
@@ -136,15 +182,15 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      background: #6366f1;
-      border: 3px solid #0c0c0e;
+      background: var(--lumen-primary);
+      border: 3px solid var(--bg-dark);
     }
-    .timeline-dot.live { background: #22c55e; }
-    .timeline-dot.dev { background: #f59e0b; }
-    .timeline-dot.planned { background: #3b82f6; }
+    .timeline-dot.live { background: var(--status-live); }
+    .timeline-dot.dev { background: var(--status-dev); }
+    .timeline-dot.planned { background: var(--status-planned); }
     .timeline-date {
       font-size: 0.85rem;
-      color: #6366f1;
+      color: var(--lumen-primary);
       font-weight: 600;
       margin-bottom: 0.25rem;
     }
@@ -154,7 +200,7 @@
       font-weight: 600;
     }
     .timeline-desc {
-      color: #a1a1aa;
+      color: var(--text-secondary);
       font-size: 0.9rem;
       margin-top: 0.25rem;
     }
@@ -166,13 +212,13 @@
       font-weight: 600;
       margin-left: 0.5rem;
     }
-    .status-live { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-    .status-dev { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-    .status-planned { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    .status-live { background: rgba(34, 197, 94, 0.2); color: var(--status-live); }
+    .status-dev { background: rgba(245, 158, 11, 0.2); color: var(--status-dev); }
+    .status-planned { background: var(--luna-glow); color: var(--luna-primary); }
 
     .team-section {
-      background: #18181b;
-      border: 1px solid #27272a;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 1.5rem;
       margin: 1rem 0;
@@ -183,20 +229,20 @@
       align-items: center;
       margin-bottom: 1rem;
     }
-    .team-title { font-size: 1.2rem; color: #818cf8; margin: 0; }
+    .team-title { font-size: 1.2rem; color: var(--lumen-primary); margin: 0; }
     .team-count {
-      background: rgba(99, 102, 241, 0.2);
-      color: #c7d2fe;
+      background: var(--lumen-glow);
+      color: var(--lumen-light);
       padding: 0.25rem 0.75rem;
       border-radius: 20px;
       font-size: 0.85rem;
     }
     .team-desc {
-      color: #a1a1aa;
+      color: var(--text-secondary);
       font-size: 0.9rem;
       margin-bottom: 1rem;
       padding-bottom: 1rem;
-      border-bottom: 1px solid #27272a;
+      border-bottom: 1px solid var(--border);
     }
     .agent-grid {
       display: flex;
@@ -204,16 +250,28 @@
       gap: 0.5rem;
     }
     .agent-chip {
-      background: #27272a;
-      border: 1px solid #3f3f46;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
       padding: 0.4rem 0.8rem;
       border-radius: 20px;
       font-size: 0.85rem;
-      color: #e4e4e7;
-      transition: background 0.2s;
+      color: var(--text-primary);
+      transition: all 0.2s;
     }
     .agent-chip:hover {
-      background: #3f3f46;
+      background: var(--lumen-glow);
+      border-color: var(--lumen-border);
+    }
+    
+    /* Luna section - different color chips */
+    .luna-section .agent-chip:hover {
+      background: var(--luna-glow);
+      border-color: var(--luna-border);
+    }
+    .luna-section .team-title { color: var(--luna-primary); }
+    .luna-section .team-count {
+      background: var(--luna-glow);
+      color: var(--luna-light);
     }
     
     .two-col {
@@ -225,9 +283,10 @@
       .two-col { grid-template-columns: 1fr; }
     }
     
+    /* Division Headers - Lumen (amber) vs Luna (silver) */
     .division-header {
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-      color: white;
+      background: linear-gradient(135deg, var(--lumen-dark) 0%, var(--lumen-primary) 50%, var(--lumen-light) 100%);
+      color: #000;
       padding: 1rem 1.5rem;
       border-radius: 12px;
       margin-bottom: 1rem;
@@ -236,7 +295,8 @@
       align-items: center;
     }
     .division-header.luna {
-      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+      background: linear-gradient(135deg, #475569 0%, var(--luna-dark) 50%, var(--luna-primary) 100%);
+      color: #fff;
     }
     .division-title { font-size: 1.3rem; font-weight: 600; margin: 0; }
     .division-count { font-size: 1.5rem; font-weight: bold; }
@@ -249,10 +309,14 @@
       margin: 1.5rem 0;
     }
     .product-card {
-      background: linear-gradient(135deg, #18181b 0%, #1f1f26 100%);
-      border: 1px solid #27272a;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 1.5rem;
+      transition: border-color 0.2s;
+    }
+    .product-card:hover {
+      border-color: var(--lumen-border);
     }
     .product-card h4 {
       color: #fff;
@@ -260,7 +324,7 @@
       font-size: 1.2rem;
     }
     .product-card .tagline {
-      color: #a1a1aa;
+      color: var(--text-secondary);
       font-size: 0.9rem;
       margin-bottom: 1rem;
     }
@@ -271,27 +335,27 @@
       margin-top: 1rem;
     }
     .product-meta span {
-      background: #27272a;
+      background: var(--bg-elevated);
       padding: 0.25rem 0.5rem;
       border-radius: 6px;
       font-size: 0.75rem;
-      color: #a1a1aa;
+      color: var(--text-secondary);
     }
     .progress-bar {
       height: 6px;
-      background: #27272a;
+      background: var(--bg-elevated);
       border-radius: 3px;
       margin: 1rem 0;
       overflow: hidden;
     }
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      background: linear-gradient(90deg, var(--lumen-dark), var(--lumen-primary), var(--lumen-light));
       border-radius: 3px;
     }
     .progress-label {
       font-size: 0.8rem;
-      color: #a1a1aa;
+      color: var(--text-secondary);
       display: flex;
       justify-content: space-between;
     }
@@ -299,11 +363,11 @@
     footer {
       text-align: center;
       padding: 2rem;
-      color: #71717a;
-      border-top: 1px solid #27272a;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
       margin-top: 3rem;
     }
-    footer .tagline { font-size: 1.2rem; color: #a1a1aa; margin-bottom: 0.5rem; }
+    footer .tagline { font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
   </style>
 </head>
 <body>
@@ -666,7 +730,7 @@
       </div>
     </div>
 
-    <div>
+    <div class="luna-section">
       <div class="division-header luna">
         <div class="division-title">🌙 Luna Labs — VPS</div>
         <div class="division-count">65</div>
