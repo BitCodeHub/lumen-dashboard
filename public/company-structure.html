@@ -1557,12 +1557,63 @@
       }
     }
     
-    // Initial fetch and set up polling
-    document.addEventListener('DOMContentLoaded', () => {
+    // SSE for real-time activity updates
+    let activityCache = [];
+    function connectActivityStream() {
+      const eventSource = new EventSource('/public/team-activity/stream');
+      
+      eventSource.onopen = () => {
+        console.log('[SSE] Connected to activity stream');
+        document.getElementById('activity-update-time').textContent = 'live';
+      };
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          if (message.type === 'activity') {
+            // Add new activity to top of cache
+            activityCache.unshift(message.data);
+            if (activityCache.length > 30) activityCache = activityCache.slice(0, 30);
+            
+            // Re-render with animation
+            renderActivityFeed({ activities: activityCache, refreshedAt: new Date().toISOString() });
+            
+            // Flash the section to indicate update
+            document.getElementById('activity-feed-section').classList.add('just-updated');
+            setTimeout(() => {
+              document.getElementById('activity-feed-section').classList.remove('just-updated');
+            }, 1000);
+          }
+        } catch (err) {
+          console.error('[SSE] Error parsing message:', err);
+        }
+      };
+      
+      eventSource.onerror = (err) => {
+        console.error('[SSE] Connection error:', err);
+        document.getElementById('activity-update-time').textContent = 'reconnecting...';
+        eventSource.close();
+        // Reconnect after 5 seconds
+        setTimeout(connectActivityStream, 5000);
+      };
+    }
+    
+    // Initial fetch and set up real-time stream
+    document.addEventListener('DOMContentLoaded', async () => {
       fetchStatus();
-      fetchActivityFeed();
+      // Initial fetch to populate cache
+      try {
+        const response = await fetch('/public/team-activity?limit=30');
+        const data = await response.json();
+        activityCache = data.activities || [];
+        renderActivityFeed(data);
+      } catch (err) {
+        console.error('Initial fetch failed:', err);
+      }
+      // Connect to SSE stream for real-time updates
+      connectActivityStream();
+      // Keep polling status
       setInterval(fetchStatus, POLL_INTERVAL);
-      setInterval(fetchActivityFeed, ACTIVITY_POLL_INTERVAL);
     });
   </script>
 </body>

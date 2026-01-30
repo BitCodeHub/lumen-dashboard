@@ -2032,6 +2032,51 @@ app.use('/api', (req, res, next) => {
 let teamActivityFeed = [];
 const MAX_ACTIVITY_ENTRIES = 100;
 
+// SSE clients for real-time activity updates
+const sseClients = new Set();
+
+// SSE endpoint for real-time team activity
+app.get('/public/team-activity/stream', (req, res) => {
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders();
+
+  // Send initial connection message
+  res.write(`data: ${JSON.stringify({ type: 'connected', message: 'Real-time activity stream connected' })}\n\n`);
+
+  // Add client to set
+  sseClients.add(res);
+  console.log(`[SSE] Client connected. Total clients: ${sseClients.size}`);
+
+  // Keep connection alive with heartbeat
+  const heartbeat = setInterval(() => {
+    res.write(`: heartbeat\n\n`);
+  }, 30000);
+
+  // Clean up on close
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+    console.log(`[SSE] Client disconnected. Total clients: ${sseClients.size}`);
+  });
+});
+
+// Broadcast activity to all SSE clients
+function broadcastActivity(activity) {
+  const message = JSON.stringify({ type: 'activity', data: activity });
+  sseClients.forEach(client => {
+    try {
+      client.write(`data: ${message}\n\n`);
+    } catch (err) {
+      console.error('[SSE] Error broadcasting to client:', err.message);
+      sseClients.delete(client);
+    }
+  });
+}
+
 // POST /api/team-activity - Log agent activity
 app.post('/api/team-activity', async (req, res) => {
   try {
@@ -2177,6 +2222,9 @@ app.post('/public/team-activity', async (req, res) => {
   } catch (dbErr) {
     console.warn('[Team Activity] DB write failed:', dbErr.message);
   }
+  
+  // Broadcast to all SSE clients for real-time updates
+  broadcastActivity(activity);
   
   console.log(`[Public Activity] ${activity.emoji} ${activity.agent}: ${activity.action}`);
   res.status(201).json(activity);
