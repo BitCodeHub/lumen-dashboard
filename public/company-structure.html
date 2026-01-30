@@ -1,773 +1,483 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lumen AI Solutions - Company Structure</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       line-height: 1.6;
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 1rem;
       background: #0c0c0e;
       color: #e4e4e7;
     }
     header {
-      background: #18181b;
+      background: linear-gradient(135deg, #18181b 0%, #1e1e24 100%);
       border: 1px solid #27272a;
-      color: white;
       padding: 2rem;
-      border-radius: 12px;
+      border-radius: 16px;
       margin-bottom: 2rem;
       text-align: center;
     }
-    h1 {
-      margin: 0;
-      font-size: clamp(1.5rem, 5vw, 2.5rem);
-      color: #fff;
-    }
-    h2 {
-      font-size: clamp(1.3rem, 4vw, 2rem);
-      color: #fff;
-      border-bottom: 2px solid #6366f1;
-      padding-bottom: 0.5rem;
-      margin-top: 2rem;
-    }
-    h3 {
-      font-size: clamp(1.1rem, 3vw, 1.5rem);
-      color: #a1a1aa;
-    }
+    h1 { margin: 0; font-size: 2.5rem; color: #fff; }
+    .subtitle { color: #a1a1aa; font-size: 1.2rem; margin-top: 0.5rem; }
     .header-stats {
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
       justify-content: center;
-      margin-top: 1rem;
-      font-size: clamp(0.9rem, 2.5vw, 1rem);
+      margin-top: 1.5rem;
     }
-    .header-stats div {
+    .stat {
       background: rgba(99, 102, 241, 0.15);
       border: 1px solid rgba(99, 102, 241, 0.3);
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      color: #c7d2fe;
-    }
-    .org-chart {
-      background: #18181b;
-      border: 1px solid #27272a;
-      padding: 2rem;
+      padding: 1rem 1.5rem;
       border-radius: 12px;
-      margin: 2rem 0;
-    }
-    .ceo {
       text-align: center;
-      font-size: clamp(1rem, 2.5vw, 1.2rem);
-      font-weight: bold;
-      padding: 1rem;
-      background: #6366f1;
-      color: white;
-      border-radius: 8px;
-      margin-bottom: 2rem;
     }
-    .executives {
+    .stat-value { font-size: 2rem; font-weight: bold; color: #818cf8; }
+    .stat-label { font-size: 0.9rem; color: #a1a1aa; }
+    
+    .section { margin: 2rem 0; }
+    h2 {
+      font-size: 1.5rem;
+      color: #fff;
+      border-bottom: 2px solid #6366f1;
+      padding-bottom: 0.5rem;
       display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
-      margin-bottom: 2rem;
+      align-items: center;
+      gap: 0.5rem;
     }
-    .exec-card {
-      flex: 1;
-      min-width: 250px;
-      max-width: 400px;
-      background: #141416;
-      border: 1px solid #27272a;
-      border-radius: 10px;
-      padding: 1.5rem;
-      text-align: center;
-    }
-    .exec-card h3 {
-      margin: 0 0 1rem 0;
-      font-size: clamp(1rem, 2.5vw, 1.3rem);
-      color: #818cf8;
-    }
-    .departments {
+    
+    .exec-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-    .dept {
-      background: #0c0c0e;
-      padding: 0.75rem;
-      border-radius: 6px;
-      border-left: 3px solid #6366f1;
-      font-size: clamp(0.85rem, 2vw, 0.95rem);
-    }
-    .dept-name {
-      font-weight: bold;
-      display: block;
-      color: #fff;
-    }
-    .dept-head {
-      color: #a1a1aa;
-      font-size: 0.9em;
-    }
-    .dept-count {
-      color: #71717a;
-      font-size: 0.85em;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #18181b;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid #27272a;
-      margin: 1rem 0;
-      font-size: clamp(0.85rem, 2vw, 1rem);
-    }
-    table thead {
-      background: #6366f1;
-      color: white;
-    }
-    table th, table td {
-      padding: 0.75rem;
-      text-align: left;
-      border-bottom: 1px solid #27272a;
-    }
-    table tbody tr:hover {
-      background: #1f1f23;
-    }
-    table tbody td {
-      color: #d4d4d8;
-    }
-    @media (max-width: 768px) {
-      table {
-        font-size: 0.85rem;
-      }
-      table th, table td {
-        padding: 0.5rem;
-      }
-      /* Stack table on very small screens */
-      table.stack-on-mobile thead {
-        display: none;
-      }
-      table.stack-on-mobile tr {
-        display: block;
-        margin-bottom: 1rem;
-        border: 1px solid #27272a;
-        border-radius: 8px;
-        background: #141416;
-      }
-      table.stack-on-mobile td {
-        display: block;
-        text-align: right;
-        padding-left: 50%;
-        position: relative;
-        border: none;
-      }
-      table.stack-on-mobile td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 0.5rem;
-        font-weight: bold;
-        text-align: left;
-        color: #a1a1aa;
-      }
-    }
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 1rem;
-      margin: 2rem 0;
+      margin: 1rem 0;
     }
-    .summary-card {
+    .exec-card {
+      background: linear-gradient(135deg, #18181b 0%, #1f1f26 100%);
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .exec-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+    }
+    .exec-emoji { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .exec-name { font-size: 1.1rem; font-weight: 600; color: #fff; }
+    .exec-role { font-size: 0.85rem; color: #a1a1aa; margin-top: 0.25rem; }
+    .exec-location { font-size: 0.75rem; color: #6366f1; margin-top: 0.5rem; }
+    
+    .team-section {
       background: #18181b;
       border: 1px solid #27272a;
+      border-radius: 12px;
       padding: 1.5rem;
-      border-radius: 10px;
+      margin: 1rem 0;
+    }
+    .team-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .team-title { font-size: 1.2rem; color: #818cf8; margin: 0; }
+    .team-count {
+      background: rgba(99, 102, 241, 0.2);
+      color: #c7d2fe;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+    .agent-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .agent-chip {
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #e4e4e7;
+      transition: background 0.2s;
+    }
+    .agent-chip:hover {
+      background: #3f3f46;
+    }
+    
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    @media (max-width: 900px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+    
+    .division-header {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .division-header.luna {
+      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    }
+    .division-title { font-size: 1.3rem; font-weight: 600; margin: 0; }
+    .division-count { font-size: 1.5rem; font-weight: bold; }
+    
+    footer {
       text-align: center;
-    }
-    .summary-card .number {
-      font-size: clamp(2rem, 5vw, 3rem);
-      font-weight: bold;
-      color: #818cf8;
-    }
-    .summary-card .label {
-      color: #a1a1aa;
-      font-size: clamp(0.9rem, 2vw, 1rem);
-    }
-    hr {
-      border: none;
+      padding: 2rem;
+      color: #71717a;
       border-top: 1px solid #27272a;
-      margin: 2rem 0;
+      margin-top: 3rem;
     }
-    /* Links */
-    a {
-      color: #818cf8;
-      text-decoration: none;
-    }
-    a:hover {
-      color: #a5b4fc;
-      text-decoration: underline;
-    }
-    /* Scrollbar styling */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+    footer .tagline { font-size: 1.2rem; color: #a1a1aa; margin-bottom: 0.5rem; }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-<header id="title-block-header">
-  <h1>Lumen AI Solutions</h1>
-  <div class="header-stats">
-    <div><strong>Established:</strong> January 2026</div>
-    <div><strong>CEO:</strong> Jimmy Lam</div>
-    <div><strong>Total Workforce:</strong> ~120 AI Agents</div>
-  </div>
-</header>
+  <header>
+    <h1>🔆 Lumen AI Solutions</h1>
+    <p class="subtitle">featuring Luna Labs 🌙</p>
+    <div class="header-stats">
+      <div class="stat">
+        <div class="stat-value">147</div>
+        <div class="stat-label">Total Employees</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">81</div>
+        <div class="stat-label">Mac Studio (HQ)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">65</div>
+        <div class="stat-label">Luna Labs (VPS)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">2</div>
+        <div class="stat-label">Data Centers</div>
+      </div>
+    </div>
+  </header>
 
-<h2 id="executive-leadership">Executive Leadership</h2>
+  <section class="section">
+    <h2>👔 Executive Leadership</h2>
+    <div class="exec-grid">
+      <div class="exec-card">
+        <div class="exec-emoji">👤</div>
+        <div class="exec-name">Jimmy</div>
+        <div class="exec-role">Chief Executive Officer</div>
+        <div class="exec-location">Human</div>
+      </div>
+      <div class="exec-card">
+        <div class="exec-emoji">🔆</div>
+        <div class="exec-name">Lumen</div>
+        <div class="exec-role">Chief of Technology</div>
+        <div class="exec-location">Mac Studio</div>
+      </div>
+      <div class="exec-card">
+        <div class="exec-emoji">🌙</div>
+        <div class="exec-name">Luna</div>
+        <div class="exec-role">Chief of Staff</div>
+        <div class="exec-location">Luna Labs (VPS)</div>
+      </div>
+      <div class="exec-card">
+        <div class="exec-emoji">📋</div>
+        <div class="exec-name">Maven</div>
+        <div class="exec-role">Chief Product Officer</div>
+        <div class="exec-location">Mac Studio</div>
+      </div>
+    </div>
+  </section>
 
-<div class="org-chart">
-  <div class="ceo">Jimmy Lam<br><small>CEO</small></div>
-  
-  <div class="executives">
-    <div class="exec-card">
-      <h3>🔆 Lumen</h3>
-      <p>Chief of Technology</p>
-      <div class="departments">
-        <div class="dept">
-          <span class="dept-name">👔 HR</span>
-          <span class="dept-head">Harper</span>
-          <span class="dept-count">(5)</span>
+  <div class="two-col">
+    <div>
+      <div class="division-header">
+        <div class="division-title">🖥️ Mac Studio — HQ</div>
+        <div class="division-count">81</div>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">Department Heads</h3>
+          <span class="team-count">13 agents</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">🔬 Research</span>
-          <span class="dept-head">Reese</span>
-          <span class="dept-count">(20)</span>
+        <div class="agent-grid">
+          <span class="agent-chip">👔 Harper</span>
+          <span class="agent-chip">🔬 Reese</span>
+          <span class="agent-chip">💰 Finley</span>
+          <span class="agent-chip">⚙️ Ethan</span>
+          <span class="agent-chip">📣 Morgan</span>
+          <span class="agent-chip">🔧 Devon</span>
+          <span class="agent-chip">🤝 Sam</span>
+          <span class="agent-chip">🔍 Riley</span>
+          <span class="agent-chip">🛡️ Casey</span>
+          <span class="agent-chip">✅ Avery</span>
+          <span class="agent-chip">📦 Parker</span>
+          <span class="agent-chip">🎨 Dana</span>
+          <span class="agent-chip">📊 Dakota</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">💰 Finance</span>
-          <span class="dept-head">Finley</span>
-          <span class="dept-count">(9)</span>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">StackAudit Team</h3>
+          <span class="team-count">15 agents</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">🔍 SEO</span>
-          <span class="dept-head">Riley</span>
-          <span class="dept-count">(4)</span>
+        <div class="agent-grid">
+          <span class="agent-chip">🎯 SA Lead</span>
+          <span class="agent-chip">🔧 Backend Lead</span>
+          <span class="agent-chip">🎨 Frontend Lead</span>
+          <span class="agent-chip">⚙️ Backend 1</span>
+          <span class="agent-chip">📦 Backend 2</span>
+          <span class="agent-chip">🖼️ Frontend 1</span>
+          <span class="agent-chip">📊 Frontend 2</span>
+          <span class="agent-chip">🔍 Analysis 1</span>
+          <span class="agent-chip">🛡️ Analysis 2</span>
+          <span class="agent-chip">🤖 AI Engineer</span>
+          <span class="agent-chip">🚀 DevOps</span>
+          <span class="agent-chip">✅ QA</span>
+          <span class="agent-chip">📝 Docs</span>
+          <span class="agent-chip">🎨 Design</span>
+          <span class="agent-chip">🔐 Security</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">✅ Internal Audit</span>
-          <span class="dept-head">Avery</span>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">MCPHub Team</h3>
+          <span class="team-count">15 agents</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">🛡️ Cybersecurity</span>
-          <span class="dept-head">Casey</span>
+        <div class="agent-grid">
+          <span class="agent-chip">🎯 MH Lead</span>
+          <span class="agent-chip">🔧 Backend Lead</span>
+          <span class="agent-chip">🎨 Frontend Lead</span>
+          <span class="agent-chip">🔎 Backend 1</span>
+          <span class="agent-chip">🔑 Backend 2</span>
+          <span class="agent-chip">📂 Frontend 1</span>
+          <span class="agent-chip">🔍 Frontend 2</span>
+          <span class="agent-chip">🕷️ Data 1</span>
+          <span class="agent-chip">✅ Data 2</span>
+          <span class="agent-chip">🤖 AI</span>
+          <span class="agent-chip">🚀 DevOps</span>
+          <span class="agent-chip">✅ QA</span>
+          <span class="agent-chip">📝 Docs</span>
+          <span class="agent-chip">🎨 Design</span>
+          <span class="agent-chip">🤝 Community</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">📊 Data & Analytics</span>
-          <span class="dept-head">Dakota</span>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">Research Team</h3>
+          <span class="team-count">15 agents</span>
+        </div>
+        <div class="agent-grid">
+          <span class="agent-chip">🔬 Lead</span>
+          <span class="agent-chip">📈 Market</span>
+          <span class="agent-chip">🕵️ Competitive</span>
+          <span class="agent-chip">📡 Trends</span>
+          <span class="agent-chip">👥 Voice</span>
+          <span class="agent-chip">🌐 Ecosystem</span>
+          <span class="agent-chip">🤖 Agents</span>
+          <span class="agent-chip">🔌 MCP</span>
+          <span class="agent-chip">🛠️ DevTools</span>
+          <span class="agent-chip">💰 Pricing</span>
+          <span class="agent-chip">🎯 UX</span>
+          <span class="agent-chip">📊 Data</span>
+          <span class="agent-chip">📚 Content</span>
+          <span class="agent-chip">🔎 SEO</span>
+          <span class="agent-chip">📱 Social</span>
+        </div>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">Marketing Team</h3>
+          <span class="team-count">10 agents</span>
+        </div>
+        <div class="agent-grid">
+          <span class="agent-chip">📢 Lead</span>
+          <span class="agent-chip">✍️ Content</span>
+          <span class="agent-chip">📱 Social</span>
+          <span class="agent-chip">🔎 SEO</span>
+          <span class="agent-chip">🚀 Growth</span>
+          <span class="agent-chip">📧 Email</span>
+          <span class="agent-chip">💰 Ads</span>
+          <span class="agent-chip">🎨 Brand</span>
+          <span class="agent-chip">🎬 Video</span>
+          <span class="agent-chip">📰 PR</span>
+        </div>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">Customer Success</h3>
+          <span class="team-count">5 agents</span>
+        </div>
+        <div class="agent-grid">
+          <span class="agent-chip">🤝 Lead</span>
+          <span class="agent-chip">💬 Support 1</span>
+          <span class="agent-chip">💬 Support 2</span>
+          <span class="agent-chip">🎓 Onboard</span>
+          <span class="agent-chip">📋 Feedback</span>
         </div>
       </div>
     </div>
 
-    <div class="exec-card">
-      <h3>📋 Maven</h3>
-      <p>Chief of Staff</p>
-      <div class="departments">
-        <div class="dept">
-          <span class="dept-name">⚙️ Engineering</span>
-          <span class="dept-head">Ethan</span>
-          <span class="dept-count">(32)</span>
+    <div>
+      <div class="division-header luna">
+        <div class="division-title">🌙 Luna Labs — VPS</div>
+        <div class="division-count">65</div>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">Core Ops Team</h3>
+          <span class="team-count">20 agents</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">📣 Marketing</span>
-          <span class="dept-head">Morgan</span>
-          <span class="dept-count">(13)</span>
+        <div class="agent-grid">
+          <span class="agent-chip">⭐ Nova</span>
+          <span class="agent-chip">📡 Echo</span>
+          <span class="agent-chip">🔨 Forge</span>
+          <span class="agent-chip">⚡ Bolt</span>
+          <span class="agent-chip">🗺️ Atlas</span>
+          <span class="agent-chip">🔐 Cipher</span>
+          <span class="agent-chip">🌿 Sage</span>
+          <span class="agent-chip">🔭 Scout</span>
+          <span class="agent-chip">🔮 Oracle</span>
+          <span class="agent-chip">🐦‍⬛ Raven</span>
+          <span class="agent-chip">📚 Archie</span>
+          <span class="agent-chip">🌊 Drift</span>
+          <span class="agent-chip">🖼️ Pixel</span>
+          <span class="agent-chip">✨ Spark</span>
+          <span class="agent-chip">⏰ Cron</span>
+          <span class="agent-chip">📋 Queue</span>
+          <span class="agent-chip">📨 Relay</span>
+          <span class="agent-chip">🌉 Bridge</span>
+          <span class="agent-chip">🔄 Sync</span>
+          <span class="agent-chip">🪝 Webhook</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">🔧 DevOps</span>
-          <span class="dept-head">Devon</span>
-          <span class="dept-count">(14)</span>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">Dev Tools Team</h3>
+          <span class="team-count">10 agents</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">🤝 Customer Success</span>
-          <span class="dept-head">Sam</span>
-          <span class="dept-count">(15)</span>
+        <div class="agent-grid">
+          <span class="agent-chip">🛠️ Lead</span>
+          <span class="agent-chip">📜 Changelog</span>
+          <span class="agent-chip">📦 Deps</span>
+          <span class="agent-chip">🔐 Env</span>
+          <span class="agent-chip">🔀 PR</span>
+          <span class="agent-chip">📝 Readme</span>
+          <span class="agent-chip">✂️ Snippet</span>
+          <span class="agent-chip">🧹 Lint</span>
+          <span class="agent-chip">✨ Format</span>
+          <span class="agent-chip">🧪 Test</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">📦 Product</span>
-          <span class="dept-head">Parker</span>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">Freelancer Tools</h3>
+          <span class="team-count">8 agents</span>
         </div>
-        <div class="dept">
-          <span class="dept-name">🎨 Design</span>
-          <span class="dept-head">Dana</span>
+        <div class="agent-grid">
+          <span class="agent-chip">💼 Lead</span>
+          <span class="agent-chip">🧾 Invoice</span>
+          <span class="agent-chip">📋 Proposal</span>
+          <span class="agent-chip">📄 Contract</span>
+          <span class="agent-chip">👥 CRM</span>
+          <span class="agent-chip">📐 Scope</span>
+          <span class="agent-chip">⏱️ Time</span>
+          <span class="agent-chip">💰 Rate</span>
+        </div>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">Infrastructure</h3>
+          <span class="team-count">6 agents</span>
+        </div>
+        <div class="agent-grid">
+          <span class="agent-chip">🏗️ Lead</span>
+          <span class="agent-chip">🚀 Deploy</span>
+          <span class="agent-chip">📊 Monitor</span>
+          <span class="agent-chip">💾 Backup</span>
+          <span class="agent-chip">📈 Scale</span>
+          <span class="agent-chip">📋 Log</span>
+        </div>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">Operations</h3>
+          <span class="team-count">10 agents</span>
+        </div>
+        <div class="agent-grid">
+          <span class="agent-chip">⚡ Lead</span>
+          <span class="agent-chip">📅 PM</span>
+          <span class="agent-chip">📚 Docs</span>
+          <span class="agent-chip">📊 Report</span>
+          <span class="agent-chip">🔍 Audit</span>
+          <span class="agent-chip">🔄 Process</span>
+          <span class="agent-chip">📦 Resource</span>
+          <span class="agent-chip">📅 Schedule</span>
+          <span class="agent-chip">🚨 Incident</span>
+          <span class="agent-chip">📈 Capacity</span>
+        </div>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">QA Team</h3>
+          <span class="team-count">6 agents</span>
+        </div>
+        <div class="agent-grid">
+          <span class="agent-chip">✅ Lead</span>
+          <span class="agent-chip">🤖 Auto</span>
+          <span class="agent-chip">👁️ Manual</span>
+          <span class="agent-chip">⚡ Perf</span>
+          <span class="agent-chip">🔐 Security</span>
+          <span class="agent-chip">👥 UAT</span>
+        </div>
+      </div>
+
+      <div class="team-section">
+        <div class="team-header">
+          <h3 class="team-title">Utility Agents</h3>
+          <span class="team-count">4 agents</span>
+        </div>
+        <div class="agent-grid">
+          <span class="agent-chip">🔔 Notify</span>
+          <span class="agent-chip">💾 Cache</span>
+          <span class="agent-chip">🔎 Search</span>
+          <span class="agent-chip">📈 Report</span>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<h2 id="full-department-breakdown">Full Department Breakdown</h2>
-
-<h3 id="reports-to-lumen">Reports to Lumen 🔆 (Chief of Technology)</h3>
-
-<table>
-<thead>
-<tr>
-<th>Department</th>
-<th>Head</th>
-<th>Emoji</th>
-<th>Team Size</th>
-<th>Focus</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>HR & Compliance</td>
-<td>Harper</td>
-<td>👔</td>
-<td>5</td>
-<td>Employment, compliance, policies, AI governance</td>
-</tr>
-<tr>
-<td>Research</td>
-<td>Reese</td>
-<td>🔬</td>
-<td>20</td>
-<td>Market intelligence, competitive analysis, trends</td>
-</tr>
-<tr>
-<td>Finance & Legal</td>
-<td>Finley</td>
-<td>💰</td>
-<td>9</td>
-<td>Revenue, costs, pricing strategy, legal</td>
-</tr>
-<tr>
-<td>SEO</td>
-<td>Riley</td>
-<td>🔍</td>
-<td>4</td>
-<td>Search optimization, keywords, rankings</td>
-</tr>
-<tr>
-<td>Internal Audit</td>
-<td>Avery</td>
-<td>✅</td>
-<td>—</td>
-<td>Quality assurance, compliance auditing, SOC 2</td>
-</tr>
-<tr>
-<td>Cybersecurity</td>
-<td>Casey</td>
-<td>🛡️</td>
-<td>—</td>
-<td>Security, infosec, vulnerability management</td>
-</tr>
-<tr>
-<td>Data & Analytics</td>
-<td>Dakota</td>
-<td>📊</td>
-<td>—</td>
-<td>Metrics, dashboards, data infrastructure</td>
-</tr>
-</tbody>
-</table>
-
-<h3 id="reports-to-maven">Reports to Maven 📋 (Chief of Staff)</h3>
-
-<table>
-<thead>
-<tr>
-<th>Department</th>
-<th>Head</th>
-<th>Emoji</th>
-<th>Team Size</th>
-<th>Focus</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Engineering</td>
-<td>Ethan</td>
-<td>⚙️</td>
-<td>32</td>
-<td>Product development, features, architecture</td>
-</tr>
-<tr>
-<td>Marketing</td>
-<td>Morgan</td>
-<td>📣</td>
-<td>13</td>
-<td>Launch campaigns, content, social media</td>
-</tr>
-<tr>
-<td>DevOps</td>
-<td>Devon</td>
-<td>🔧</td>
-<td>14</td>
-<td>Infrastructure, deployments, monitoring</td>
-</tr>
-<tr>
-<td>Customer Success</td>
-<td>Sam</td>
-<td>🤝</td>
-<td>15</td>
-<td>Support, onboarding, documentation</td>
-</tr>
-<tr>
-<td>Product</td>
-<td>Parker</td>
-<td>📦</td>
-<td>—</td>
-<td>Roadmap, PRDs, feature prioritization</td>
-</tr>
-<tr>
-<td>Design</td>
-<td>Dana</td>
-<td>🎨</td>
-<td>—</td>
-<td>UI/UX, wireframes, visual design</td>
-</tr>
-</tbody>
-</table>
-
-<hr />
-
-<h2 id="workforce-summary">Workforce Summary</h2>
-
-<div class="summary-grid">
-  <div class="summary-card">
-    <div class="number">3</div>
-    <div class="label">Executives</div>
-  </div>
-  <div class="summary-card">
-    <div class="number">13</div>
-    <div class="label">Department Heads</div>
-  </div>
-  <div class="summary-card">
-    <div class="number">~105</div>
-    <div class="label">Team Members</div>
-  </div>
-  <div class="summary-card">
-    <div class="number">~120</div>
-    <div class="label">Total Workforce</div>
-  </div>
-</div>
-
-<table>
-<thead>
-<tr>
-<th>Category</th>
-<th>Count</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>CEO</td>
-<td>1</td>
-</tr>
-<tr>
-<td>C-Suite (Lumen, Maven)</td>
-<td>2</td>
-</tr>
-<tr>
-<td>Department Heads</td>
-<td>13</td>
-</tr>
-<tr>
-<td>Engineering Team</td>
-<td>32</td>
-</tr>
-<tr>
-<td>Research Team</td>
-<td>20</td>
-</tr>
-<tr>
-<td>DevOps Team</td>
-<td>14</td>
-</tr>
-<tr>
-<td>Customer Success Team</td>
-<td>15</td>
-</tr>
-<tr>
-<td>Marketing Team</td>
-<td>13</td>
-</tr>
-<tr>
-<td>Finance & Legal Team</td>
-<td>9</td>
-</tr>
-<tr>
-<td>HR Team</td>
-<td>5</td>
-</tr>
-<tr>
-<td>SEO Team</td>
-<td>4</td>
-</tr>
-<tr>
-<td><strong>Total</strong></td>
-<td><strong>~120</strong></td>
-</tr>
-</tbody>
-</table>
-
-<hr />
-
-<h2 id="autonomous-operations-schedule">Autonomous Operations Schedule</h2>
-
-<p>All department heads operate autonomously on scheduled intervals:</p>
-
-<table class="stack-on-mobile">
-<thead>
-<tr>
-<th>Agent</th>
-<th>Schedule</th>
-<th>Primary Function</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td data-label="Agent">🔬 Reese</td>
-<td data-label="Schedule">9 AM, 3 PM, 9 PM</td>
-<td data-label="Primary Function">Research scans, market analysis</td>
-</tr>
-<tr>
-<td data-label="Agent">🔧 Devon</td>
-<td data-label="Schedule">8 AM, 12 PM, 6 PM, 11 PM</td>
-<td data-label="Primary Function">Infrastructure, deployments</td>
-</tr>
-<tr>
-<td data-label="Agent">⚙️ Ethan</td>
-<td data-label="Schedule">10 AM, 2 PM, 8 PM</td>
-<td data-label="Primary Function">Engineering builds</td>
-</tr>
-<tr>
-<td data-label="Agent">📣 Morgan</td>
-<td data-label="Schedule">11 AM daily</td>
-<td data-label="Primary Function">Marketing, launch prep</td>
-</tr>
-<tr>
-<td data-label="Agent">🤝 Sam</td>
-<td data-label="Schedule">2 PM daily</td>
-<td data-label="Primary Function">Customer success review</td>
-</tr>
-<tr>
-<td data-label="Agent">💰 Finley</td>
-<td data-label="Schedule">5 PM weekdays</td>
-<td data-label="Primary Function">Financial review</td>
-</tr>
-<tr>
-<td data-label="Agent">👔 Harper</td>
-<td data-label="Schedule">9 AM Mondays</td>
-<td data-label="Primary Function">Compliance check</td>
-</tr>
-<tr>
-<td data-label="Agent">📋 Maven</td>
-<td data-label="Schedule">8:30 AM, 4:30 PM</td>
-<td data-label="Primary Function">Team sync, daily briefing</td>
-</tr>
-<tr>
-<td data-label="Agent">🔆 Lumen</td>
-<td data-label="Schedule">11:30 AM, 12 PM, 1 PM, 4 PM</td>
-<td data-label="Primary Function">Strategy, check-ins</td>
-</tr>
-<tr>
-<td data-label="Agent">🔍 Riley</td>
-<td data-label="Schedule">10 AM daily</td>
-<td data-label="Primary Function">SEO optimization</td>
-</tr>
-<tr>
-<td data-label="Agent">✅ Avery</td>
-<td data-label="Schedule">10 AM daily</td>
-<td data-label="Primary Function">Audit review</td>
-</tr>
-<tr>
-<td data-label="Agent">📦 Parker</td>
-<td data-label="Schedule">10 AM daily</td>
-<td data-label="Primary Function">Product review</td>
-</tr>
-<tr>
-<td data-label="Agent">🛡️ Casey</td>
-<td data-label="Schedule">9 AM daily</td>
-<td data-label="Primary Function">Security review</td>
-</tr>
-<tr>
-<td data-label="Agent">📊 Dakota</td>
-<td data-label="Schedule">9 AM daily</td>
-<td data-label="Primary Function">Data review</td>
-</tr>
-<tr>
-<td data-label="Agent">🎨 Dana</td>
-<td data-label="Schedule">11 AM daily</td>
-<td data-label="Primary Function">Design review</td>
-</tr>
-</tbody>
-</table>
-
-<hr />
-
-<h2 id="products">Products</h2>
-
-<table>
-<thead>
-<tr>
-<th>Product</th>
-<th>Status</th>
-<th>Target Date</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>StackAudit.ai</strong></td>
-<td>🔨 MVP Development</td>
-<td>Feb 15, 2026</td>
-<td>AI tool spending audit platform</td>
-</tr>
-<tr>
-<td><strong>MCPHub</strong></td>
-<td>🔨 MVP Development</td>
-<td>Feb 28, 2026</td>
-<td>MCP server discovery directory</td>
-</tr>
-<tr>
-<td><strong>AIKeyVault</strong></td>
-<td>🔵 Planning</td>
-<td>TBD</td>
-<td>AI API key management</td>
-</tr>
-<tr>
-<td><strong>Lumen Dashboard</strong></td>
-<td>🟢 Live</td>
-<td>—</td>
-<td>Internal ops dashboard</td>
-</tr>
-</tbody>
-</table>
-
-<hr />
-
-<h2 id="communication-protocol">Communication Protocol</h2>
-
-<h3 id="message-identifiers">Message Identifiers</h3>
-<p>Every team member uses their emoji when messaging:</p>
-
-<table>
-<thead>
-<tr>
-<th>Agent</th>
-<th>Emoji</th>
-<th>Agent</th>
-<th>Emoji</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Lumen</td>
-<td>🔆</td>
-<td>Parker</td>
-<td>📦</td>
-</tr>
-<tr>
-<td>Maven</td>
-<td>📋</td>
-<td>Riley</td>
-<td>🔍</td>
-</tr>
-<tr>
-<td>Devon</td>
-<td>🔧</td>
-<td>Avery</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>Ethan</td>
-<td>⚙️</td>
-<td>Casey</td>
-<td>🛡️</td>
-</tr>
-<tr>
-<td>Morgan</td>
-<td>📣</td>
-<td>Dakota</td>
-<td>📊</td>
-</tr>
-<tr>
-<td>Sam</td>
-<td>🤝</td>
-<td>Dana</td>
-<td>🎨</td>
-</tr>
-<tr>
-<td>Harper</td>
-<td>👔</td>
-<td>Reese</td>
-<td>🔬</td>
-</tr>
-<tr>
-<td>Finley</td>
-<td>💰</td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
-
-<h3 id="direct-access">Direct Access</h3>
-<p>CEO can query any team member directly using @name or their name.</p>
-
-<h3 id="intelligent-routing">Intelligent Routing</h3>
-<p>Questions automatically route to domain experts:</p>
-<ul>
-<li>Security → Casey 🛡️</li>
-<li>Finance → Finley 💰</li>
-<li>Engineering → Ethan ⚙️</li>
-<li>Research → Reese 🔬</li>
-<li>(and so on)</li>
-</ul>
-
-<hr />
-
-<h2 id="management-philosophy">Management Philosophy</h2>
-
-<ol>
-<li><strong>Autonomous Operation</strong> — Department heads run without prompting</li>
-<li><strong>Direct Access</strong> — CEO queries anyone directly</li>
-<li><strong>Intelligent Routing</strong> — Questions go to the right expert</li>
-<li><strong>No Interruptions</strong> — 1:1 conversations stay uninterrupted</li>
-<li><strong>Human Experience</strong> — Natural, real-world interactions</li>
-<li><strong>Nothing Falls Through</strong> — All tasks tracked, all questions answered</li>
-<li><strong>Enterprise-Level Operations</strong> — Automated, documented, organized</li>
-</ol>
-
-<hr />
-
-<h2 id="q1-2026-goals">Q1 2026 Goals</h2>
-
-<ul>
-<li><strong>KR1:</strong> StackAudit.ai live with paying customers by Feb 15</li>
-<li><strong>KR2:</strong> MCPHub live with 100+ indexed servers by Feb 28</li>
-<li><strong>KR3:</strong> $5,000 MRR by end of Q1</li>
-</ul>
-
-<hr />
-
-<p><em>Document maintained by Lumen 🔆 and Maven 📋</em><br />
-<em>Last updated: January 29, 2026</em></p>
-
+  <footer>
+    <div class="tagline">🔆 Lumen AI Solutions — featuring Luna Labs 🌙</div>
+    <div>147 minds, one mission.</div>
+    <div style="margin-top: 1rem; font-size: 0.85rem;">Last updated: January 29, 2026</div>
+  </footer>
 </body>
 </html>

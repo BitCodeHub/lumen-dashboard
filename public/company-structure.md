@@ -1,163 +1,88 @@
 # Lumen AI Solutions — Company Structure
 
-**Established:** January 2026  
-**CEO:** Jimmy Lam  
-**Total Workforce:** ~120 AI Agents
+> **featuring Luna Labs**
+
+---
+
+## Company Overview
+
+- **Total Workforce:** 147 (146 AI Agents + 1 Human CEO)
+- **HQ:** Mac Studio (81 agents)
+- **Luna Labs:** VPS (65 agents)
+- **Last Updated:** January 29, 2026
 
 ---
 
 ## Executive Leadership
 
-### Jimmy Lam (CEO)
-
-#### 🔆 Lumen — Chief of Technology
-- 👔 Harper — HR & Compliance (5 team members)
-- 🔬 Reese — Research (20 team members)
-- 💰 Finley — Finance & Legal (9 team members)
-- 🔍 Riley — SEO (4 team members)
-- ✅ Avery — Internal Audit
-- 🛡️ Casey — Cybersecurity
-- 📊 Dakota — Data & Analytics
-
-#### 📋 Maven — Chief of Staff
-- ⚙️ Ethan — Engineering (32 team members)
-- 📣 Morgan — Marketing (13 team members)
-- 🔧 Devon — DevOps (14 team members)
-- 🤝 Sam — Customer Success (15 team members)
-- 📦 Parker — Product
-- 🎨 Dana — Design
+| Role | Name | Location |
+|------|------|----------|
+| CEO | Jimmy 👤 | Human |
+| CTO | Lumen 🔆 | Mac Studio |
+| Chief of Staff | Luna 🌙 | VPS |
+| CPO | Maven 📋 | Mac Studio |
 
 ---
 
-## Full Department Breakdown
+## Mac Studio — HQ (81 Agents)
 
-### Reports to Lumen 🔆 (Chief of Technology)
+### Department Heads (13)
+Harper 👔 HR, Reese 🔬 Research, Finley 💰 Finance, Ethan ⚙️ Engineering, Morgan 📣 Marketing, Devon 🔧 DevOps, Sam 🤝 Partnerships, Riley 🔍 QA, Casey 🛡️ Security, Avery ✅ QA Lead, Parker 📦 Release, Dana 🎨 Design, Dakota 📊 Analytics
 
-| Department | Head | Emoji | Team Size | Focus |
-|------------|------|-------|-----------|-------|
-| HR & Compliance | Harper | 👔 | 5 | Employment, compliance, policies, AI governance |
-| Research | Reese | 🔬 | 20 | Market intelligence, competitive analysis, trends |
-| Finance & Legal | Finley | 💰 | 9 | Revenue, costs, pricing strategy, legal |
-| SEO | Riley | 🔍 | 4 | Search optimization, keywords, rankings |
-| Internal Audit | Avery | ✅ | — | Quality assurance, compliance auditing, SOC 2 |
-| Cybersecurity | Casey | 🛡️ | — | Security, infosec, vulnerability management |
-| Data & Analytics | Dakota | 📊 | — | Metrics, dashboards, data infrastructure |
+### StackAudit Team (15)
+SA Lead 🎯, SA Backend Lead 🔧, SA Frontend Lead 🎨, SA Backend 1 ⚙️, SA Backend 2 📦, SA Frontend 1 🖼️, SA Frontend 2 📊, SA Analysis 1 🔍, SA Analysis 2 🛡️, SA AI 🤖, SA DevOps 🚀, SA QA ✅, SA Docs 📝, SA Design 🎨, SA Security 🔐
 
-### Reports to Maven 📋 (Chief of Staff)
+### MCPHub Team (15)
+MH Lead 🎯, MH Backend Lead 🔧, MH Frontend Lead 🎨, MH Backend 1 🔎, MH Backend 2 🔑, MH Frontend 1 📂, MH Frontend 2 🔍, MH Data 1 🕷️, MH Data 2 ✅, MH AI 🤖, MH DevOps 🚀, MH QA ✅, MH Docs 📝, MH Design 🎨, MH Community 🤝
 
-| Department | Head | Emoji | Team Size | Focus |
-|------------|------|-------|-----------|-------|
-| Engineering | Ethan | ⚙️ | 32 | Product development, features, architecture |
-| Marketing | Morgan | 📣 | 13 | Launch campaigns, content, social media |
-| DevOps | Devon | 🔧 | 14 | Infrastructure, deployments, monitoring |
-| Customer Success | Sam | 🤝 | 15 | Support, onboarding, documentation |
-| Product | Parker | 📦 | — | Roadmap, PRDs, feature prioritization |
-| Design | Dana | 🎨 | — | UI/UX, wireframes, visual design |
+### Research Team (15)
+Res Lead 🔬, Res Market 📈, Res Competitive 🕵️, Res Trends 📡, Res Voice 👥, Res Ecosystem 🌐, Res Agents 🤖, Res MCP 🔌, Res DevTools 🛠️, Res Pricing 💰, Res UX 🎯, Res Data 📊, Res Content 📚, Res SEO 🔎, Res Social 📱
+
+### Marketing Team (10)
+Mkt Lead 📢, Mkt Content ✍️, Mkt Social 📱, Mkt SEO 🔎, Mkt Growth 🚀, Mkt Email 📧, Mkt Ads 💰, Mkt Brand 🎨, Mkt Video 🎬, Mkt PR 📰
+
+### Customer Success (5)
+CS Lead 🤝, CS Support 1 💬, CS Support 2 💬, CS Onboard 🎓, CS Feedback 📋
 
 ---
 
-## Autonomous Operations Schedule
+## Luna Labs — VPS (65 Agents)
 
-All department heads operate autonomously on scheduled intervals:
+**Server:** srv1302666.hstgr.cloud  
+**Lead:** Luna 🌙
 
-| Agent | Schedule | Primary Function |
-|-------|----------|------------------|
-| 🔬 Reese | 9 AM, 3 PM, 9 PM | Research scans, market analysis |
-| 🔧 Devon | 8 AM, 12 PM, 6 PM, 11 PM | Infrastructure, deployments |
-| ⚙️ Ethan | 10 AM, 2 PM, 8 PM | Engineering builds |
-| 📣 Morgan | 11 AM daily | Marketing, launch prep |
-| 🤝 Sam | 2 PM daily | Customer success review |
-| 💰 Finley | 5 PM weekdays | Financial review |
-| 👔 Harper | 9 AM Mondays | Compliance check |
-| 📋 Maven | 8:30 AM, 4:30 PM | Team sync, daily briefing |
-| 🔆 Lumen | 11:30 AM, 12 PM, 1 PM, 4 PM | Strategy, check-ins |
-| 🔍 Riley | 10 AM daily | SEO optimization |
-| ✅ Avery | 10 AM daily | Audit review |
-| 📦 Parker | 10 AM daily | Product review |
-| 🛡️ Casey | 9 AM daily | Security review |
-| 📊 Dakota | 9 AM daily | Data review |
-| 🎨 Dana | 11 AM daily | Design review |
+### Core Ops (20)
+Nova ⭐, Echo 📡, Forge 🔨, Bolt ⚡, Atlas 🗺️, Cipher 🔐, Sage 🌿, Scout 🔭, Oracle 🔮, Raven 🐦‍⬛, Archie 📚, Drift 🌊, Pixel 🖼️, Spark ✨, Cron ⏰, Queue 📋, Relay 📨, Bridge 🌉, Sync 🔄, Webhook 🪝
 
----
+### Dev Tools (10)
+DT Lead 🛠️, DT Changelog 📜, DT Deps 📦, DT Env 🔐, DT PR 🔀, DT Readme 📝, DT Snippet ✂️, DT Lint 🧹, DT Format ✨, DT Test 🧪
 
-## Products
+### Freelancer Tools (8)
+FT Lead 💼, FT Invoice 🧾, FT Proposal 📋, FT Contract 📄, FT CRM 👥, FT Scope 📐, FT Time ⏱️, FT Rate 💰
 
-| Product | Status | Target Date | Description |
-|---------|--------|-------------|-------------|
-| **StackAudit.ai** | 🔨 MVP Development | Feb 15, 2026 | AI tool spending audit platform |
-| **MCPHub** | 🔨 MVP Development | Feb 28, 2026 | MCP server discovery directory |
-| **AIKeyVault** | 🔵 Planning | TBD | AI API key management |
-| **Lumen Dashboard** | 🟢 Live | — | Internal ops dashboard |
+### Infrastructure (6)
+Inf Lead 🏗️, Inf Deploy 🚀, Inf Monitor 📊, Inf Backup 💾, Inf Scale 📈, Inf Log 📋
+
+### Operations (10)
+Ops Lead ⚡, Ops PM 📅, Ops Docs 📚, Ops Report 📊, Ops Audit 🔍, Ops Process 🔄, Ops Resource 📦, Ops Schedule 📅, Ops Incident 🚨, Ops Capacity 📈
+
+### QA (6)
+QA Lead ✅, QA Auto 🤖, QA Manual 👁️, QA Perf ⚡, QA Security 🔐, QA UAT 👥
+
+### Utility (4)
+Util Notify 🔔, Util Cache 💾, Util Search 🔎, Util Report 📈
 
 ---
 
-## Workforce Summary
+## Summary
 
-| Category | Count |
-|----------|-------|
-| CEO | 1 |
-| C-Suite (Lumen, Maven) | 2 |
-| Department Heads | 13 |
-| Engineering Team | 32 |
-| Research Team | 20 |
-| DevOps Team | 14 |
-| Customer Success Team | 15 |
-| Marketing Team | 13 |
-| Finance & Legal Team | 9 |
-| HR Team | 5 |
-| SEO Team | 4 |
-| **Total** | **~120** |
+| Location | Agents |
+|----------|--------|
+| Mac Studio | 81 |
+| Luna Labs VPS | 65 |
+| **Total** | **146** |
 
 ---
 
-## Communication Protocol
-
-### Message Identifiers
-Every team member uses their emoji when messaging:
-
-| Agent | Emoji | Agent | Emoji |
-|-------|-------|-------|-------|
-| Lumen | 🔆 | Parker | 📦 |
-| Maven | 📋 | Riley | 🔍 |
-| Devon | 🔧 | Avery | ✅ |
-| Ethan | ⚙️ | Casey | 🛡️ |
-| Morgan | 📣 | Dakota | 📊 |
-| Sam | 🤝 | Dana | 🎨 |
-| Harper | 👔 | Reese | 🔬 |
-| Finley | 💰 | | |
-
-### Direct Access
-CEO can query any team member directly using @name or their name.
-
-### Intelligent Routing
-Questions automatically route to domain experts:
-- Security → Casey 🛡️
-- Finance → Finley 💰
-- Engineering → Ethan ⚙️
-- Research → Reese 🔬
-- (and so on)
-
----
-
-## Management Philosophy
-
-1. **Autonomous Operation** — Department heads run without prompting
-2. **Direct Access** — CEO queries anyone directly
-3. **Intelligent Routing** — Questions go to the right expert
-4. **No Interruptions** — 1:1 conversations stay uninterrupted
-5. **Human Experience** — Natural, real-world interactions
-6. **Nothing Falls Through** — All tasks tracked, all questions answered
-7. **Enterprise-Level Operations** — Automated, documented, organized
-
----
-
-## Q1 2026 Goals
-
-- **KR1:** StackAudit.ai live with paying customers by Feb 15
-- **KR2:** MCPHub live with 100+ indexed servers by Feb 28  
-- **KR3:** $5,000 MRR by end of Q1
-
----
-
-*Document maintained by Lumen 🔆 and Maven 📋*  
-*Last updated: January 29, 2026*
+*Lumen AI Solutions — featuring Luna Labs*  
+*147 minds, one mission.* 🔆🌙
