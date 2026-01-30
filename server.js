@@ -1681,6 +1681,7 @@ app.post('/public/company-status', async (req, res) => {
       companyStatusCache.teamStatus = parseTeamStatus(standupContent);
       companyStatusCache.recentWins = parseRecentWins(standupContent);
       companyStatusCache.blockers = parseBlockers(standupContent);
+      companyStatusCache.productProgress = parseProductProgress(standupContent, '');
     }
     
     // Also persist to database if available
