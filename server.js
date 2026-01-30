@@ -21,6 +21,7 @@ const automationBuilder = require('./automation-builder');
 const contextResurrection = require('./context-resurrection');
 const proactiveNotifications = require('./proactive-notifications');
 const voiceClone = require('./voice-clone');
+const { setupExpenseAnalyticsRoutes } = require('./expense-analytics-api');
 
 const app = express();
 
@@ -5805,6 +5806,9 @@ setTimeout(async () => {
 
 // Register Deal Radar routes
 dealRadar.registerRoutes(app, pool);
+
+// Register Expense Analytics routes
+setupExpenseAnalyticsRoutes(app, pool);
 
 // Start server
 app.listen(PORT, () => {
