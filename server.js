@@ -3569,6 +3569,26 @@ app.get('/api/jobs', async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Database error' }); }
 });
 
+// POST /api/jobs - Add a new job listing
+app.post('/api/jobs', async (req, res) => {
+  try {
+    const { title, company, location, salary_text, salary_min, salary_max, job_type, url, description, fit_notes, tags, source } = req.body;
+    if (!title || !company) {
+      return res.status(400).json({ error: 'Title and company are required' });
+    }
+    const result = await pool.query(
+      `INSERT INTO lumen_jobs (title, company, location, salary_text, salary_min, salary_max, job_type, url, description, fit_notes, tags, source, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'new', NOW())
+       RETURNING *`,
+      [title, company, location, salary_text, salary_min, salary_max, job_type, url, description, fit_notes, tags || [], source || 'manual']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('[Jobs] Error adding job:', err);
+    res.status(500).json({ error: 'Database error', details: err.message });
+  }
+});
+
 app.get('/api/jobs/stats', async (req, res) => {
   try {
     const result = await pool.query(`SELECT COUNT(*) FILTER (WHERE status = 'new') as new, COUNT(*) FILTER (WHERE status = 'interested') as interested, COUNT(*) FILTER (WHERE status = 'applied') as applied, COUNT(*) FILTER (WHERE status = 'interviewing') as interviewing, COUNT(*) as total FROM lumen_jobs WHERE archived = FALSE OR archived IS NULL`);
