@@ -1635,12 +1635,95 @@ app.get('/status', (req, res) => {
 // PUBLIC API ROUTES (No auth required)
 // ============================================
 
+// In-memory cache for company status (for Render deployment)
+let companyStatusCache = {
+  lastUpdated: new Date().toISOString(),
+  teamStatus: [],
+  recentWins: [],
+  blockers: [],
+  productProgress: [
+    { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 75, status: 'development', recentUpdates: 0 },
+    { id: 'mcphub', name: 'MCPHub', emoji: '🔌', progress: 60, status: 'development', recentUpdates: 0 },
+    { id: 'aikeyvault', name: 'AIKeyVault', emoji: '🔐', progress: 10, status: 'planning', recentUpdates: 0 },
+    { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 0 }
+  ]
+};
+
 // Company structure workspace path (configurable)
 const COMPANY_WORKSPACE = process.env.COMPANY_WORKSPACE || '/Users/jimmysmacstudio/clawd';
+
+// POST endpoint for Clawdbot to push status updates
+app.post('/public/company-status', async (req, res) => {
+  try {
+    // Verify API key for writes
+    const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+    if (!apiKey || apiKey !== process.env.DASHBOARD_API_KEY) {
+      // Allow writes from localhost without API key
+      const clientIP = req.ip || req.connection?.remoteAddress || '';
+      const isLocalhost = clientIP === '127.0.0.1' || clientIP === '::1' || clientIP === '::ffff:127.0.0.1';
+      if (!isLocalhost) {
+        return res.status(401).json({ error: 'API key required for status updates' });
+      }
+    }
+    
+    const { teamStatus, recentWins, blockers, productProgress, standupContent } = req.body;
+    
+    // Update cache
+    companyStatusCache.lastUpdated = new Date().toISOString();
+    
+    if (teamStatus) companyStatusCache.teamStatus = teamStatus;
+    if (recentWins) companyStatusCache.recentWins = recentWins;
+    if (blockers) companyStatusCache.blockers = blockers;
+    if (productProgress) companyStatusCache.productProgress = productProgress;
+    
+    // If raw standup content is provided, parse it
+    if (standupContent) {
+      companyStatusCache.teamStatus = parseTeamStatus(standupContent);
+      companyStatusCache.recentWins = parseRecentWins(standupContent);
+      companyStatusCache.blockers = parseBlockers(standupContent);
+    }
+    
+    // Also persist to database if available
+    try {
+      await pool.query(`
+        INSERT INTO company_status (id, status_data, updated_at)
+        VALUES (1, $1, NOW())
+        ON CONFLICT (id) DO UPDATE SET status_data = $1, updated_at = NOW()
+      `, [JSON.stringify(companyStatusCache)]);
+    } catch (dbErr) {
+      console.warn('[Company Status] Database save failed (table may not exist):', dbErr.message);
+    }
+    
+    console.log(`[Company Status] Updated at ${companyStatusCache.lastUpdated}`);
+    res.json({ success: true, lastUpdated: companyStatusCache.lastUpdated });
+  } catch (err) {
+    console.error('[Company Status] Error updating:', err);
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+});
 
 // Public company status endpoint - real-time team progress
 app.get('/public/company-status', async (req, res) => {
   try {
+    // First try to read from database
+    try {
+      const dbResult = await pool.query('SELECT status_data, updated_at FROM company_status WHERE id = 1');
+      if (dbResult.rows.length > 0) {
+        const data = dbResult.rows[0];
+        const statusData = typeof data.status_data === 'string' ? JSON.parse(data.status_data) : data.status_data;
+        return res.json({
+          success: true,
+          source: 'database',
+          lastUpdated: data.updated_at || statusData.lastUpdated,
+          refreshedAt: new Date().toISOString(),
+          ...statusData
+        });
+      }
+    } catch (dbErr) {
+      console.warn('[Company Status] Database read failed:', dbErr.message);
+    }
+    
+    // Try to read from filesystem (for local development)
     const standupPath = path.join(COMPANY_WORKSPACE, 'company', 'DAILY_STANDUP.md');
     const pipelinePath = path.join(COMPANY_WORKSPACE, 'company', 'PIPELINE_QUEUE.md');
     const productTrackerPath = path.join(COMPANY_WORKSPACE, 'company', 'PRODUCT_TRACKER.md');
@@ -1648,10 +1731,12 @@ app.get('/public/company-status', async (req, res) => {
     let standupContent = '';
     let pipelineContent = '';
     let productContent = '';
+    let fileExists = false;
     
     // Read files if they exist
     if (fs.existsSync(standupPath)) {
       standupContent = fs.readFileSync(standupPath, 'utf-8');
+      fileExists = true;
     }
     if (fs.existsSync(pipelinePath)) {
       pipelineContent = fs.readFileSync(pipelinePath, 'utf-8');
@@ -1660,31 +1745,43 @@ app.get('/public/company-status', async (req, res) => {
       productContent = fs.readFileSync(productTrackerPath, 'utf-8');
     }
     
-    // Parse team status from standup
-    const teamStatus = parseTeamStatus(standupContent);
-    const recentWins = parseRecentWins(standupContent);
-    const blockers = parseBlockers(standupContent);
-    const productProgress = parseProductProgress(standupContent, productContent);
-    
-    // Get last update time from file modification
-    let lastUpdated = new Date().toISOString();
-    if (fs.existsSync(standupPath)) {
+    // If files exist, parse them
+    if (fileExists) {
+      const teamStatus = parseTeamStatus(standupContent);
+      const recentWins = parseRecentWins(standupContent);
+      const blockers = parseBlockers(standupContent);
+      const productProgress = parseProductProgress(standupContent, productContent);
+      
+      // Get last update time from file modification
       const stats = fs.statSync(standupPath);
-      lastUpdated = stats.mtime.toISOString();
+      const lastUpdated = stats.mtime.toISOString();
+      
+      return res.json({
+        success: true,
+        source: 'filesystem',
+        lastUpdated,
+        refreshedAt: new Date().toISOString(),
+        teamStatus,
+        recentWins,
+        blockers,
+        productProgress,
+        raw: {
+          standupLength: standupContent.length,
+          pipelineLength: pipelineContent.length
+        }
+      });
     }
     
+    // Fall back to cache
     res.json({
       success: true,
-      lastUpdated,
+      source: 'cache',
+      lastUpdated: companyStatusCache.lastUpdated,
       refreshedAt: new Date().toISOString(),
-      teamStatus,
-      recentWins,
-      blockers,
-      productProgress,
-      raw: {
-        standupLength: standupContent.length,
-        pipelineLength: pipelineContent.length
-      }
+      teamStatus: companyStatusCache.teamStatus,
+      recentWins: companyStatusCache.recentWins,
+      blockers: companyStatusCache.blockers,
+      productProgress: companyStatusCache.productProgress
     });
   } catch (err) {
     console.error('[Public API] Error getting company status:', err);
