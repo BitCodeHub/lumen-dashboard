@@ -368,9 +368,213 @@
       margin-top: 3rem;
     }
     footer .tagline { font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    
+    /* Live Status Styles */
+    .live-status-section {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(148, 163, 184, 0.05) 100%);
+      border: 1px solid var(--lumen-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    .live-status-section.just-updated {
+      animation: flash-update 0.5s ease-out;
+    }
+    @keyframes flash-update {
+      0% { background: rgba(34, 197, 94, 0.2); }
+      100% { background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(148, 163, 184, 0.05) 100%); }
+    }
+    .live-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--status-live);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    .live-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #fff;
+      margin: 0;
+    }
+    .live-timestamp {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .live-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .live-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .live-card h4 {
+      color: var(--lumen-primary);
+      margin: 0 0 0.75rem 0;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .live-team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+    .live-team-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      transition: all 0.2s;
+    }
+    .live-team-card:hover {
+      border-color: var(--lumen-border);
+    }
+    .live-team-card.status-complete { border-left: 3px solid var(--status-live); }
+    .live-team-card.status-blocked { border-left: 3px solid #ef4444; }
+    .live-team-card.status-active { border-left: 3px solid var(--lumen-primary); }
+    .live-team-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+    .live-team-emoji { font-size: 1.2rem; }
+    .live-team-name { font-weight: 600; color: #fff; flex: 1; }
+    .live-team-status-icon { font-size: 0.8rem; }
+    .live-team-lead { font-size: 0.75rem; color: var(--text-muted); }
+    .live-team-summary { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.4; }
+    .live-team-agents { font-size: 0.75rem; color: var(--lumen-primary); margin-top: 0.25rem; }
+    .live-wins {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .live-win-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .win-check { color: var(--status-live); flex-shrink: 0; }
+    .win-text { line-height: 1.4; }
+    .live-blockers {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .live-blocker-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      padding: 0.75rem;
+    }
+    .blocker-icon { flex-shrink: 0; }
+    .blocker-content { flex: 1; }
+    .blocker-text { font-size: 0.85rem; color: #fff; display: block; }
+    .blocker-meta { font-size: 0.75rem; color: var(--text-muted); }
+    .live-products {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+    .live-product-item {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+    }
+    .live-product-item .product-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    .live-product-item .progress-bar {
+      height: 4px;
+      margin: 0.5rem 0;
+    }
+    .live-product-item .progress-label {
+      font-size: 0.75rem;
+    }
   </style>
 </head>
 <body>
+  <!-- Live Status Section -->
+  <section class="live-status-section" id="live-status-section">
+    <div class="live-header">
+      <div class="live-indicator">
+        <div class="live-dot"></div>
+        <h3 class="live-title">🔴 Live Team Status</h3>
+      </div>
+      <div class="live-timestamp">
+        Last updated: <span id="last-update-time">Loading...</span>
+      </div>
+    </div>
+    
+    <div class="live-grid" id="live-status-content">
+      <div class="live-card">
+        <h4>👥 Team Activity</h4>
+        <div id="live-team-status">
+          <p style="color: var(--text-muted);">Loading team status...</p>
+        </div>
+      </div>
+      
+      <div class="live-card">
+        <h4>🏆 Recent Wins</h4>
+        <div id="live-wins-content">
+          <p style="color: var(--text-muted);">Loading wins...</p>
+        </div>
+      </div>
+      
+      <div class="live-card">
+        <h4>⚠️ Active Blockers</h4>
+        <div id="live-blockers-content">
+          <p style="color: var(--text-muted);">Loading blockers...</p>
+        </div>
+      </div>
+      
+      <div class="live-card">
+        <h4>📦 Product Progress</h4>
+        <div id="live-products-content">
+          <p style="color: var(--text-muted);">Loading progress...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <header>
     <h1>🔆 Lumen AI Solutions</h1>
     <p class="subtitle">featuring Luna Labs 🌙</p>
@@ -982,7 +1186,173 @@
   <footer>
     <div class="tagline">🔆 Lumen AI Solutions — featuring Luna Labs 🌙</div>
     <div>147 minds, one mission.</div>
-    <div style="margin-top: 1rem; font-size: 0.85rem;">Last updated: January 29, 2026</div>
+    <div style="margin-top: 1rem; font-size: 0.85rem;">Last updated: <span id="footer-timestamp">Loading...</span></div>
   </footer>
+
+  <script>
+    // ============================================
+    // REAL-TIME STATUS UPDATES
+    // ============================================
+    
+    const POLL_INTERVAL = 30000; // 30 seconds
+    let lastData = null;
+    
+    // Format relative time
+    function timeAgo(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
+      
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return Math.floor(seconds / 60) + ' min ago';
+      if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
+      return Math.floor(seconds / 86400) + ' days ago';
+    }
+    
+    // Format timestamp
+    function formatTimestamp(dateString) {
+      return new Date(dateString).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+    
+    // Update the live status panel
+    function updateLiveStatus(data) {
+      if (!data.success) {
+        document.getElementById('live-status-content').innerHTML = `
+          <div style="color: var(--text-muted); text-align: center; padding: 2rem;">
+            <p>⚠️ Unable to load real-time status</p>
+            <p style="font-size: 0.85rem;">Will retry in ${POLL_INTERVAL/1000} seconds</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Update timestamp
+      document.getElementById('last-update-time').textContent = timeAgo(data.lastUpdated);
+      document.getElementById('footer-timestamp').textContent = formatTimestamp(data.refreshedAt);
+      
+      // Build team status grid
+      let teamHtml = '';
+      if (data.teamStatus && data.teamStatus.length > 0) {
+        teamHtml = '<div class="live-team-grid">';
+        for (const team of data.teamStatus) {
+          const statusClass = team.status === 'complete' ? 'status-complete' : 
+                              team.status === 'blocked' ? 'status-blocked' : 'status-active';
+          const statusIcon = team.status === 'complete' ? '✅' : 
+                             team.status === 'blocked' ? '🔴' : '🟢';
+          teamHtml += `
+            <div class="live-team-card ${statusClass}">
+              <div class="live-team-header">
+                <span class="live-team-emoji">${team.emoji}</span>
+                <span class="live-team-name">${team.name}</span>
+                <span class="live-team-status-icon">${statusIcon}</span>
+              </div>
+              <div class="live-team-lead">Lead: ${team.lead}</div>
+              ${team.summary ? `<div class="live-team-summary">${team.summary.substring(0, 100)}${team.summary.length > 100 ? '...' : ''}</div>` : ''}
+              ${team.active > 0 ? `<div class="live-team-agents">${team.active}/${team.total} active</div>` : ''}
+            </div>
+          `;
+        }
+        teamHtml += '</div>';
+      }
+      
+      // Build recent wins
+      let winsHtml = '';
+      if (data.recentWins && data.recentWins.length > 0) {
+        winsHtml = '<div class="live-wins">';
+        for (const win of data.recentWins.slice(0, 8)) {
+          winsHtml += `
+            <div class="live-win-item">
+              <span class="win-check">✅</span>
+              <span class="win-text">${win.win}</span>
+            </div>
+          `;
+        }
+        winsHtml += '</div>';
+      } else {
+        winsHtml = '<p style="color: var(--text-muted);">No wins recorded yet today</p>';
+      }
+      
+      // Build blockers
+      let blockersHtml = '';
+      if (data.blockers && data.blockers.length > 0) {
+        blockersHtml = '<div class="live-blockers">';
+        for (const blocker of data.blockers.slice(0, 5)) {
+          blockersHtml += `
+            <div class="live-blocker-item">
+              <span class="blocker-icon">⚠️</span>
+              <div class="blocker-content">
+                <span class="blocker-text">${blocker.blocker}</span>
+                <span class="blocker-meta">${blocker.team} • ${blocker.owner}</span>
+              </div>
+            </div>
+          `;
+        }
+        blockersHtml += '</div>';
+      } else {
+        blockersHtml = '<p style="color: var(--status-live);">🎉 No blockers!</p>';
+      }
+      
+      // Build product progress
+      let productsHtml = '<div class="live-products">';
+      if (data.productProgress) {
+        for (const product of data.productProgress) {
+          const statusClass = product.status === 'live' ? 'status-live' : 
+                              product.status === 'planning' ? 'status-planned' : 'status-dev';
+          productsHtml += `
+            <div class="live-product-item">
+              <div class="product-header">
+                <span>${product.emoji} ${product.name}</span>
+                <span class="status-badge ${statusClass}">${product.status}</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width: ${product.progress}%"></div></div>
+              <div class="progress-label"><span>Progress</span><span>${product.progress}%</span></div>
+            </div>
+          `;
+        }
+      }
+      productsHtml += '</div>';
+      
+      // Render everything
+      document.getElementById('live-team-status').innerHTML = teamHtml;
+      document.getElementById('live-wins-content').innerHTML = winsHtml;
+      document.getElementById('live-blockers-content').innerHTML = blockersHtml;
+      document.getElementById('live-products-content').innerHTML = productsHtml;
+      
+      // Flash animation on update
+      if (lastData && JSON.stringify(lastData) !== JSON.stringify(data)) {
+        document.getElementById('live-status-section').classList.add('just-updated');
+        setTimeout(() => {
+          document.getElementById('live-status-section').classList.remove('just-updated');
+        }, 1000);
+      }
+      
+      lastData = data;
+    }
+    
+    // Fetch status data
+    async function fetchStatus() {
+      try {
+        const response = await fetch('/public/company-status');
+        const data = await response.json();
+        updateLiveStatus(data);
+      } catch (err) {
+        console.error('Failed to fetch status:', err);
+        updateLiveStatus({ success: false });
+      }
+    }
+    
+    // Initial fetch and set up polling
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchStatus();
+      setInterval(fetchStatus, POLL_INTERVAL);
+    });
+  </script>
 </body>
 </html>

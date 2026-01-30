@@ -1617,6 +1617,241 @@ app.get('/', (req, res, next) => {
   next();
 });
 
+// Public pages (no auth required)
+app.get('/company-structure.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'company-structure.html'));
+});
+app.get('/company', (req, res) => {
+  res.redirect('/company-structure.html');
+});
+app.get('/team', (req, res) => {
+  res.redirect('/company-structure.html');
+});
+app.get('/status', (req, res) => {
+  res.redirect('/company-structure.html');
+});
+
+// ============================================
+// PUBLIC API ROUTES (No auth required)
+// ============================================
+
+// Company structure workspace path (configurable)
+const COMPANY_WORKSPACE = process.env.COMPANY_WORKSPACE || '/Users/jimmysmacstudio/clawd';
+
+// Public company status endpoint - real-time team progress
+app.get('/public/company-status', async (req, res) => {
+  try {
+    const standupPath = path.join(COMPANY_WORKSPACE, 'company', 'DAILY_STANDUP.md');
+    const pipelinePath = path.join(COMPANY_WORKSPACE, 'company', 'PIPELINE_QUEUE.md');
+    const productTrackerPath = path.join(COMPANY_WORKSPACE, 'company', 'PRODUCT_TRACKER.md');
+    
+    let standupContent = '';
+    let pipelineContent = '';
+    let productContent = '';
+    
+    // Read files if they exist
+    if (fs.existsSync(standupPath)) {
+      standupContent = fs.readFileSync(standupPath, 'utf-8');
+    }
+    if (fs.existsSync(pipelinePath)) {
+      pipelineContent = fs.readFileSync(pipelinePath, 'utf-8');
+    }
+    if (fs.existsSync(productTrackerPath)) {
+      productContent = fs.readFileSync(productTrackerPath, 'utf-8');
+    }
+    
+    // Parse team status from standup
+    const teamStatus = parseTeamStatus(standupContent);
+    const recentWins = parseRecentWins(standupContent);
+    const blockers = parseBlockers(standupContent);
+    const productProgress = parseProductProgress(standupContent, productContent);
+    
+    // Get last update time from file modification
+    let lastUpdated = new Date().toISOString();
+    if (fs.existsSync(standupPath)) {
+      const stats = fs.statSync(standupPath);
+      lastUpdated = stats.mtime.toISOString();
+    }
+    
+    res.json({
+      success: true,
+      lastUpdated,
+      refreshedAt: new Date().toISOString(),
+      teamStatus,
+      recentWins,
+      blockers,
+      productProgress,
+      raw: {
+        standupLength: standupContent.length,
+        pipelineLength: pipelineContent.length
+      }
+    });
+  } catch (err) {
+    console.error('[Public API] Error getting company status:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to load company status',
+      refreshedAt: new Date().toISOString()
+    });
+  }
+});
+
+// Parse team status from standup content
+function parseTeamStatus(content) {
+  const teams = [
+    { id: 'research', name: 'Research', emoji: '🔬', lead: 'Reese', pattern: /## 🔬 Research.*?(?=## [🔧🛡️📣💰👔✅📦🎨📊🤝⚙️]|---|\n# |$)/s },
+    { id: 'security', name: 'Security', emoji: '🛡️', lead: 'Casey', pattern: /## 🛡️ Security.*?(?=## [🔬🔧📣💰👔✅📦🎨📊🤝⚙️]|---|\n# |$)/s },
+    { id: 'devops', name: 'DevOps', emoji: '🔧', lead: 'Devon', pattern: /## 🔧 DevOps.*?(?=## [🔬🛡️📣💰👔✅📦🎨📊🤝⚙️]|---|\n# |$)/s },
+    { id: 'engineering', name: 'Engineering', emoji: '⚙️', lead: 'Ethan', pattern: /## ⚙️ Engineering.*?(?=## [🔬🛡️🔧📣💰👔✅📦🎨📊🤝]|---|\n# |$)/s },
+    { id: 'marketing', name: 'Marketing', emoji: '📣', lead: 'Morgan', pattern: /## 📣 Marketing.*?(?=## [🔬🛡️🔧💰👔✅📦🎨📊🤝⚙️]|---|\n# |$)/s },
+    { id: 'finance', name: 'Finance', emoji: '💰', lead: 'Finley', pattern: /## 💰 Finance.*?(?=## [🔬🛡️🔧📣👔✅📦🎨📊🤝⚙️]|---|\n# |$)/s },
+    { id: 'product', name: 'Product', emoji: '📦', lead: 'Parker', pattern: /## 📦 Product.*?(?=## [🔬🛡️🔧📣💰👔✅🎨📊🤝⚙️]|---|\n# |$)/s },
+    { id: 'design', name: 'Design', emoji: '🎨', lead: 'Dana', pattern: /## 🎨 Design.*?(?=## [🔬🛡️🔧📣💰👔✅📦📊🤝⚙️]|---|\n# |$)/s },
+    { id: 'success', name: 'Customer Success', emoji: '🤝', lead: 'Sam', pattern: /## 🤝 Success.*?(?=## [🔬🛡️🔧📣💰👔✅📦🎨📊⚙️]|---|\n# |$)/s },
+    { id: 'data', name: 'Data & Analytics', emoji: '📊', lead: 'Dakota', pattern: /## 📊 Data.*?(?=## [🔬🛡️🔧📣💰👔✅📦🎨🤝⚙️]|---|\n# |$)/s },
+    { id: 'hr', name: 'HR', emoji: '👔', lead: 'Harper', pattern: /## 👔 HR.*?(?=## [🔬🛡️🔧📣💰✅📦🎨📊🤝⚙️]|---|\n# |$)/s },
+    { id: 'audit', name: 'Internal Audit', emoji: '✅', lead: 'Avery', pattern: /## ✅ (?:Internal )?Audit.*?(?=## [🔬🛡️🔧📣💰👔📦🎨📊🤝⚙️]|---|\n# |$)/s },
+    { id: 'seo', name: 'SEO', emoji: '🔍', lead: 'Riley', pattern: /## 🔍 SEO.*?(?=## [🔬🛡️🔧📣💰👔✅📦🎨📊🤝⚙️]|---|\n# |$)/s }
+  ];
+  
+  const status = [];
+  
+  for (const team of teams) {
+    const match = content.match(team.pattern);
+    if (match) {
+      const section = match[0];
+      
+      // Extract what they did
+      const whatDidMatch = section.match(/### What I Did.*?\n([\s\S]*?)(?=### What|### Coordination|### Blockers|### Next|$)/i);
+      const whatDid = whatDidMatch ? whatDidMatch[1].trim().substring(0, 500) : '';
+      
+      // Check for completion markers
+      const isComplete = section.includes('COMPLETE ✅') || section.includes('✅ Complete');
+      
+      // Extract active status
+      const activeMatch = section.match(/Active:\s*(\d+)\/(\d+)/);
+      const active = activeMatch ? parseInt(activeMatch[1]) : 0;
+      const total = activeMatch ? parseInt(activeMatch[2]) : 0;
+      
+      // Check for blockers
+      const hasBlocker = section.includes('⚠️') && !section.includes('⚠️ None');
+      
+      status.push({
+        id: team.id,
+        name: team.name,
+        emoji: team.emoji,
+        lead: team.lead,
+        status: isComplete ? 'complete' : (hasBlocker ? 'blocked' : 'active'),
+        active,
+        total,
+        summary: whatDid.split('\n').slice(0, 3).join(' ').substring(0, 200),
+        hasBlocker
+      });
+    }
+  }
+  
+  return status;
+}
+
+// Parse recent wins from standup
+function parseRecentWins(content) {
+  const wins = [];
+  const winsSection = content.match(/## 🏆 Wins Today[\s\S]*?(?=## ⚠️|---|\n# |$)/);
+  
+  if (winsSection) {
+    const lines = winsSection[0].split('\n');
+    for (const line of lines) {
+      const match = line.match(/\|\s*[\d:]+\s*(?:AM|PM)?\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|/);
+      if (match) {
+        wins.push({
+          team: match[1].trim(),
+          win: match[2].trim()
+        });
+      }
+    }
+  }
+  
+  // Also look for ✅ items throughout
+  const checkmarks = content.match(/✅\s+[^\n]+/g) || [];
+  for (const item of checkmarks.slice(0, 10)) {
+    if (!wins.some(w => item.includes(w.win))) {
+      wins.push({
+        team: 'Team',
+        win: item.replace('✅', '').trim().substring(0, 100)
+      });
+    }
+  }
+  
+  return wins.slice(0, 15);
+}
+
+// Parse blockers from standup
+function parseBlockers(content) {
+  const blockers = [];
+  const blockerSection = content.match(/## ⚠️ Blockers[\s\S]*?(?=## 📋|---|\n# |$)/);
+  
+  if (blockerSection) {
+    const lines = blockerSection[0].split('\n');
+    for (const line of lines) {
+      const match = line.match(/\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|/);
+      if (match && match[1].trim() !== 'Team' && match[1].trim() !== '—') {
+        blockers.push({
+          team: match[1].trim(),
+          blocker: match[2].trim(),
+          owner: match[3].trim(),
+          eta: match[4].trim()
+        });
+      }
+    }
+  }
+  
+  // Also look for 🚨 and 🔴 markers
+  const criticalMatches = content.match(/🚨[^\n]+|🔴[^\n]+/g) || [];
+  for (const item of criticalMatches.slice(0, 5)) {
+    blockers.push({
+      team: 'Critical',
+      blocker: item.replace(/🚨|🔴/g, '').trim().substring(0, 150),
+      owner: 'TBD',
+      eta: 'ASAP'
+    });
+  }
+  
+  return blockers.slice(0, 10);
+}
+
+// Parse product progress
+function parseProductProgress(standupContent, productContent) {
+  const products = [
+    { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', defaultProgress: 75 },
+    { id: 'mcphub', name: 'MCPHub', emoji: '🔌', defaultProgress: 60 },
+    { id: 'aikeyvault', name: 'AIKeyVault', emoji: '🔐', defaultProgress: 10 },
+    { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', defaultProgress: 100 }
+  ];
+  
+  return products.map(product => {
+    // Try to extract progress from content
+    const progressMatch = standupContent.match(new RegExp(`${product.name}.*?(\\d+)%`, 'i'));
+    const progress = progressMatch ? parseInt(progressMatch[1]) : product.defaultProgress;
+    
+    // Check status
+    let status = 'development';
+    if (progress >= 100) status = 'live';
+    else if (progress < 20) status = 'planning';
+    
+    // Look for recent updates
+    const updateMatch = standupContent.match(new RegExp(`${product.id}[^\\n]*`, 'gi')) || [];
+    
+    return {
+      id: product.id,
+      name: product.name,
+      emoji: product.emoji,
+      progress,
+      status,
+      recentUpdates: updateMatch.length
+    };
+  });
+}
+
 // ============================================
 // PROTECTED API ROUTES
 // ============================================
