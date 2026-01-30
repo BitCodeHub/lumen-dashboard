@@ -2091,6 +2091,39 @@ app.get('/public/team-activity', (req, res) => {
   });
 });
 
+// POST /public/team-activity - Push activity with API key
+app.post('/public/team-activity', (req, res) => {
+  // Verify API key
+  const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+  if (!apiKey || apiKey !== process.env.DASHBOARD_API_KEY) {
+    return res.status(401).json({ error: 'API key required' });
+  }
+  
+  const { agent, emoji, action, status, details, department } = req.body;
+  if (!agent || !action) {
+    return res.status(400).json({ error: 'Agent and action are required' });
+  }
+  
+  const activity = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    agent: agent,
+    emoji: emoji || '🤖',
+    department: department || 'Unknown',
+    action: action,
+    status: status || 'working',
+    details: details || null
+  };
+  
+  teamActivityFeed.unshift(activity);
+  if (teamActivityFeed.length > MAX_ACTIVITY_ENTRIES) {
+    teamActivityFeed = teamActivityFeed.slice(0, MAX_ACTIVITY_ENTRIES);
+  }
+  
+  console.log(`[Public Activity] ${activity.emoji} ${activity.agent}: ${activity.action}`);
+  res.status(201).json(activity);
+});
+
 // ============================================
 // BRIEFINGS API
 // ============================================
