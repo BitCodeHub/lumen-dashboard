@@ -1495,8 +1495,14 @@ const generateTemplateData = () => {
 // AUTHENTICATION ROUTES (PUBLIC)
 // ============================================
 
-// Register new user
+// Register new user (DISABLED)
 app.post('/api/auth/register', async (req, res) => {
+  // Registration disabled - contact admin for access
+  return res.status(403).json({ 
+    error: 'Registration is currently disabled. Contact admin for access.',
+    disabled: true 
+  });
+  
   try {
     const { username, email, password } = req.body;
     
