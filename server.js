@@ -1632,6 +1632,12 @@ app.use('/api', (req, res, next) => {
     return next();
   }
   
+  // Allow API key authentication for automated/cron calls
+  const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+  if (apiKey && process.env.DASHBOARD_API_KEY && apiKey === process.env.DASHBOARD_API_KEY) {
+    return next();
+  }
+  
   // Require authentication for all other API routes
   auth.requireAuth(req, res, next);
 });
