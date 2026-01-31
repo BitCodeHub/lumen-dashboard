@@ -1676,9 +1676,13 @@ let companyStatusCache = {
   productProgress: [
     { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 85, status: 'development', recentUpdates: 0 },
     { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'research', recentUpdates: 0 },
-    { id: 'pricehawk', name: 'PriceHawk.io', emoji: '🦅', progress: 20, status: 'planning', recentUpdates: 0 },
-    { id: 'ai-compliance', name: 'AI Compliance Monitor', emoji: '📋', progress: 10, status: 'research', recentUpdates: 0 },
-    { id: 'ai-legal-review', name: 'AI Legal Doc Review', emoji: '⚖️', progress: 5, status: 'idea', recentUpdates: 0 },
+    { id: 'testimonial-engine', name: 'AI Testimonial Engine', emoji: '💬', progress: 15, status: 'planning', recentUpdates: 0 },
+    { id: 'code-review', name: 'AI Code Review Assistant', emoji: '👨‍💻', progress: 25, status: 'planning', recentUpdates: 0 },
+    { id: 'meeting-prep', name: 'AI Meeting Prep Assistant', emoji: '📅', progress: 40, status: 'development', recentUpdates: 0 },
+    { id: 'competitor-api', name: 'Competitor API Monitor', emoji: '📡', progress: 10, status: 'research', recentUpdates: 0 },
+    { id: 'legal-docs', name: 'AI Legal Doc Generator', emoji: '⚖️', progress: 5, status: 'idea', recentUpdates: 0 },
+    { id: 'cs-quality', name: 'AI CS Quality Monitor', emoji: '🎧', progress: 8, status: 'idea', recentUpdates: 0 },
+    { id: 'elderly-care', name: 'AI Elderly Care Companion', emoji: '👴', progress: 3, status: 'idea', recentUpdates: 0 },
     { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 0 }
   ]
 };
@@ -1840,14 +1844,27 @@ app.get('/public/company-status', async (req, res) => {
           productProgress = companyStatusCache.productProgress || [];
         }
         
-        // Always include StackAudit and Lumen Dashboard
+        // Full product pipeline (Maven's recommendations + existing)
         const staticProducts = [
+          // Active Development
           { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 85, status: 'development', recentUpdates: 0 },
-          { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 0 }
+          { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 0 },
+          { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'research', recentUpdates: 0 },
+          // Tier 1 - Immediate Priority (Q1 2026)
+          { id: 'testimonial-engine', name: 'AI Testimonial Engine', emoji: '💬', progress: 15, status: 'planning', recentUpdates: 0 },
+          { id: 'code-review', name: 'AI Code Review Assistant', emoji: '👨‍💻', progress: 25, status: 'planning', recentUpdates: 0 },
+          // Tier 2 - Strategic Growth (Q2 2026)
+          { id: 'meeting-prep', name: 'AI Meeting Prep Assistant', emoji: '📅', progress: 40, status: 'development', recentUpdates: 0 },
+          { id: 'competitor-api', name: 'Competitor API Monitor', emoji: '📡', progress: 10, status: 'research', recentUpdates: 0 },
+          // Tier 3 - Market Expansion (Q3 2026)
+          { id: 'legal-docs', name: 'AI Legal Doc Generator', emoji: '⚖️', progress: 5, status: 'idea', recentUpdates: 0 },
+          { id: 'cs-quality', name: 'AI CS Quality Monitor', emoji: '🎧', progress: 8, status: 'idea', recentUpdates: 0 },
+          // Tier 4 - R&D (Q4 2026)
+          { id: 'elderly-care', name: 'AI Elderly Care Companion', emoji: '👴', progress: 3, status: 'idea', recentUpdates: 0 },
         ];
         
         // Merge: static products first, then dynamic from ideas
-        const allProducts = [...staticProducts, ...productProgress.filter(p => p.id !== 'stackaudit' && p.id !== 'dashboard')];
+        const allProducts = [...staticProducts, ...productProgress.filter(p => !staticProducts.some(sp => sp.id === p.id))];
         
         return res.json({
           success: true,
@@ -1857,7 +1874,7 @@ app.get('/public/company-status', async (req, res) => {
           teamStatus: Object.values(teamMap),
           recentWins,
           blockers,
-          productProgress: allProducts.slice(0, 8)
+          productProgress: allProducts.slice(0, 12)
         });
       }
     } catch (dbErr) {
