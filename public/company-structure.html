@@ -471,20 +471,26 @@
     .live-wins {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
-      max-height: 300px;
+      gap: 0.5rem;
+      max-height: 350px;
       overflow-y: auto;
     }
-    .live-win-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.5rem;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      padding: 0.25rem 0;
+    .live-win-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--status-live);
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
     }
-    .win-check { color: var(--status-live); flex-shrink: 0; }
-    .win-text { line-height: 1.4; }
+    .live-win-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+    .win-check { color: var(--status-live); font-size: 1rem; }
+    .win-agent { font-weight: 600; color: #fff; font-size: 0.85rem; }
+    .win-text { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
     .live-blockers {
       display: flex;
       flex-direction: column;
@@ -1397,15 +1403,18 @@
         teamHtml += '</div>';
       }
       
-      // Build recent wins
+      // Build recent wins - card style like Team Activity
       let winsHtml = '';
       if (data.recentWins && data.recentWins.length > 0) {
         winsHtml = '<div class="live-wins">';
         for (const win of data.recentWins.slice(0, 8)) {
           winsHtml += `
-            <div class="live-win-item">
-              <span class="win-check">✅</span>
-              <span class="win-text">${win.win}</span>
+            <div class="live-win-card">
+              <div class="live-win-header">
+                <span class="win-check">✅</span>
+                <span class="win-agent">${win.team}</span>
+              </div>
+              <div class="win-text">${win.win}</div>
             </div>
           `;
         }
