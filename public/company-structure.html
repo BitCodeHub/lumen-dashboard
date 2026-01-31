@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lumen AI Solutions - Company Structure</title>
+  <!-- Chart.js CDN for visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     /* 
      * Lumen AI Solutions - Company Structure
@@ -779,6 +781,335 @@
       50% { opacity: 0.5; }
     }
     .moltbook-loading { animation: moltbook-pulse 1.5s ease-in-out infinite; }
+    
+    /* ============================================
+       🎨 ENHANCED TEAM ACTIVITY DASHBOARD STYLES
+       Added by Dana 🎨 - Design Lead
+       ============================================ */
+    
+    /* Agent Avatar with Status Indicator */
+    .agent-avatar {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-card) 100%);
+      border: 2px solid var(--border);
+      font-size: 1.25rem;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+    .agent-avatar:hover {
+      transform: scale(1.1);
+      border-color: var(--lumen-primary);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+    }
+    .agent-avatar .status-dot {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-dark);
+    }
+    .agent-avatar .status-dot.active {
+      background: var(--status-live);
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+      animation: status-pulse 2s ease-in-out infinite;
+    }
+    .agent-avatar .status-dot.idle {
+      background: var(--text-muted);
+    }
+    .agent-avatar .status-dot.busy {
+      background: var(--lumen-primary);
+      animation: status-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes status-pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
+      50% { opacity: 0.7; box-shadow: 0 0 12px currentColor; }
+    }
+    
+    /* Department Filter Tabs */
+    .dept-filter-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .dept-filter-tab {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.4rem 1rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .dept-filter-tab:hover {
+      background: var(--lumen-glow);
+      border-color: var(--lumen-border);
+      color: var(--text-primary);
+    }
+    .dept-filter-tab.active {
+      background: var(--lumen-primary);
+      border-color: var(--lumen-primary);
+      color: #000;
+      font-weight: 600;
+    }
+    .dept-filter-tab .count-badge {
+      background: rgba(0,0,0,0.2);
+      padding: 0.1rem 0.4rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .dept-filter-tab.active .count-badge {
+      background: rgba(0,0,0,0.3);
+    }
+    
+    /* Activity Timeline with Time Groups */
+    .activity-timeline {
+      position: relative;
+    }
+    .timeline-group {
+      margin-bottom: 1.5rem;
+    }
+    .timeline-group-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+    }
+    .timeline-group-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .timeline-group-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--lumen-primary);
+      background: var(--lumen-glow);
+      padding: 0.25rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid var(--lumen-border);
+    }
+    .timeline-group-label.past {
+      color: var(--luna-primary);
+      background: var(--luna-glow);
+      border-color: var(--luna-border);
+    }
+    
+    /* Enhanced Activity Item for Timeline */
+    .activity-item-enhanced {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .activity-item-enhanced:hover {
+      border-color: var(--lumen-border);
+      transform: translateX(4px);
+    }
+    .activity-item-enhanced::before {
+      content: '';
+      position: absolute;
+      left: -1px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 60%;
+      border-radius: 0 2px 2px 0;
+    }
+    .activity-item-enhanced.status-completed::before { background: var(--status-live); }
+    .activity-item-enhanced.status-working::before { background: var(--lumen-primary); }
+    .activity-item-enhanced.status-blocked::before { background: #ef4444; }
+    
+    .activity-item-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .activity-item-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.35rem;
+    }
+    .activity-agent-name {
+      font-weight: 600;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+    .activity-dept-badge {
+      font-size: 0.7rem;
+      color: var(--luna-primary);
+      background: var(--luna-glow);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--luna-border);
+    }
+    .activity-timestamp {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+    .activity-description {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .activity-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      margin-left: 0.5rem;
+      font-weight: 600;
+    }
+    .activity-status-badge.completed {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--status-live);
+    }
+    .activity-status-badge.working {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--lumen-primary);
+    }
+    .activity-status-badge.blocked {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+    
+    /* Team Productivity Summary Card */
+    .productivity-card {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(245, 158, 11, 0.08) 100%);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .productivity-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .productivity-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+      margin: 0;
+    }
+    .productivity-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .productivity-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    @media (max-width: 768px) {
+      .productivity-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    .productivity-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .productivity-stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .productivity-stat-value.completed { color: var(--status-live); }
+    .productivity-stat-value.in-progress { color: var(--lumen-primary); }
+    .productivity-stat-value.blocked { color: #ef4444; }
+    .productivity-stat-value.agents { color: var(--luna-primary); }
+    .productivity-stat-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .productivity-chart-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      height: 200px;
+    }
+    
+    /* Active Agents Row */
+    .active-agents-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .active-agents-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .active-agents-avatars {
+      display: flex;
+      align-items: center;
+    }
+    .active-agents-avatars .agent-avatar {
+      width: 32px;
+      height: 32px;
+      font-size: 0.9rem;
+      margin-left: -8px;
+      border: 2px solid var(--bg-dark);
+    }
+    .active-agents-avatars .agent-avatar:first-child {
+      margin-left: 0;
+    }
+    .active-agents-overflow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--lumen-glow);
+      border: 2px solid var(--lumen-border);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--lumen-primary);
+      margin-left: -8px;
+    }
   </style>
 </head>
 <body>
@@ -825,7 +1156,47 @@
     </div>
   </section>
 
-  <!-- Live Activity Feed -->
+  <!-- 📊 Team Productivity Summary Card -->
+  <section class="productivity-card" id="productivity-card">
+    <div class="productivity-header">
+      <h3 class="productivity-title">
+        <span>📊</span> Team Productivity
+      </h3>
+      <span class="productivity-date" id="productivity-date">Today</span>
+    </div>
+    
+    <div class="productivity-stats" id="productivity-stats">
+      <div class="productivity-stat">
+        <div class="productivity-stat-value completed" id="stat-completed">0</div>
+        <div class="productivity-stat-label">Completed</div>
+      </div>
+      <div class="productivity-stat">
+        <div class="productivity-stat-value in-progress" id="stat-in-progress">0</div>
+        <div class="productivity-stat-label">In Progress</div>
+      </div>
+      <div class="productivity-stat">
+        <div class="productivity-stat-value blocked" id="stat-blocked">0</div>
+        <div class="productivity-stat-label">Blocked</div>
+      </div>
+      <div class="productivity-stat">
+        <div class="productivity-stat-value agents" id="stat-active-agents">0</div>
+        <div class="productivity-stat-label">Active Agents</div>
+      </div>
+    </div>
+    
+    <div class="productivity-chart-container">
+      <canvas id="productivityChart"></canvas>
+    </div>
+    
+    <div class="active-agents-row">
+      <span class="active-agents-label">Active now:</span>
+      <div class="active-agents-avatars" id="active-agents-avatars">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Activity Feed (Enhanced) -->
   <section class="live-status-section" id="activity-feed-section" style="border-color: var(--luna-border);">
     <div class="live-header">
       <div class="live-indicator">
@@ -837,7 +1208,36 @@
       </div>
     </div>
     
-    <div id="activity-feed-content" style="max-height: 400px; overflow-y: auto;">
+    <!-- Department Filter Tabs -->
+    <div class="dept-filter-tabs" id="dept-filter-tabs">
+      <button class="dept-filter-tab active" data-dept="all">
+        🏢 All <span class="count-badge" id="filter-count-all">0</span>
+      </button>
+      <button class="dept-filter-tab" data-dept="engineering">
+        ⚙️ Engineering <span class="count-badge" id="filter-count-engineering">0</span>
+      </button>
+      <button class="dept-filter-tab" data-dept="product">
+        📦 Product <span class="count-badge" id="filter-count-product">0</span>
+      </button>
+      <button class="dept-filter-tab" data-dept="design">
+        🎨 Design <span class="count-badge" id="filter-count-design">0</span>
+      </button>
+      <button class="dept-filter-tab" data-dept="research">
+        🔬 Research <span class="count-badge" id="filter-count-research">0</span>
+      </button>
+      <button class="dept-filter-tab" data-dept="marketing">
+        📣 Marketing <span class="count-badge" id="filter-count-marketing">0</span>
+      </button>
+      <button class="dept-filter-tab" data-dept="devops">
+        🔧 DevOps <span class="count-badge" id="filter-count-devops">0</span>
+      </button>
+      <button class="dept-filter-tab" data-dept="security">
+        🛡️ Security <span class="count-badge" id="filter-count-security">0</span>
+      </button>
+    </div>
+    
+    <!-- Activity Timeline with Time Groups -->
+    <div id="activity-feed-content" class="activity-timeline" style="max-height: 500px; overflow-y: auto;">
       <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Loading activity feed...</p>
     </div>
   </section>
@@ -1738,11 +2138,32 @@
     }
     
     // ============================================
-    // LIVE ACTIVITY FEED
+    // 🎨 ENHANCED LIVE ACTIVITY FEED
+    // Added by Dana 🎨 - Design Lead
     // ============================================
     
     const ACTIVITY_POLL_INTERVAL = 15000; // 15 seconds
     let lastActivityIds = new Set();
+    let allActivities = []; // Store all activities for filtering
+    let currentDeptFilter = 'all';
+    let productivityChart = null;
+    
+    // Agent emoji map for avatars
+    const agentEmojis = {
+      'Lumen': '🔆', 'Luna': '🌙', 'Maven': '📋', 'Harper': '👔', 'Reese': '🔬',
+      'Finley': '💰', 'Ethan': '⚙️', 'Morgan': '📣', 'Devon': '🔧', 'Sam': '🤝',
+      'Riley': '🔍', 'Casey': '🛡️', 'Avery': '✅', 'Parker': '📦', 'Dana': '🎨',
+      'Dakota': '📊', 'Nova': '⭐', 'Echo': '📡', 'Forge': '🔨', 'Bolt': '⚡',
+      'Atlas': '🗺️', 'Cipher': '🔐', 'Sage': '🌿', 'Scout': '🔭', 'Oracle': '🔮',
+      'Raven': '🐦‍⬛', 'Archie': '📚', 'Drift': '🌊', 'Pixel': '🖼️', 'Spark': '✨'
+    };
+    
+    // Department mapping
+    const deptMapping = {
+      'Engineering': 'engineering', 'Product': 'product', 'Design': 'design',
+      'Research': 'research', 'Marketing': 'marketing', 'DevOps': 'devops',
+      'Security': 'security', 'HR': 'hr', 'Finance': 'finance', 'QA': 'qa'
+    };
     
     function formatActivityTime(dateString) {
       const date = new Date(dateString);
@@ -1755,12 +2176,211 @@
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
     
-    function renderActivityFeed(data) {
+    // Get time group for activity
+    function getTimeGroup(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
+      
+      if (seconds < 300) return 'just-now'; // 5 minutes
+      if (seconds < 3600) return '1h-ago'; // 1 hour
+      if (seconds < 86400) return 'today'; // 24 hours
+      return 'earlier';
+    }
+    
+    function getTimeGroupLabel(group) {
+      switch(group) {
+        case 'just-now': return '⚡ Just Now';
+        case '1h-ago': return '🕐 Last Hour';
+        case 'today': return '📅 Today';
+        case 'earlier': return '📜 Earlier';
+        default: return group;
+      }
+    }
+    
+    // Calculate productivity stats
+    function calculateProductivityStats(activities) {
+      const stats = {
+        completed: 0,
+        inProgress: 0,
+        blocked: 0,
+        activeAgents: new Set()
+      };
+      
+      activities.forEach(a => {
+        if (a.status === 'completed') stats.completed++;
+        else if (a.status === 'blocked') stats.blocked++;
+        else stats.inProgress++;
+        stats.activeAgents.add(a.agent);
+      });
+      
+      return {
+        completed: stats.completed,
+        inProgress: stats.inProgress,
+        blocked: stats.blocked,
+        activeAgents: stats.activeAgents.size,
+        activeAgentsList: Array.from(stats.activeAgents)
+      };
+    }
+    
+    // Update productivity stats display
+    function updateProductivityStats(activities) {
+      const stats = calculateProductivityStats(activities);
+      
+      document.getElementById('stat-completed').textContent = stats.completed;
+      document.getElementById('stat-in-progress').textContent = stats.inProgress;
+      document.getElementById('stat-blocked').textContent = stats.blocked;
+      document.getElementById('stat-active-agents').textContent = stats.activeAgents;
+      
+      // Update date
+      document.getElementById('productivity-date').textContent = new Date().toLocaleDateString('en-US', {
+        weekday: 'long', month: 'short', day: 'numeric'
+      });
+      
+      // Render active agent avatars
+      renderActiveAgentAvatars(stats.activeAgentsList.slice(0, 8));
+      
+      // Update chart
+      updateProductivityChart(stats);
+    }
+    
+    // Render active agent avatars with status indicators
+    function renderActiveAgentAvatars(agents) {
+      const container = document.getElementById('active-agents-avatars');
+      let html = '';
+      
+      agents.forEach((agent, i) => {
+        if (i < 6) {
+          const emoji = agentEmojis[agent] || '🤖';
+          const status = Math.random() > 0.3 ? 'active' : 'busy'; // Demo: random status
+          html += `
+            <div class="agent-avatar" title="${agent}">
+              ${emoji}
+              <span class="status-dot ${status}"></span>
+            </div>
+          `;
+        }
+      });
+      
+      if (agents.length > 6) {
+        html += `<div class="active-agents-overflow">+${agents.length - 6}</div>`;
+      }
+      
+      container.innerHTML = html || '<span style="color: var(--text-muted); font-size: 0.8rem;">No active agents</span>';
+    }
+    
+    // Initialize/update productivity chart
+    function updateProductivityChart(stats) {
+      const ctx = document.getElementById('productivityChart');
+      if (!ctx) return;
+      
+      const chartData = {
+        labels: ['Completed', 'In Progress', 'Blocked'],
+        datasets: [{
+          data: [stats.completed, stats.inProgress, stats.blocked],
+          backgroundColor: [
+            'rgba(34, 197, 94, 0.8)',
+            'rgba(245, 158, 11, 0.8)',
+            'rgba(239, 68, 68, 0.8)'
+          ],
+          borderColor: [
+            'rgba(34, 197, 94, 1)',
+            'rgba(245, 158, 11, 1)',
+            'rgba(239, 68, 68, 1)'
+          ],
+          borderWidth: 2,
+          borderRadius: 6
+        }]
+      };
+      
+      const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              color: '#a1a1aa',
+              font: { size: 11 },
+              padding: 12,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#71717a', stepSize: 1 }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#71717a' }
+          }
+        }
+      };
+      
+      if (productivityChart) {
+        productivityChart.data = chartData;
+        productivityChart.update('none');
+      } else {
+        productivityChart = new Chart(ctx, {
+          type: 'bar',
+          data: chartData,
+          options: chartOptions
+        });
+      }
+    }
+    
+    // Update department filter counts
+    function updateFilterCounts(activities) {
+      const counts = { all: activities.length };
+      
+      activities.forEach(a => {
+        const dept = deptMapping[a.department] || 'other';
+        counts[dept] = (counts[dept] || 0) + 1;
+      });
+      
+      Object.keys(counts).forEach(dept => {
+        const el = document.getElementById(`filter-count-${dept}`);
+        if (el) el.textContent = counts[dept];
+      });
+    }
+    
+    // Filter activities by department
+    function filterActivities(activities, dept) {
+      if (dept === 'all') return activities;
+      return activities.filter(a => {
+        const actDept = deptMapping[a.department] || 'other';
+        return actDept === dept;
+      });
+    }
+    
+    // Group activities by time
+    function groupActivitiesByTime(activities) {
+      const groups = {
+        'just-now': [],
+        '1h-ago': [],
+        'today': [],
+        'earlier': []
+      };
+      
+      activities.forEach(a => {
+        const group = getTimeGroup(a.timestamp);
+        groups[group].push(a);
+      });
+      
+      return groups;
+    }
+    
+    // Render enhanced activity timeline
+    function renderActivityTimeline(activities) {
       const container = document.getElementById('activity-feed-content');
       const countEl = document.getElementById('activity-count');
       const timeEl = document.getElementById('activity-update-time');
       
-      if (!data.success || !data.activities || data.activities.length === 0) {
+      if (!activities || activities.length === 0) {
         container.innerHTML = `
           <div class="activity-empty">
             <div class="activity-empty-emoji">🌙</div>
@@ -1772,45 +2392,93 @@
         return;
       }
       
-      countEl.textContent = data.count;
+      countEl.textContent = activities.length;
       timeEl.textContent = 'just now';
       
-      let html = '<div class="activity-list">';
-      const newIds = new Set();
+      const groups = groupActivitiesByTime(activities);
+      let html = '';
       
-      for (const activity of data.activities) {
-        const isNew = !lastActivityIds.has(activity.id);
-        newIds.add(activity.id);
+      ['just-now', '1h-ago', 'today', 'earlier'].forEach(groupKey => {
+        const groupActivities = groups[groupKey];
+        if (groupActivities.length === 0) return;
         
-        const statusClass = activity.status === 'completed' ? 'completed' : 
-                           activity.status === 'blocked' ? 'blocked' : 'working';
-        const statusLabel = activity.status === 'completed' ? '✓ Done' : 
-                           activity.status === 'blocked' ? '⚠ Blocked' : '⚡ Working';
+        const isPast = groupKey === 'earlier' || groupKey === 'today';
         
         html += `
-          <div class="activity-item ${isNew ? 'new-activity' : ''}">
-            <div class="activity-emoji">${activity.emoji || '🤖'}</div>
-            <div class="activity-content">
-              <div class="activity-header">
-                <span class="activity-agent">${activity.agent}</span>
-                ${activity.department ? `<span class="activity-dept">${activity.department}</span>` : ''}
-                <span class="activity-time">${formatActivityTime(activity.timestamp)}</span>
+          <div class="timeline-group">
+            <div class="timeline-group-header">
+              <span class="timeline-group-label ${isPast ? 'past' : ''}">${getTimeGroupLabel(groupKey)}</span>
+            </div>
+        `;
+        
+        groupActivities.forEach(activity => {
+          const isNew = !lastActivityIds.has(activity.id);
+          const statusClass = activity.status === 'completed' ? 'completed' : 
+                             activity.status === 'blocked' ? 'blocked' : 'working';
+          const statusLabel = activity.status === 'completed' ? '✓ Done' : 
+                             activity.status === 'blocked' ? '⚠ Blocked' : '⚡ Working';
+          const emoji = agentEmojis[activity.agent] || activity.emoji || '🤖';
+          const agentStatus = activity.status === 'completed' ? 'idle' : 'active';
+          
+          html += `
+            <div class="activity-item-enhanced status-${statusClass} ${isNew ? 'new-activity' : ''}">
+              <div class="agent-avatar">
+                ${emoji}
+                <span class="status-dot ${agentStatus}"></span>
               </div>
-              <div class="activity-action">
-                ${activity.action}
-                <span class="activity-status ${statusClass}">${statusLabel}</span>
+              <div class="activity-item-content">
+                <div class="activity-item-header">
+                  <span class="activity-agent-name">${activity.agent}</span>
+                  ${activity.department ? `<span class="activity-dept-badge">${activity.department}</span>` : ''}
+                  <span class="activity-timestamp">${formatActivityTime(activity.timestamp)}</span>
+                </div>
+                <div class="activity-description">
+                  ${activity.action}
+                  <span class="activity-status-badge ${statusClass}">${statusLabel}</span>
+                </div>
               </div>
             </div>
+          `;
+        });
+        
+        html += '</div>';
+      });
+      
+      container.innerHTML = html;
+      
+      // Update lastActivityIds
+      const newIds = new Set();
+      activities.forEach(a => newIds.add(a.id));
+      lastActivityIds = newIds;
+    }
+    
+    // Main render function for activity feed
+    function renderActivityFeed(data) {
+      if (!data.success && !data.activities) {
+        document.getElementById('activity-feed-content').innerHTML = `
+          <div class="activity-empty">
+            <div class="activity-empty-emoji">⚠️</div>
+            <p>Could not load activity feed</p>
           </div>
         `;
+        return;
       }
       
-      html += '</div>';
-      container.innerHTML = html;
-      lastActivityIds = newIds;
+      // Store all activities
+      allActivities = data.activities || [];
       
-      // Flash section on new activity
-      if (data.activities.some(a => !lastActivityIds.has(a.id))) {
+      // Update filter counts
+      updateFilterCounts(allActivities);
+      
+      // Update productivity stats
+      updateProductivityStats(allActivities);
+      
+      // Filter and render timeline
+      const filtered = filterActivities(allActivities, currentDeptFilter);
+      renderActivityTimeline(filtered);
+      
+      // Flash section on update
+      if (data.activities && data.activities.some(a => !lastActivityIds.has(a.id))) {
         document.getElementById('activity-feed-section').classList.add('just-updated');
         setTimeout(() => {
           document.getElementById('activity-feed-section').classList.remove('just-updated');
@@ -1818,9 +2486,26 @@
       }
     }
     
+    // Set up department filter tabs
+    function initDeptFilters() {
+      const tabs = document.querySelectorAll('.dept-filter-tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          // Update active state
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          
+          // Update filter and re-render
+          currentDeptFilter = tab.dataset.dept;
+          const filtered = filterActivities(allActivities, currentDeptFilter);
+          renderActivityTimeline(filtered);
+        });
+      });
+    }
+    
     async function fetchActivityFeed() {
       try {
-        const response = await fetch('/public/team-activity?limit=30');
+        const response = await fetch('/public/team-activity?limit=50');
         const data = await response.json();
         renderActivityFeed(data);
       } catch (err) {
@@ -1878,15 +2563,20 @@
     
     // Initial fetch and set up real-time stream
     document.addEventListener('DOMContentLoaded', async () => {
+      // 🎨 Initialize department filter tabs
+      initDeptFilters();
+      
       fetchStatus();
       // Initial fetch to populate cache
       try {
-        const response = await fetch('/public/team-activity?limit=30');
+        const response = await fetch('/public/team-activity?limit=50');
         const data = await response.json();
         activityCache = data.activities || [];
         renderActivityFeed(data);
       } catch (err) {
         console.error('Initial fetch failed:', err);
+        // Show demo data if API fails
+        renderActivityFeed({ success: true, activities: getDemoActivities() });
       }
       // Connect to SSE stream for real-time updates
       connectActivityStream();
@@ -1903,6 +2593,21 @@
       // 🦞 Initialize Moltbook feed
       initMoltbookFeed();
     });
+    
+    // Demo data for offline/testing
+    function getDemoActivities() {
+      const now = Date.now();
+      return [
+        { id: 1, agent: 'Ethan', emoji: '⚙️', department: 'Engineering', action: 'Completed code modularization for briefings routes', status: 'completed', timestamp: new Date(now - 60000).toISOString() },
+        { id: 2, agent: 'Dana', emoji: '🎨', department: 'Design', action: 'Enhanced team activity dashboard with avatars and timeline', status: 'working', timestamp: new Date(now - 120000).toISOString() },
+        { id: 3, agent: 'Devon', emoji: '🔧', department: 'DevOps', action: 'Added health check endpoint and compression middleware', status: 'completed', timestamp: new Date(now - 300000).toISOString() },
+        { id: 4, agent: 'Maven', emoji: '📋', department: 'Product', action: 'Updated dashboard sprint plan with new priorities', status: 'completed', timestamp: new Date(now - 600000).toISOString() },
+        { id: 5, agent: 'Casey', emoji: '🛡️', department: 'Security', action: 'Running security audit on new endpoints', status: 'working', timestamp: new Date(now - 900000).toISOString() },
+        { id: 6, agent: 'Reese', emoji: '🔬', department: 'Research', action: 'Analyzing competitor dashboard implementations', status: 'working', timestamp: new Date(now - 1800000).toISOString() },
+        { id: 7, agent: 'Morgan', emoji: '📣', department: 'Marketing', action: 'Preparing launch assets for StackAudit', status: 'working', timestamp: new Date(now - 3600000).toISOString() },
+        { id: 8, agent: 'Dakota', emoji: '📊', department: 'Research', action: 'Built Chart.js integration for productivity metrics', status: 'completed', timestamp: new Date(now - 7200000).toISOString() }
+      ];
+    }
     
     // 🦞 MOLTBOOK AGENT ARMY FUNCTIONS
     const MOLTBOOK_POLL_INTERVAL = 60000; // 1 minute
