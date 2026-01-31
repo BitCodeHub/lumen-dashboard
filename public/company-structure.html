@@ -472,8 +472,6 @@
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
-      max-height: 350px;
-      overflow-y: auto;
     }
     .live-win-card {
       background: var(--bg-elevated);
@@ -1407,7 +1405,7 @@
       let winsHtml = '';
       if (data.recentWins && data.recentWins.length > 0) {
         winsHtml = '<div class="live-wins">';
-        for (const win of data.recentWins.slice(0, 8)) {
+        for (const win of data.recentWins) {
           winsHtml += `
             <div class="live-win-card">
               <div class="live-win-header">
