@@ -1744,14 +1744,11 @@ app.get('/public/company-status', async (req, res) => {
   try {
     // PRIORITY: Pull from team_activity table for REAL data
     try {
-      // Get recent activities (last 24 hours)
-      const activitiesResult = await pool.query(`
-        SELECT agent, emoji, department, action, status, created_at as timestamp 
-        FROM team_activity 
-        WHERE created_at > NOW() - INTERVAL '24 hours'
-        ORDER BY created_at DESC
-        LIMIT 100
-      `);
+      // Get recent activities - same query as /public/team-activity
+      const activitiesResult = await pool.query(
+        'SELECT id, agent, emoji, department, action, status, details, created_at as timestamp FROM team_activity ORDER BY created_at DESC LIMIT 100'
+      );
+      console.log(`[Company Status] Got ${activitiesResult.rows.length} activities from team_activity`);
       
       if (activitiesResult.rows.length > 0) {
         const activities = activitiesResult.rows;
