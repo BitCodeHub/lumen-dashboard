@@ -1474,7 +1474,7 @@
             </div>
             <div class="hidden md:block col-span-2">
               <span class="text-sm font-semibold ${cfg.textColor}">$${exp.amount.toFixed(2)}</span>
-              ${exp.tax ? `<p class="text-xs text-zinc-600">+$${exp.tax.toFixed(2)} tax</p>` : ''}
+              ${exp.tax ? `<p class="text-xs text-zinc-600">+$${parseFloat(exp.tax).toFixed(2)} tax</p>` : ''}
             </div>
             <div class="hidden md:block col-span-2">
               <span class="px-2 py-1 text-xs rounded-full ${cfg.bgColor} ${cfg.textColor}">${cfg.icon} ${exp.category}</span>
@@ -1524,10 +1524,10 @@
         { label: 'Time', value: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }), show: true },
         { label: 'Address', value: exp.merchant_address, show: exp.merchant_address },
         { label: 'Phone', value: exp.merchant_phone, show: exp.merchant_phone },
-        { label: 'Subtotal', value: exp.subtotal ? `$${exp.subtotal.toFixed(2)}` : null, show: exp.subtotal },
-        { label: 'Tax', value: exp.tax ? `$${exp.tax.toFixed(2)}` : null, show: exp.tax },
-        { label: 'Tip', value: exp.tip ? `$${exp.tip.toFixed(2)}` : null, show: exp.tip },
-        { label: 'Discount', value: exp.discount ? `-$${exp.discount.toFixed(2)}` : null, show: exp.discount },
+        { label: 'Subtotal', value: exp.subtotal ? `$${parseFloat(exp.subtotal).toFixed(2)}` : null, show: exp.subtotal },
+        { label: 'Tax', value: exp.tax ? `$${parseFloat(exp.tax).toFixed(2)}` : null, show: exp.tax },
+        { label: 'Tip', value: exp.tip ? `$${parseFloat(exp.tip).toFixed(2)}` : null, show: exp.tip },
+        { label: 'Discount', value: exp.discount ? `-$${parseFloat(exp.discount).toFixed(2)}` : null, show: exp.discount },
         { label: 'Payment', value: exp.payment_method, show: exp.payment_method },
         { label: 'Card', value: exp.card_type ? `${exp.card_type}${exp.card_last_four ? ' •••• ' + exp.card_last_four : ''}` : null, show: exp.card_type },
         { label: 'Receipt #', value: exp.receipt_number, show: exp.receipt_number },
