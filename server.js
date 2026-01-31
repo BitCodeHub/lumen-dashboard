@@ -1746,10 +1746,10 @@ app.get('/public/company-status', async (req, res) => {
     try {
       // Get recent activities (last 24 hours)
       const activitiesResult = await pool.query(`
-        SELECT agent, emoji, department, action, status, timestamp 
+        SELECT agent, emoji, department, action, status, created_at as timestamp 
         FROM team_activity 
-        WHERE timestamp > NOW() - INTERVAL '24 hours'
-        ORDER BY timestamp DESC
+        WHERE created_at > NOW() - INTERVAL '24 hours'
+        ORDER BY created_at DESC
         LIMIT 100
       `);
       
