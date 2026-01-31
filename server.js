@@ -1777,13 +1777,13 @@ app.get('/public/company-status', async (req, res) => {
           }
         }
         
-        // Get recent wins (completed items) - show ALL
+        // Get recent wins (completed items) - compact display
         const recentWins = activities
           .filter(a => a.status === 'completed')
-          .slice(0, 50)
+          .slice(0, 15)
           .map(a => ({
             team: a.agent,
-            win: (a.action || '').substring(0, 150)
+            win: (a.action || '').substring(0, 80)
           }));
         
         // Get blockers
