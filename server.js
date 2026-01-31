@@ -1674,9 +1674,9 @@ let companyStatusCache = {
   recentWins: [],
   blockers: [],
   productProgress: [
-    { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 75, status: 'development', recentUpdates: 0 },
-    { id: 'mcphub', name: 'MCPHub', emoji: '🔌', progress: 60, status: 'development', recentUpdates: 0 },
-    { id: 'aikeyvault', name: 'AIKeyVault', emoji: '🔐', progress: 10, status: 'planning', recentUpdates: 0 },
+    { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 85, status: 'development', recentUpdates: 0 },
+    { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'development', recentUpdates: 0 },
+    { id: 'ideas-pipeline', name: 'Ideas Pipeline', emoji: '💡', progress: 100, status: 'live', recentUpdates: 310 },
     { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 0 }
   ]
 };
@@ -1785,14 +1785,20 @@ app.get('/public/company-status', async (req, res) => {
           }));
         
         // Get blockers
+        // Get blockers - status=blocked, 🚨, or critical keywords
+        const blockerKeywords = ['CRITICAL', 'URGENT', 'BLOCKED', 'ZERO', '🚨', '⚠️', 'OVERDUE', 'EMERGENCY'];
         const blockers = activities
-          .filter(a => a.status === 'blocked' || (a.action && a.action.includes('🚨')))
+          .filter(a => {
+            if (a.status === 'blocked') return true;
+            const action = (a.action || '').toUpperCase();
+            return blockerKeywords.some(kw => action.includes(kw));
+          })
           .slice(0, 10)
           .map(a => ({
             team: a.department || 'Critical',
             blocker: (a.action || '').substring(0, 120),
             owner: a.agent,
-            eta: 'Review Needed'
+            eta: a.status === 'blocked' ? 'BLOCKED' : 'Needs Attention'
           }));
         
         return res.json({
@@ -2053,9 +2059,9 @@ function parseBlockers(content) {
 // Parse product progress
 function parseProductProgress(standupContent, productContent) {
   const products = [
-    { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', defaultProgress: 75 },
-    { id: 'mcphub', name: 'MCPHub', emoji: '🔌', defaultProgress: 60 },
-    { id: 'aikeyvault', name: 'AIKeyVault', emoji: '🔐', defaultProgress: 10 },
+    { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', defaultProgress: 85 },
+    { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', defaultProgress: 45 },
+    { id: 'ideas-pipeline', name: 'Ideas Pipeline', emoji: '💡', defaultProgress: 100 },
     { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', defaultProgress: 100 }
   ];
   
