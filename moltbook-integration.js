@@ -230,7 +230,8 @@ async function initMoltbookIntegration(app) {
   // API Routes
   
   // PUBLIC: Get live activity feed (no auth required for company-structure page)
-  app.get('/public/moltbook/activity', (req, res) => {
+  // Note: Using /moltbook-public to avoid conflict with static files at /public/
+  app.get('/moltbook-public/activity', (req, res) => {
     res.json({
       success: true,
       data: activityCache,
