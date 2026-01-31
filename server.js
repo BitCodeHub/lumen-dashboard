@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -22,6 +23,7 @@ const contextResurrection = require('./context-resurrection');
 const proactiveNotifications = require('./proactive-notifications');
 const voiceClone = require('./voice-clone');
 const { setupExpenseAnalyticsRoutes } = require('./expense-analytics-api');
+const { initMoltbookIntegration } = require('./moltbook-integration');
 
 const app = express();
 
@@ -47,9 +49,44 @@ pool.on('error', (err) => {
 });
 
 // Middleware
+app.use(compression()); // Gzip compression for all responses
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// ============================================
+// HEALTH CHECK ENDPOINT (Public, no auth)
+// ============================================
+app.get('/health', async (req, res) => {
+  const healthCheck = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: '3.5.0',
+    checks: {
+      server: 'ok',
+      database: 'unknown'
+    }
+  };
+  
+  try {
+    // Test DB connectivity with a simple query
+    const dbStart = Date.now();
+    await pool.query('SELECT 1 as health_check');
+    const dbLatency = Date.now() - dbStart;
+    
+    healthCheck.checks.database = 'ok';
+    healthCheck.checks.dbLatencyMs = dbLatency;
+  } catch (err) {
+    healthCheck.status = 'degraded';
+    healthCheck.checks.database = 'error';
+    healthCheck.checks.dbError = err.message;
+    console.error('[Health] DB check failed:', err.message);
+  }
+  
+  const statusCode = healthCheck.status === 'healthy' ? 200 : 503;
+  res.status(statusCode).json(healthCheck);
+});
 
 // Session management with error handling
 try {
@@ -6567,8 +6604,20 @@ app.get('*', (req, res) => {
 });
 
 // ============================================
-// CRON JOBS FOR SYNC
+// CRON JOBS FOR SYNC & KEEP-ALIVE
 // ============================================
+
+// Keep-alive self-ping every 10 minutes to prevent Render cold starts
+cron.schedule('*/10 * * * *', async () => {
+  const selfUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  try {
+    const response = await fetch(`${selfUrl}/health`);
+    const data = await response.json();
+    console.log(`[Keep-Alive] Self-ping: ${data.status} (DB: ${data.checks.database}, latency: ${data.checks.dbLatencyMs || 'N/A'}ms)`);
+  } catch (err) {
+    console.warn('[Keep-Alive] Self-ping failed:', err.message);
+  }
+});
 
 // Schedule aitmpl.com scrape every hour at minute 0
 cron.schedule('0 * * * *', async () => {
@@ -6610,13 +6659,22 @@ dealRadar.registerRoutes(app, pool);
 // Register Expense Analytics routes
 setupExpenseAnalyticsRoutes(app, pool);
 
+// Initialize Moltbook Agent Army Integration
+initMoltbookIntegration(app).catch(err => {
+  console.error('[Moltbook] Failed to initialize:', err.message);
+});
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`🔆 Lumen Dashboard v3.5 running on port ${PORT}`);
+  console.log(`🔆 Lumen Dashboard v3.5.1 running on port ${PORT}`);
+  console.log(`   💚 Health check: /health (DB connectivity)`);
+  console.log(`   🏓 Keep-alive: enabled (self-ping every 10 min)`);
+  console.log(`   📦 Compression: enabled (gzip)`);
   console.log(`   📡 Deal Radar: enabled (24/7 opportunity scanner)`);
   console.log(`   🔄 Hourly scrape sync: enabled (every hour at :00)`);
   console.log(`   📡 GitHub polling: enabled (every 15 min at :05, :20, :35, :50)`);
   console.log(`   📊 Rate limit: 4 req/hr (limit: 60/hr unauthenticated)`);
   console.log(`   🎯 Watching: davila7/claude-code-templates`);
   console.log(`   🎙️ Voice Clone: ${voiceClone.isApiConfigured() ? 'LIVE (ElevenLabs)' : 'MOCK mode'}`);
+  console.log(`   🦞 Moltbook Agent Army: 51 agents (LumenCTO_007 + 50 specialists)`);
 });
