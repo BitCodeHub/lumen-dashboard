@@ -1675,8 +1675,10 @@ let companyStatusCache = {
   blockers: [],
   productProgress: [
     { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 85, status: 'development', recentUpdates: 0 },
-    { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'development', recentUpdates: 0 },
-    { id: 'ideas-pipeline', name: 'Ideas Pipeline', emoji: '💡', progress: 100, status: 'live', recentUpdates: 310 },
+    { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'research', recentUpdates: 0 },
+    { id: 'pricehawk', name: 'PriceHawk.io', emoji: '🦅', progress: 20, status: 'planning', recentUpdates: 0 },
+    { id: 'ai-compliance', name: 'AI Compliance Monitor', emoji: '📋', progress: 10, status: 'research', recentUpdates: 0 },
+    { id: 'ai-legal-review', name: 'AI Legal Doc Review', emoji: '⚖️', progress: 5, status: 'idea', recentUpdates: 0 },
     { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 0 }
   ]
 };
@@ -2061,7 +2063,9 @@ function parseProductProgress(standupContent, productContent) {
   const products = [
     { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', defaultProgress: 85 },
     { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', defaultProgress: 45 },
-    { id: 'ideas-pipeline', name: 'Ideas Pipeline', emoji: '💡', defaultProgress: 100 },
+    { id: 'pricehawk', name: 'PriceHawk.io', emoji: '🦅', defaultProgress: 20 },
+    { id: 'ai-compliance', name: 'AI Compliance Monitor', emoji: '📋', defaultProgress: 10 },
+    { id: 'ai-legal-review', name: 'AI Legal Doc Review', emoji: '⚖️', defaultProgress: 5 },
     { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', defaultProgress: 100 }
   ];
   
