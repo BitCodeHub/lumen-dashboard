@@ -1803,6 +1803,52 @@ app.get('/public/company-status', async (req, res) => {
             eta: a.status === 'blocked' ? 'BLOCKED' : 'Needs Attention'
           }));
         
+        // Get product progress from ideas table (real-time)
+        let productProgress = [];
+        try {
+          const ideasResult = await pool.query(`
+            SELECT id, name, status, priority, category, revenue_potential, build_time
+            FROM ai_ideas 
+            WHERE status IN ('building', 'validated', 'researching', 'shipped')
+            ORDER BY 
+              CASE status 
+                WHEN 'building' THEN 1 
+                WHEN 'validated' THEN 2 
+                WHEN 'researching' THEN 3 
+                WHEN 'shipped' THEN 4 
+              END,
+              priority DESC
+            LIMIT 10
+          `);
+          
+          if (ideasResult.rows.length > 0) {
+            productProgress = ideasResult.rows.map(idea => ({
+              id: idea.id,
+              name: idea.name,
+              emoji: idea.status === 'shipped' ? '🚀' : idea.status === 'building' ? '🔨' : idea.status === 'validated' ? '✅' : '🔬',
+              progress: idea.status === 'shipped' ? 100 : idea.status === 'building' ? 60 : idea.status === 'validated' ? 40 : 20,
+              status: idea.status,
+              recentUpdates: 0
+            }));
+          }
+        } catch (ideasErr) {
+          console.warn('[Company Status] Ideas query failed:', ideasErr.message);
+        }
+        
+        // Add static products if no dynamic ones
+        if (productProgress.length === 0) {
+          productProgress = companyStatusCache.productProgress || [];
+        }
+        
+        // Always include StackAudit and Lumen Dashboard
+        const staticProducts = [
+          { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 85, status: 'development', recentUpdates: 0 },
+          { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 0 }
+        ];
+        
+        // Merge: static products first, then dynamic from ideas
+        const allProducts = [...staticProducts, ...productProgress.filter(p => p.id !== 'stackaudit' && p.id !== 'dashboard')];
+        
         return res.json({
           success: true,
           source: 'team_activity',
@@ -1811,7 +1857,7 @@ app.get('/public/company-status', async (req, res) => {
           teamStatus: Object.values(teamMap),
           recentWins,
           blockers,
-          productProgress: companyStatusCache.productProgress || []
+          productProgress: allProducts.slice(0, 8)
         });
       }
     } catch (dbErr) {
