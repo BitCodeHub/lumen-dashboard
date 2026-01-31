@@ -229,7 +229,16 @@ async function initMoltbookIntegration(app) {
   
   // API Routes
   
-  // Get live activity feed
+  // PUBLIC: Get live activity feed (no auth required for company-structure page)
+  app.get('/public/moltbook/activity', (req, res) => {
+    res.json({
+      success: true,
+      data: activityCache,
+      timestamp: new Date().toISOString()
+    });
+  });
+  
+  // Get live activity feed (authenticated)
   app.get('/api/moltbook/activity', (req, res) => {
     res.json({
       success: true,

@@ -2620,7 +2620,7 @@
     
     async function refreshMoltbookFeed() {
       try {
-        const response = await fetch('/api/moltbook/activity');
+        const response = await fetch('/public/moltbook/activity');
         const result = await response.json();
         
         if (result.success) {
