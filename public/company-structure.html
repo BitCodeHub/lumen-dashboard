@@ -1333,7 +1333,7 @@
     // REAL-TIME STATUS UPDATES
     // ============================================
     
-    const POLL_INTERVAL = 30000; // 30 seconds
+    const POLL_INTERVAL = 15000; // 15 seconds - auto refresh all columns
     let lastData = null;
     
     // Format relative time
@@ -1643,8 +1643,15 @@
       }
       // Connect to SSE stream for real-time updates
       connectActivityStream();
-      // Keep polling status
-      setInterval(fetchStatus, POLL_INTERVAL);
+      
+      // Auto-refresh ALL data every 15 seconds
+      setInterval(() => {
+        fetchStatus();
+        fetchActivityFeed();
+      }, 15000);
+      
+      // Also poll activity feed separately for faster updates
+      setInterval(fetchActivityFeed, 10000);
     });
   </script>
 </body>
