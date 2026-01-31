@@ -6598,6 +6598,18 @@ app.get('/api/automations/examples', (req, res) => {
   });
 });
 
+// PUBLIC: Moltbook activity feed (no auth required for company-structure page)
+// Must be registered BEFORE catch-all
+const moltbookModule = require('./moltbook-integration');
+app.get('/moltbook-public/activity', (req, res) => {
+  const cache = moltbookModule.getActivityCache ? moltbookModule.getActivityCache() : {};
+  res.json({
+    success: true,
+    data: cache,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Catch-all route for SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
