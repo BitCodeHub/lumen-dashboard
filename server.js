@@ -1905,14 +1905,27 @@ function parseRecentWins(content) {
     }
   }
   
-  // Also look for ✅ items throughout
-  const checkmarks = content.match(/✅\s+[^\n]+/g) || [];
-  for (const item of checkmarks.slice(0, 10)) {
-    if (!wins.some(w => item.includes(w.win))) {
-      wins.push({
-        team: 'Team',
-        win: item.replace('✅', '').trim().substring(0, 100)
-      });
+  // Parse from Team Activity table (format: | Time | Agent | Dept | Action ✅ |)
+  const activitySection = content.match(/## 👥 Team Activity[\s\S]*?(?=## |---|\n# |$)/);
+  if (activitySection) {
+    const lines = activitySection[0].split('\n');
+    for (const line of lines) {
+      // Match table rows with ✅ at the end (completed items)
+      if (line.includes('✅') && line.includes('|')) {
+        const parts = line.split('|').filter(p => p.trim());
+        if (parts.length >= 4) {
+          const agent = parts[1]?.trim() || 'Team';
+          const action = parts[3]?.trim().replace(/✅/g, '').trim() || '';
+          // Extract just the first part before " — "
+          const shortAction = action.split(' — ')[0].substring(0, 80);
+          if (shortAction && !wins.some(w => w.win === shortAction)) {
+            wins.push({
+              team: agent,
+              win: shortAction
+            });
+          }
+        }
+      }
     }
   }
   
@@ -1939,15 +1952,31 @@ function parseBlockers(content) {
     }
   }
   
-  // Also look for 🚨 and 🔴 markers
-  const criticalMatches = content.match(/🚨[^\n]+|🔴[^\n]+/g) || [];
-  for (const item of criticalMatches.slice(0, 5)) {
-    blockers.push({
-      team: 'Critical',
-      blocker: item.replace(/🚨|🔴/g, '').trim().substring(0, 150),
-      owner: 'TBD',
-      eta: 'ASAP'
-    });
+  // Parse from Team Activity table (format: | Time | Agent | Dept | Action 🚨 |)
+  const activitySection = content.match(/## 👥 Team Activity[\s\S]*?(?=## |---|\n# |$)/);
+  if (activitySection) {
+    const lines = activitySection[0].split('\n');
+    for (const line of lines) {
+      // Match table rows with 🚨 (critical/urgent items)
+      if (line.includes('🚨') && line.includes('|')) {
+        const parts = line.split('|').filter(p => p.trim());
+        if (parts.length >= 4) {
+          const agent = parts[1]?.trim() || 'Team';
+          const dept = parts[2]?.trim() || '';
+          const action = parts[3]?.trim().replace(/🚨/g, '').trim() || '';
+          // Extract the key message
+          const shortAction = action.split(' — ')[0].substring(0, 120);
+          if (shortAction && !blockers.some(b => b.blocker === shortAction)) {
+            blockers.push({
+              team: dept || 'Critical',
+              blocker: shortAction,
+              owner: agent,
+              eta: 'Review Needed'
+            });
+          }
+        }
+      }
+    }
   }
   
   return blockers.slice(0, 10);
