@@ -1742,7 +1742,78 @@ app.post('/public/company-status', async (req, res) => {
 // Public company status endpoint - real-time team progress
 app.get('/public/company-status', async (req, res) => {
   try {
-    // First try to read from database
+    // PRIORITY: Pull from team_activity table for REAL data
+    try {
+      // Get recent activities (last 24 hours)
+      const activitiesResult = await pool.query(`
+        SELECT agent, emoji, department, action, status, timestamp 
+        FROM team_activity 
+        WHERE timestamp > NOW() - INTERVAL '24 hours'
+        ORDER BY timestamp DESC
+        LIMIT 100
+      `);
+      
+      if (activitiesResult.rows.length > 0) {
+        const activities = activitiesResult.rows;
+        
+        // Build team status from activities
+        const teamMap = {};
+        for (const act of activities) {
+          const dept = act.department || 'Unknown';
+          if (!teamMap[dept]) {
+            teamMap[dept] = {
+              id: dept.toLowerCase().replace(/\s+/g, '-'),
+              name: dept,
+              emoji: act.emoji || '🤖',
+              lead: act.agent,
+              total: 1,
+              active: act.status === 'working' ? 1 : 0,
+              status: act.status === 'completed' ? 'complete' : 'active',
+              summary: act.action?.substring(0, 150) || '',
+              hasBlocker: act.status === 'blocked'
+            };
+          } else {
+            teamMap[dept].total++;
+            if (act.status === 'working') teamMap[dept].active++;
+          }
+        }
+        
+        // Get recent wins (completed items)
+        const recentWins = activities
+          .filter(a => a.status === 'completed')
+          .slice(0, 15)
+          .map(a => ({
+            team: a.agent,
+            win: (a.action || '').substring(0, 100)
+          }));
+        
+        // Get blockers
+        const blockers = activities
+          .filter(a => a.status === 'blocked' || (a.action && a.action.includes('🚨')))
+          .slice(0, 10)
+          .map(a => ({
+            team: a.department || 'Critical',
+            blocker: (a.action || '').substring(0, 120),
+            owner: a.agent,
+            eta: 'Review Needed'
+          }));
+        
+        return res.json({
+          success: true,
+          source: 'team_activity',
+          lastUpdated: activities[0]?.timestamp || new Date().toISOString(),
+          refreshedAt: new Date().toISOString(),
+          teamStatus: Object.values(teamMap),
+          recentWins,
+          blockers,
+          productProgress: companyStatusCache.productProgress || []
+        });
+      }
+    } catch (dbErr) {
+      console.warn('[Company Status] team_activity query failed:', dbErr.message);
+    }
+    
+    // Fallback: try company_status table
     try {
       const dbResult = await pool.query('SELECT status_data, updated_at FROM company_status WHERE id = 1');
       if (dbResult.rows.length > 0) {
