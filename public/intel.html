@@ -953,6 +953,20 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
     });
+
+    // Auto-test: If URL has ?test=1, run a test search
+    if (window.location.search.includes('test=1')) {
+      document.getElementById('query-input').value = 'my hyundai app';
+      document.getElementById('context-input').value = 'crash issues';
+      setTimeout(() => startResearch(), 1000);
+    }
+
+    // Debug: Log page loaded
+    console.log('[Intel] Page loaded. AI Enabled check...');
+    fetch('/api/enterprise/metrics')
+      .then(r => r.json())
+      .then(d => console.log('[Intel] AI Status:', d.aiEnabled ? 'ENABLED' : 'DISABLED', d))
+      .catch(e => console.error('[Intel] Metrics error:', e));
   </script>
 </body>
 </html>
