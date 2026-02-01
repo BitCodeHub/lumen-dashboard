@@ -217,6 +217,40 @@
     .status-live { background: rgba(34, 197, 94, 0.2); color: var(--status-live); }
     .status-dev { background: rgba(245, 158, 11, 0.2); color: var(--status-dev); }
     .status-planned { background: var(--luna-glow); color: var(--luna-primary); }
+    .status-paused { background: rgba(113, 113, 122, 0.2); color: var(--text-muted); }
+    
+    /* Priority badges */
+    .priority-badge {
+      display: inline-block;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      margin-left: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .priority-badge.p0 {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+      animation: p0-pulse 2s ease-in-out infinite;
+    }
+    .priority-badge.p1 {
+      background: rgba(245, 158, 11, 0.3);
+      color: var(--lumen-primary);
+    }
+    @keyframes p0-pulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.7); }
+    }
+    .live-product-item.p0-highlight {
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.05);
+    }
+    .progress-fill.p0-fill {
+      background: linear-gradient(90deg, #ef4444, #f97316);
+    }
 
     .team-section {
       background: var(--bg-card);
@@ -2088,19 +2122,31 @@
         blockersHtml = '<p style="color: var(--status-live);">🎉 No blockers!</p>';
       }
       
-      // Build product progress
+      // Build product progress (sorted: P0 first, then by completion %)
       let productsHtml = '<div class="live-products">';
       if (data.productProgress) {
-        for (const product of data.productProgress) {
+        // Sort: P0 projects first (in order), then others by progress descending
+        const sorted = [...data.productProgress].sort((a, b) => {
+          // P0 projects always first
+          if (a.priority === 'P0' && b.priority !== 'P0') return -1;
+          if (b.priority === 'P0' && a.priority !== 'P0') return 1;
+          // Within same priority, sort by progress descending
+          return b.progress - a.progress;
+        });
+        
+        for (const product of sorted) {
           const statusClass = product.status === 'live' ? 'status-live' : 
+                              product.status === 'paused' ? 'status-paused' :
                               product.status === 'planning' ? 'status-planned' : 'status-dev';
+          const priorityBadge = product.priority === 'P0' ? '<span class="priority-badge p0" title="Priority 0 - Active Development">P0</span>' : 
+                                product.priority === 'P1' ? '<span class="priority-badge p1" title="Priority 1">P1</span>' : '';
           productsHtml += `
-            <div class="live-product-item">
+            <div class="live-product-item ${product.priority === 'P0' ? 'p0-highlight' : ''}">
               <div class="product-header">
-                <span>${product.emoji} ${product.name}</span>
+                <span>${product.emoji} ${product.name} ${priorityBadge}</span>
                 <span class="status-badge ${statusClass}">${product.status}</span>
               </div>
-              <div class="progress-bar"><div class="progress-fill" style="width: ${product.progress}%"></div></div>
+              <div class="progress-bar"><div class="progress-fill ${product.priority === 'P0' ? 'p0-fill' : ''}" style="width: ${product.progress}%"></div></div>
               <div class="progress-label"><span>Progress</span><span>${product.progress}%</span></div>
             </div>
           `;
