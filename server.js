@@ -1968,15 +1968,18 @@ app.get('/public/company-status', async (req, res) => {
             }));
             
             // Sort: active first, then by priority (P0 > P1 > P2), then by progress descending
-            const priorityOrder = { 'P0': 0, 'P1': 1, 'P2': 2, null: 3 };
-            const statusOrder = { 'active': 0, 'live': 1, 'planning': 2, 'pipeline': 3, 'stopped': 4, 'halted': 5, 'paused': 5 };
+            // NOTE: Use 1-based values because 0 is falsy in JS!
+            const priorityOrder = { 'P0': 1, 'P1': 2, 'P2': 3 };
+            const statusOrder = { 'active': 1, 'live': 2, 'planning': 3, 'pipeline': 4, 'stopped': 5, 'halted': 6, 'paused': 6 };
             staticProducts.sort((a, b) => {
               // Active status first
-              const statusDiff = (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
-              if (statusDiff !== 0) return statusDiff;
+              const statusA = statusOrder[a.status] || 99;
+              const statusB = statusOrder[b.status] || 99;
+              if (statusA !== statusB) return statusA - statusB;
               // Then by priority
-              const priorityDiff = (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99);
-              if (priorityDiff !== 0) return priorityDiff;
+              const priorityA = priorityOrder[a.priority] || 99;
+              const priorityB = priorityOrder[b.priority] || 99;
+              if (priorityA !== priorityB) return priorityA - priorityB;
               // Then by progress (higher first)
               return (b.progress || 0) - (a.progress || 0);
             });
