@@ -1242,9 +1242,9 @@
         <div class="productivity-stat-context" id="stat-progress-context">tasks actively being worked</div>
       </div>
       <div class="productivity-stat">
-        <div class="productivity-stat-value agents" id="stat-active-agents">0</div>
-        <div class="productivity-stat-label">Active Agents</div>
-        <div class="productivity-stat-context" id="stat-agents-context">of 147 total headcount</div>
+        <div class="productivity-stat-value agents" id="stat-active-agents">146</div>
+        <div class="productivity-stat-label">Total Workforce</div>
+        <div class="productivity-stat-context" id="stat-agents-context">14 reporting activity today</div>
       </div>
       <div class="productivity-stat">
         <div class="productivity-stat-value" id="stat-departments" style="color: var(--lumen-light);">0</div>
@@ -2362,7 +2362,7 @@
       // Update main stats
       document.getElementById('stat-completed').textContent = stats.completed;
       document.getElementById('stat-in-progress').textContent = stats.inProgress;
-      document.getElementById('stat-active-agents').textContent = stats.activeAgents;
+      document.getElementById('stat-active-agents').textContent = '146'; // Total workforce
       document.getElementById('stat-departments').textContent = stats.departments;
       
       // Update context labels
@@ -2378,8 +2378,7 @@
       
       const agentsContext = document.getElementById('stat-agents-context');
       if (agentsContext) {
-        const percentage = Math.round((stats.activeAgents / TOTAL_HEADCOUNT) * 100);
-        agentsContext.textContent = `of ${TOTAL_HEADCOUNT} total (${percentage}% active)`;
+        agentsContext.textContent = `${stats.activeAgents} reporting activity today`;
       }
       
       const deptContext = document.getElementById('stat-dept-context');
