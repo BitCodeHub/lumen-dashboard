@@ -57,12 +57,13 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Security middleware (added 2026-01-31 per Casey's security advisory)
-// Fixed 2026-01-31: Added CDN sources for Tailwind, SimpleMDE, Chart.js
+// Fixed 2026-01-31: Added CDN sources + allow inline onclick handlers
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net"], // Allow CDN scripts
+      scriptSrcAttr: ["'unsafe-inline'"], // Allow onclick handlers
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "http:"],
