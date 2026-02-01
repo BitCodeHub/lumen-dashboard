@@ -17,6 +17,9 @@ const AZURE_OPENAI_API_KEY = process.env.AZURE_OPENAI_API_KEY || '';
 const AZURE_OPENAI_DEPLOYMENT = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4.1';
 const AZURE_OPENAI_API_VERSION = process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview';
 
+// Brave Search API
+const BRAVE_API_KEY = process.env.BRAVE_API_KEY || 'BSABvHsl6UydRIohkKFRZZYk-dAmZY2';
+
 const AI_ENABLED = !!(AZURE_OPENAI_ENDPOINT && AZURE_OPENAI_API_KEY);
 
 // ==========================================
@@ -87,8 +90,8 @@ const AGENTS = {
       emoji: '🏢',
       specialty: 'Web & News',
       agentCount: 10,
-      sources: ['web', 'news'],
-      focus: 'News articles, blog posts, official announcements',
+      sources: ['brave', 'web'],
+      focus: 'News articles, blog posts, official announcements via Brave Search',
       status: 'idle'
     },
     {
@@ -409,6 +412,61 @@ async function fetchWeb(query) {
   }
 }
 
+async function fetchBrave(query) {
+  if (!BRAVE_API_KEY) {
+    console.log('[EnterpriseIntel] Brave API key not configured');
+    return [];
+  }
+  
+  try {
+    const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=20`;
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Subscription-Token': BRAVE_API_KEY
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('[EnterpriseIntel] Brave API error:', response.status);
+      return [];
+    }
+    
+    const data = await response.json();
+    const results = [];
+    
+    // Web results
+    for (const item of (data.web?.results || []).slice(0, 15)) {
+      results.push({
+        id: `brave-${item.url?.slice(-40) || Date.now()}`,
+        title: item.title,
+        content: item.description || '',
+        url: item.url,
+        source: 'brave',
+        age: item.age
+      });
+    }
+    
+    // News results if available
+    for (const item of (data.news?.results || []).slice(0, 5)) {
+      results.push({
+        id: `brave-news-${item.url?.slice(-40) || Date.now()}`,
+        title: `📰 ${item.title}`,
+        content: item.description || '',
+        url: item.url,
+        source: 'brave-news',
+        age: item.age
+      });
+    }
+    
+    console.log(`[EnterpriseIntel] Brave: "${query}" -> ${results.length} results`);
+    return results;
+  } catch (err) {
+    console.error('[EnterpriseIntel] Brave fetch error:', err.message);
+    return [];
+  }
+}
+
 // ==========================================
 // AGENT EXECUTION - PARALLEL REAL AI AGENTS
 // ==========================================
@@ -434,6 +492,9 @@ async function runSquadAgent(squad, query, context) {
         break;
       case 'hackernews':
         rawData.push(...await fetchHackerNews(query));
+        break;
+      case 'brave':
+        rawData.push(...await fetchBrave(query));
         break;
       case 'web':
       case 'news':

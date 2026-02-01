@@ -661,19 +661,19 @@
         </div>
       </div>
 
-      <!-- Agent Army Live Feed -->
-      <div class="results-section" style="margin-bottom: 1.5rem;">
-        <div class="results-header">
-          <h3>🛡️ Agent Army Live Feed</h3>
+      <!-- Agent Army Live Feed - Collapsible -->
+      <details class="results-section" style="margin-bottom: 1.5rem;" open>
+        <summary class="results-header" style="cursor: pointer; list-style: none;">
+          <h3>🛡️ General Tech Intel <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">(not related to your search)</span></h3>
           <span class="results-count" id="army-count">Loading...</span>
-        </div>
-        <div class="results-body" id="army-body" style="max-height: 400px;">
+        </summary>
+        <div class="results-body" id="army-body" style="max-height: 300px;">
           <div class="empty-state">
             <div class="emoji">⏳</div>
             <h3>Loading opportunities...</h3>
           </div>
         </div>
-      </div>
+      </details>
 
       <!-- Results Section -->
       <div class="results-section">
@@ -842,9 +842,11 @@
     }
 
     function updateKPIs(data) {
-      document.getElementById('kpi-sources').textContent = data.metrics?.totalSources || 0;
+      console.log('[Intel] Updating KPIs with:', data.metrics);
+      const sources = data.metrics?.totalSources || data.squadStats?.reduce((sum, s) => sum + (s.sources || 0), 0) || 0;
+      document.getElementById('kpi-sources').textContent = sources;
       document.getElementById('kpi-results').textContent = data.results?.length || 0;
-      document.getElementById('kpi-confidence').textContent = (data.synthesis?.confidence_score || 0) + '%';
+      document.getElementById('kpi-confidence').textContent = (data.synthesis?.confidence_score || data.metrics?.confidence || 0) + '%';
       document.getElementById('kpi-time').textContent = (data.metrics?.duration || 0) + 'ms';
     }
 
