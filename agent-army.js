@@ -615,6 +615,142 @@ async function searchWeb(query) {
   }
 }
 
+// ==========================================
+// APP STORE REVIEW SCANNING
+// ==========================================
+
+async function searchAppleAppStore(query) {
+  try {
+    const encodedQuery = encodeURIComponent(query);
+    const url = `https://itunes.apple.com/search?term=${encodedQuery}&entity=software&limit=5&country=us`;
+    
+    const response = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT }
+    });
+    
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    if (!data.results) return [];
+    
+    return data.results.map(app => ({
+      id: `apple-${app.trackId}`,
+      appId: app.trackId,
+      name: app.trackName,
+      developer: app.artistName,
+      icon: app.artworkUrl100,
+      rating: app.averageUserRating,
+      ratingCount: app.userRatingCount,
+      price: app.formattedPrice,
+      url: app.trackViewUrl,
+      source: 'appstore',
+      platform: 'ios'
+    }));
+  } catch (err) {
+    console.error('[AgentArmy] Apple App Store search error:', err.message);
+    return [];
+  }
+}
+
+async function fetchAppleAppReviews(appId, country = 'us') {
+  try {
+    // Apple RSS feed for reviews
+    const url = `https://itunes.apple.com/rss/customerreviews/id=${appId}/sortBy=mostRecent/json`;
+    
+    const response = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT }
+    });
+    
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    if (!data.feed || !data.feed.entry) return [];
+    
+    // Skip first entry (app info)
+    const reviews = data.feed.entry.slice(1);
+    
+    return reviews.map(review => ({
+      id: review.id?.label || `review-${Date.now()}`,
+      title: review.title?.label || '',
+      content: review.content?.label || '',
+      rating: parseInt(review['im:rating']?.label) || 0,
+      author: review.author?.name?.label || 'Anonymous',
+      version: review['im:version']?.label || '',
+      date: review.updated?.label || '',
+      url: review.link?.attributes?.href || '',
+      source: 'appstore-review',
+      platform: 'ios',
+      sentiment: getSentiment(parseInt(review['im:rating']?.label) || 3)
+    }));
+  } catch (err) {
+    console.error('[AgentArmy] Apple reviews fetch error:', err.message);
+    return [];
+  }
+}
+
+async function searchGooglePlayStore(query) {
+  // Google Play doesn't have a public API, but we can search via web
+  try {
+    const encodedQuery = encodeURIComponent(query + ' site:play.google.com/store/apps');
+    const url = `https://api.duckduckgo.com/?q=${encodedQuery}&format=json&no_redirect=1`;
+    
+    const response = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT }
+    });
+    
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    const results = [];
+    
+    if (data.RelatedTopics) {
+      for (const topic of data.RelatedTopics.slice(0, 5)) {
+        if (topic.FirstURL && topic.FirstURL.includes('play.google.com')) {
+          results.push({
+            id: `play-${topic.FirstURL.slice(-30)}`,
+            name: topic.Text?.split(' - ')[0] || query,
+            snippet: topic.Text || '',
+            url: topic.FirstURL,
+            source: 'playstore',
+            platform: 'android'
+          });
+        }
+      }
+    }
+    
+    return results;
+  } catch (err) {
+    console.error('[AgentArmy] Google Play search error:', err.message);
+    return [];
+  }
+}
+
+function getSentiment(rating) {
+  if (rating >= 4) return { label: 'Positive', emoji: '😊', color: '#22c55e' };
+  if (rating >= 3) return { label: 'Neutral', emoji: '😐', color: '#f59e0b' };
+  return { label: 'Negative', emoji: '😞', color: '#ef4444' };
+}
+
+function analyzeSentiment(text) {
+  const positiveWords = ['love', 'great', 'amazing', 'excellent', 'best', 'awesome', 'perfect', 'fantastic', 'helpful', 'recommend'];
+  const negativeWords = ['hate', 'terrible', 'worst', 'awful', 'bad', 'horrible', 'useless', 'waste', 'broken', 'crash', 'bug'];
+  
+  const lower = text.toLowerCase();
+  let positiveCount = 0;
+  let negativeCount = 0;
+  
+  for (const word of positiveWords) {
+    if (lower.includes(word)) positiveCount++;
+  }
+  for (const word of negativeWords) {
+    if (lower.includes(word)) negativeCount++;
+  }
+  
+  if (positiveCount > negativeCount) return { label: 'Positive', emoji: '😊', color: '#22c55e', score: positiveCount };
+  if (negativeCount > positiveCount) return { label: 'Negative', emoji: '😞', color: '#ef4444', score: -negativeCount };
+  return { label: 'Neutral', emoji: '😐', color: '#f59e0b', score: 0 };
+}
+
 function scoreRelevance(item, keywords, context) {
   const content = `${item.title || ''} ${item.selftext || ''} ${item.snippet || ''}`.toLowerCase();
   const keywordList = keywords.toLowerCase().split(/\s+/);
@@ -669,11 +805,13 @@ async function runIntelligentResearch(keyword, context, sources) {
     
     for (const result of redditResults) {
       const { score, matches } = scoreRelevance(result, keyword, context);
+      const sentiment = analyzeSentiment(`${result.title} ${result.selftext}`);
       if (score >= 30) { // Relevance threshold
         allResults.push({
           ...result,
           relevanceScore: score,
           matches,
+          sentiment,
           priority: score >= 80 ? 'hot' : score >= 50 ? 'warm' : 'monitor',
           foundBy: 'LumenSec'
         });
@@ -688,15 +826,91 @@ async function runIntelligentResearch(keyword, context, sources) {
     
     for (const result of webResults) {
       const { score, matches } = scoreRelevance(result, keyword, context);
+      const sentiment = analyzeSentiment(`${result.title} ${result.snippet}`);
       if (score >= 20) {
         allResults.push({
           ...result,
           relevanceScore: score,
           matches,
+          sentiment,
           priority: score >= 60 ? 'hot' : score >= 40 ? 'warm' : 'monitor',
           foundBy: 'LumenRes'
         });
       }
+    }
+  }
+  
+  // Apple App Store search
+  if (sources.includes('appstore')) {
+    const apps = await searchAppleAppStore(keyword);
+    sourcesScanned += apps.length;
+    
+    for (const app of apps) {
+      // Fetch reviews for each app
+      const reviews = await fetchAppleAppReviews(app.appId);
+      sourcesScanned += reviews.length;
+      
+      // Add app info
+      allResults.push({
+        id: app.id,
+        title: `📱 ${app.name} - iOS App`,
+        snippet: `By ${app.developer} • ⭐ ${app.rating?.toFixed(1) || 'N/A'} (${app.ratingCount?.toLocaleString() || 0} ratings) • ${app.price}`,
+        url: app.url,
+        source: 'appstore',
+        platform: 'ios',
+        appInfo: app,
+        relevanceScore: 70,
+        matches: [keyword],
+        sentiment: getSentiment(Math.round(app.rating || 3)),
+        priority: app.rating >= 4 ? 'hot' : app.rating >= 3 ? 'warm' : 'monitor',
+        foundBy: 'LumenEnt'
+      });
+      
+      // Add relevant reviews
+      for (const review of reviews.slice(0, 5)) {
+        const { score, matches } = scoreRelevance({ title: review.title, selftext: review.content }, keyword, context);
+        if (score >= 20 || context.toLowerCase().includes('review') || context.toLowerCase().includes('sentiment')) {
+          allResults.push({
+            id: review.id,
+            title: `⭐${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)} ${review.title}`,
+            snippet: review.content,
+            fullContent: review.content,
+            url: review.url || app.url,
+            source: 'appstore-review',
+            platform: 'ios',
+            author: review.author,
+            rating: review.rating,
+            appName: app.name,
+            relevanceScore: score + (review.rating <= 2 ? 20 : 0), // Boost negative reviews for insights
+            matches,
+            sentiment: review.sentiment,
+            priority: review.rating <= 2 ? 'hot' : review.rating <= 3 ? 'warm' : 'monitor',
+            foundBy: 'LumenArch'
+          });
+        }
+      }
+    }
+  }
+  
+  // Google Play Store search
+  if (sources.includes('playstore')) {
+    const apps = await searchGooglePlayStore(keyword);
+    sourcesScanned += apps.length;
+    
+    for (const app of apps) {
+      allResults.push({
+        id: app.id,
+        title: `📱 ${app.name} - Android App`,
+        snippet: app.snippet,
+        url: app.url,
+        source: 'playstore',
+        platform: 'android',
+        relevanceScore: 60,
+        matches: [keyword],
+        sentiment: { label: 'Unknown', emoji: '❓', color: '#71717a' },
+        priority: 'warm',
+        foundBy: 'LumenDev'
+      });
     }
   }
   
@@ -706,13 +920,21 @@ async function runIntelligentResearch(keyword, context, sources) {
   const duration = Date.now() - startTime;
   console.log(`[AgentArmy] Research complete: ${allResults.length} relevant results from ${sourcesScanned} sources (${duration}ms)`);
   
+  // Calculate sentiment summary
+  const sentimentSummary = {
+    positive: allResults.filter(r => r.sentiment?.label === 'Positive').length,
+    neutral: allResults.filter(r => r.sentiment?.label === 'Neutral').length,
+    negative: allResults.filter(r => r.sentiment?.label === 'Negative').length
+  };
+  
   return {
     results: allResults.slice(0, 50), // Top 50 results
     stats: {
       sourcesScanned,
       totalResults: allResults.length,
       hotCount: allResults.filter(r => r.priority === 'hot').length,
-      duration
+      duration,
+      sentiment: sentimentSummary
     }
   };
 }

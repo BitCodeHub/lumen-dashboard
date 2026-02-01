@@ -516,6 +516,140 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--lumen-border);
+      border-radius: 16px;
+      max-width: 700px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: modalIn 0.2s ease-out;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 1;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    .modal-close:hover {
+      color: var(--text-primary);
+    }
+    .modal-body {
+      padding: 1.5rem;
+    }
+    .modal-meta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+    }
+    .modal-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.8rem;
+      background: var(--bg-elevated);
+      border-radius: 6px;
+      color: var(--text-secondary);
+    }
+    .modal-content {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+    }
+    .modal-url {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: var(--bg-elevated);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .modal-url-text {
+      flex: 1;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      word-break: break-all;
+    }
+    .modal-url-btn {
+      padding: 0.5rem 1rem;
+      background: var(--lumen-primary);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .modal-url-btn:hover {
+      background: var(--lumen-light);
+    }
+    .sentiment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .sentiment-positive { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .sentiment-neutral { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .sentiment-negative { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    /* Clickable result cards */
+    .result-card {
+      cursor: pointer;
+    }
+    .result-card:hover {
+      border-color: var(--lumen-primary);
+      transform: translateY(-1px);
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .header { padding: 1rem; }
@@ -523,6 +657,7 @@
       .search-row { flex-direction: column; }
       .search-input-wrapper { min-width: 100%; }
       .page-tabs { display: none; }
+      .modal { margin: 0.5rem; max-height: 90vh; }
     }
   </style>
 </head>
@@ -577,13 +712,17 @@
             <input type="checkbox" name="source" value="web" checked>
             <span>🌐</span> Web Search
           </label>
+          <label class="source-toggle active">
+            <input type="checkbox" name="source" value="appstore" checked>
+            <span>🍎</span> App Store
+          </label>
+          <label class="source-toggle active">
+            <input type="checkbox" name="source" value="playstore" checked>
+            <span>🤖</span> Google Play
+          </label>
           <label class="source-toggle">
             <input type="checkbox" name="source" value="twitter" disabled>
             <span>🐦</span> X/Twitter (soon)
-          </label>
-          <label class="source-toggle">
-            <input type="checkbox" name="source" value="trends" disabled>
-            <span>📈</span> Google Trends (soon)
           </label>
         </div>
       </form>
@@ -680,6 +819,25 @@
       </div>
     </section>
   </main>
+
+  <!-- Result Detail Modal -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-title">Result Title</div>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-meta" id="modal-meta"></div>
+        <div class="modal-content" id="modal-content"></div>
+        <div class="modal-url">
+          <span style="font-size: 1.25rem;">🔗</span>
+          <div class="modal-url-text" id="modal-url-text"></div>
+          <a id="modal-url-btn" class="modal-url-btn" href="#" target="_blank">Open Source →</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     // State
@@ -819,22 +977,29 @@
         return;
       }
       
-      grid.innerHTML = results.map(result => `
-        <div class="result-card ${result.priority}">
+      grid.innerHTML = results.map((result, idx) => `
+        <div class="result-card ${result.priority}" onclick="openModal(${idx})">
           <div class="result-header">
-            <div class="result-title">
-              <a href="${result.url}" target="_blank">${truncate(result.title, 120)}</a>
+            <div class="result-title">${truncate(result.title, 120)}</div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              ${result.sentiment ? `
+                <span class="sentiment-badge sentiment-${result.sentiment.label?.toLowerCase() || 'neutral'}">
+                  ${result.sentiment.emoji || '😐'} ${result.sentiment.label || 'Neutral'}
+                </span>
+              ` : ''}
+              <span class="result-priority ${result.priority}">
+                ${result.priority === 'hot' ? '🔥 Hot' : result.priority === 'warm' ? '🟡 Warm' : '👀 Monitor'}
+              </span>
             </div>
-            <span class="result-priority ${result.priority}">
-              ${result.priority === 'hot' ? '🔥 Hot' : result.priority === 'warm' ? '🟡 Warm' : '👀 Monitor'}
-            </span>
           </div>
           ${result.snippet ? `<p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.5rem 0;">${truncate(result.snippet, 200)}</p>` : ''}
           <div class="result-meta">
-            <span class="result-source">${getSourceIcon(result.source)} ${result.source}</span>
+            <span class="result-source">${getSourceIcon(result.source)} ${getSourceLabel(result.source)}</span>
             ${result.score ? `<span>⬆️ ${result.score}</span>` : ''}
-            ${result.comments ? `<span>💬 ${result.comments}</span>` : ''}
+            ${result.numComments ? `<span>💬 ${result.numComments}</span>` : ''}
+            ${result.rating ? `<span>⭐ ${result.rating}/5</span>` : ''}
             ${result.subreddit ? `<span>📁 r/${result.subreddit}</span>` : ''}
+            ${result.appName ? `<span>📱 ${result.appName}</span>` : ''}
             <span>🤖 ${result.foundBy || 'AgentArmy'}</span>
           </div>
           ${result.matches && result.matches.length > 0 ? `
@@ -845,6 +1010,64 @@
         </div>
       `).join('');
     }
+    
+    function getSourceLabel(source) {
+      const labels = {
+        'reddit': 'Reddit',
+        'web': 'Web',
+        'appstore': 'App Store',
+        'appstore-review': 'App Review',
+        'playstore': 'Google Play',
+        'twitter': 'X/Twitter'
+      };
+      return labels[source] || source;
+    }
+    
+    function openModal(idx) {
+      const result = results[idx];
+      if (!result) return;
+      
+      document.getElementById('modal-title').textContent = result.title;
+      
+      // Build meta section
+      const metaItems = [];
+      if (result.source) metaItems.push(`${getSourceIcon(result.source)} ${getSourceLabel(result.source)}`);
+      if (result.sentiment) metaItems.push(`${result.sentiment.emoji} ${result.sentiment.label}`);
+      if (result.score) metaItems.push(`⬆️ ${result.score} upvotes`);
+      if (result.numComments) metaItems.push(`💬 ${result.numComments} comments`);
+      if (result.rating) metaItems.push(`⭐ ${result.rating}/5 stars`);
+      if (result.author) metaItems.push(`👤 ${result.author}`);
+      if (result.subreddit) metaItems.push(`📁 r/${result.subreddit}`);
+      if (result.appName) metaItems.push(`📱 ${result.appName}`);
+      if (result.foundBy) metaItems.push(`🤖 Found by ${result.foundBy}`);
+      
+      document.getElementById('modal-meta').innerHTML = metaItems.map(item => 
+        `<span class="modal-meta-item">${item}</span>`
+      ).join('');
+      
+      // Content
+      const content = result.fullContent || result.selftext || result.snippet || 'No additional content available.';
+      document.getElementById('modal-content').textContent = content;
+      
+      // URL
+      document.getElementById('modal-url-text').textContent = result.url;
+      document.getElementById('modal-url-btn').href = result.url;
+      
+      // Show modal
+      document.getElementById('modal-overlay').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('modal-overlay').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
 
     function getSourceIcon(source) {
       const icons = {
