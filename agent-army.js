@@ -852,180 +852,165 @@ async function aiFilterResults(results, keyword, context, options = {}) {
     return basicFilter(results, keyword, context, region);
   }
   
-  console.log(`[AgentArmy] AI filtering ${results.length} results with Claude...`);
+  console.log(`[AgentArmy] AI filtering ${results.length} results with ${AI_PROVIDER}...`);
   
-  // Batch results for efficiency (analyze 10 at a time)
-  const batchSize = 10;
+  // Batch results for efficiency (analyze 5 at a time for speed)
+  const batchSize = 5;
   const filteredResults = [];
+  let aiCallFailed = false;
   
-  for (let i = 0; i < results.length; i += batchSize) {
+  for (let i = 0; i < Math.min(results.length, 30); i += batchSize) { // Limit to first 30 for speed
     const batch = results.slice(i, i + batchSize);
     
-    const prompt = `You are an AI research agent. Your job is to filter search results for relevance.
+    const prompt = `You are an AI research analyst. Filter these search results for relevance.
 
-USER QUERY: "${keyword}"
-USER CONTEXT: "${context || 'No additional context'}"
-REQUIRED REGION: ${region} (reject content from other regions/countries)
-REQUIRED LANGUAGE: ${language} (reject non-${language} content)
+QUERY: "${keyword}"
+CONTEXT: "${context || 'General search'}"
+REGION: ${region} only (reject other countries)
 
-Analyze each result below and respond with a JSON array of objects with format:
-{"index": number, "relevant": boolean, "reason": "brief reason", "relevanceScore": 0-100}
+For each result, respond with JSON array:
+[{"index": 0, "relevant": true/false, "score": 0-100, "reason": "why"}]
 
-STRICT RULES:
-1. Result MUST directly relate to BOTH the query AND the context
-2. Reject results about different topics even if they mention the keyword
-3. Reject results from other countries/regions (e.g., reject German, UK, Europe content if US required)
-4. Reject results in other languages
-5. For app-related queries, only include results about that SPECIFIC app issue mentioned
-6. A result about "climate control" is NOT relevant to "app crash issues"
-7. Be VERY strict - when in doubt, reject
+RULES:
+- relevant=true if it matches the query AND context topic
+- For "${keyword}" with context "${context}": only include results about this SPECIFIC topic
+- Reject non-English content
+- Reject content clearly from other countries (German, UK, etc)
+- Score 80+ = highly relevant, 50-79 = somewhat relevant
 
-RESULTS TO ANALYZE:
-${batch.map((r, idx) => `[${idx}] Title: ${r.title}\nContent: ${(r.selftext || r.snippet || '').substring(0, 300)}\nSource: ${r.source}${r.subreddit ? ` (r/${r.subreddit})` : ''}`).join('\n\n')}
+RESULTS:
+${batch.map((r, idx) => `[${idx}] ${r.title} | ${(r.selftext || r.snippet || '').substring(0, 200)}`).join('\n')}
 
-Respond ONLY with the JSON array, no other text.`;
+JSON only:`;
 
     try {
-      const response = await callAI(prompt, 1000);
+      const response = await callAI(prompt, 800);
       
       if (response) {
         // Parse JSON response
-        const jsonMatch = response.match(/\[[\s\S]*\]/);
+        const jsonMatch = response.match(/\[[\s\S]*?\]/);
         if (jsonMatch) {
-          const analysis = JSON.parse(jsonMatch[0]);
-          
-          for (const item of analysis) {
-            if (item.relevant && item.relevanceScore >= 50) {
-              const result = batch[item.index];
-              if (result) {
-                filteredResults.push({
-                  ...result,
-                  aiRelevanceScore: item.relevanceScore,
-                  aiReason: item.reason,
-                  relevanceScore: item.relevanceScore,
-                  priority: item.relevanceScore >= 80 ? 'hot' : item.relevanceScore >= 60 ? 'warm' : 'monitor'
-                });
+          try {
+            const analysis = JSON.parse(jsonMatch[0]);
+            
+            for (const item of analysis) {
+              if (item.relevant && (item.score >= 40 || item.relevanceScore >= 40)) {
+                const result = batch[item.index];
+                if (result) {
+                  const score = item.score || item.relevanceScore || 60;
+                  filteredResults.push({
+                    ...result,
+                    aiRelevanceScore: score,
+                    aiReason: item.reason || 'AI matched',
+                    relevanceScore: score,
+                    priority: score >= 75 ? 'hot' : score >= 55 ? 'warm' : 'monitor'
+                  });
+                }
               }
             }
+          } catch (parseErr) {
+            console.error('[AgentArmy] JSON parse error:', parseErr.message, 'Response:', response.substring(0, 200));
           }
         }
+      } else {
+        console.log('[AgentArmy] AI returned null response');
+        aiCallFailed = true;
       }
     } catch (err) {
-      console.error('[AgentArmy] AI filtering batch error:', err.message);
-      // Fall back to basic filtering for this batch
-      filteredResults.push(...basicFilter(batch, keyword, context, region));
+      console.error('[AgentArmy] AI filtering error:', err.message);
+      aiCallFailed = true;
     }
     
-    // Small delay between batches to respect rate limits
+    // Small delay between batches
     if (i + batchSize < results.length) {
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
+  }
+  
+  // If AI filtering returned nothing or failed, fall back to basic filtering
+  if (filteredResults.length === 0 || aiCallFailed) {
+    console.log('[AgentArmy] AI filtering returned 0 results or failed, using basic filter');
+    return basicFilter(results, keyword, context, region);
   }
   
   console.log(`[AgentArmy] AI filtered to ${filteredResults.length} relevant results`);
   return filteredResults;
 }
 
-function basicFilter(results, keyword, context, region) {
-  // STRICT fallback filtering when Claude API is not available
+function basicFilter(results, keyword, context, region = 'US') {
+  // Smart fallback filtering - US English only
   const keywordLower = keyword.toLowerCase();
   const keywordParts = keywordLower.split(/\s+/).filter(w => w.length > 2);
   const contextLower = (context || '').toLowerCase();
   const contextWords = contextLower.split(/\s+/).filter(w => w.length > 3);
   
-  // Region-specific rejection patterns
-  const regionFilters = {
-    'US': {
-      reject: ['deutschland', 'german', 'français', 'french', 'españa', 'spanish', 'italiano', 
-               'uk only', 'australia', 'canadian', 'india', 'brasil', 'россия', 'china', 
-               '€', '£', '¥', 'europe only', 'eu only', 'nicht', 'keine', 'très', 'molto'],
-      require: [] // US is default, no specific requirements
-    },
-    'UK': {
-      reject: ['usa only', 'us only', 'america only', '$', 'deutschland', 'français'],
-      require: []
-    },
-    'EU': {
-      reject: ['usa only', 'us only', 'uk only'],
-      require: []
-    },
-    'Global': {
-      reject: [],
-      require: []
-    }
-  };
+  // Non-US/non-English rejection patterns
+  const rejectPatterns = ['deutschland', 'german', 'français', 'french', 'españa', 'italiano', 
+                          'australia', 'brasil', 'россия', '€', '£', '¥', 'nicht', 'keine'];
   
-  const filter = regionFilters[region] || regionFilters['US'];
-  
-  return results.filter(r => {
+  const filtered = results.filter(r => {
     const content = `${r.title || ''} ${r.selftext || ''} ${r.snippet || ''}`.toLowerCase();
     
-    // STRICT: Must contain ALL keyword parts (not just first word)
-    for (const part of keywordParts) {
-      if (!content.includes(part)) return false;
+    // Must contain at least the main keyword (first significant word)
+    const mainKeyword = keywordParts.find(p => p.length > 3) || keywordParts[0];
+    if (mainKeyword && !content.includes(mainKeyword)) return false;
+    
+    // Reject non-US content
+    for (const pattern of rejectPatterns) {
+      if (content.includes(pattern)) return false;
     }
     
-    // STRICT: Reject non-matching regions
-    for (const indicator of filter.reject) {
-      if (content.includes(indicator)) return false;
-    }
-    
-    // STRICT: If context provided, must match context meaning
+    // If context mentions specific issues, prioritize those
     if (contextWords.length > 0) {
-      let contextMatchCount = 0;
+      let hasContextMatch = false;
       for (const word of contextWords) {
         if (content.includes(word)) {
-          contextMatchCount++;
+          hasContextMatch = true;
+          break;
         }
       }
-      // Must match at least 30% of context words, or at least 2 words
-      const threshold = Math.max(2, Math.floor(contextWords.length * 0.3));
-      if (contextMatchCount < Math.min(threshold, contextWords.length)) return false;
-    }
-    
-    // Calculate relevance score
-    let score = 50;
-    
-    // Boost for keyword density
-    for (const part of keywordParts) {
-      const matches = (content.match(new RegExp(part, 'g')) || []).length;
-      score += matches * 5;
-    }
-    
-    // Boost for context matches
-    for (const word of contextWords) {
-      if (content.includes(word)) score += 10;
-    }
-    
-    // Boost for high-intent phrases in context
-    const intentPhrases = ['crash', 'issue', 'problem', 'bug', 'error', 'fail', 'broken', 'not working', 'help'];
-    for (const phrase of intentPhrases) {
-      if (contextLower.includes(phrase) && content.includes(phrase)) {
-        score += 20;
+      // For specific context, require at least one context word match
+      if (contextLower.includes('crash') || contextLower.includes('issue') || contextLower.includes('problem')) {
+        if (!hasContextMatch) return false;
       }
     }
     
     return true;
-  }).map(r => {
+  });
+  
+  // Score and sort results
+  const scored = filtered.map(r => {
     let score = 50;
     const content = `${r.title || ''} ${r.selftext || ''} ${r.snippet || ''}`.toLowerCase();
     
-    // Calculate final score
+    // Boost for keyword matches
     for (const part of keywordParts) {
-      const matches = (content.match(new RegExp(part, 'g')) || []).length;
-      score += matches * 5;
+      if (content.includes(part)) score += 15;
     }
+    
+    // Boost for context word matches
     for (const word of contextWords) {
-      if (content.includes(word)) score += 10;
+      if (content.includes(word)) score += 20;
+    }
+    
+    // Boost for issue-related words if context mentions issues
+    const issueWords = ['crash', 'bug', 'issue', 'problem', 'error', 'fail', 'broken', 'freeze', 'stuck'];
+    if (contextLower.includes('crash') || contextLower.includes('issue')) {
+      for (const word of issueWords) {
+        if (content.includes(word)) score += 25;
+      }
     }
     
     return {
       ...r,
       relevanceScore: Math.min(score, 100),
       priority: score >= 80 ? 'hot' : score >= 60 ? 'warm' : 'monitor',
-      aiReason: 'Matched via keyword + context filtering'
+      aiReason: 'Keyword + context match'
     };
-  }).sort((a, b) => b.relevanceScore - a.relevanceScore);
+  });
+  
+  // Sort by score and return top results
+  return scored.sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, 30);
 }
 
 function scoreRelevance(item, keywords, context) {

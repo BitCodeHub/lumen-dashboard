@@ -722,15 +722,7 @@
           </label>
         </div>
         <div style="display: flex; gap: 1rem; margin-top: 1rem; align-items: center;">
-          <label style="font-size: 0.85rem; color: var(--text-secondary);">
-            🌎 Region:
-            <select id="search-region" style="margin-left: 0.5rem; padding: 0.4rem 0.8rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;">
-              <option value="US" selected>🇺🇸 United States</option>
-              <option value="UK">🇬🇧 United Kingdom</option>
-              <option value="EU">🇪🇺 Europe</option>
-              <option value="Global">🌍 Global (All)</option>
-            </select>
-          </label>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">🇺🇸 US Only</span>
           <span id="ai-badge" style="font-size: 0.75rem; padding: 0.3rem 0.6rem; background: var(--lumen-glow); border: 1px solid var(--lumen-border); border-radius: 20px; color: var(--lumen-primary);">
             🤖 AI-Powered Filtering
           </span>
@@ -890,18 +882,15 @@
       isSearching = true;
       results = [];
       
-      // Get region
-      const region = document.getElementById('search-region').value;
-      
       // Update UI
       updateSearchingUI(true);
       
       try {
-        // Call research API with AI filtering
+        // Call research API with AI filtering (US only, English only)
         const response = await fetch('/api/agent-army/research', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keyword, context, sources, region, language: 'English' })
+          body: JSON.stringify({ keyword, context, sources, region: 'US', language: 'English' })
         });
         
         const data = await response.json();
