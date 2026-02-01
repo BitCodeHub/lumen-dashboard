@@ -2297,35 +2297,37 @@ function parseBlockers(content) {
 
 // Parse product progress
 function parseProductProgress(standupContent, productContent) {
+  // Current product list — Active projects FIRST, stopped/halted LAST
+  // Updated Feb 2, 2026: StackAudit STOPPED per CEO directive
   const products = [
-    { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', defaultProgress: 85 },
-    { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', defaultProgress: 45 },
-    { id: 'pricehawk', name: 'PriceHawk.io', emoji: '🦅', defaultProgress: 20 },
-    { id: 'ai-compliance', name: 'AI Compliance Monitor', emoji: '📋', defaultProgress: 10 },
-    { id: 'ai-legal-review', name: 'AI Legal Doc Review', emoji: '⚖️', defaultProgress: 5 },
-    { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', defaultProgress: 100 }
+    // ACTIVE — these appear first
+    { id: 'agentshield', name: 'AgentShield', emoji: '🛡️', defaultProgress: 35, defaultStatus: 'active', priority: 'P0', note: 'Active development. Sprint 0 ongoing.' },
+    { id: 'ai-code-observability', name: 'AI Code Observability', emoji: '📈', defaultProgress: 80, defaultStatus: 'active', priority: 'P1', note: 'MVP complete. Testing in progress.' },
+    // LIVE
+    { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', defaultProgress: 100, defaultStatus: 'live', priority: 'P1', note: 'Operational.' },
+    // PLANNING
+    { id: 'eu-ai-compliance', name: 'EU AI Compliance SaaS', emoji: '🇪🇺', defaultProgress: 25, defaultStatus: 'planning', priority: 'P1', note: 'March 1 target. Awaiting approval.' },
+    // PIPELINE
+    { id: 'ai-code-validator', name: 'AI Code Quality Validator', emoji: '✅', defaultProgress: 10, defaultStatus: 'pipeline', priority: 'P2', note: 'Conditional on StackAudit validation.' },
+    { id: 'construction-safety', name: 'Construction Safety AI', emoji: '🏗️', defaultProgress: 5, defaultStatus: 'pipeline', priority: 'P2', note: 'Validation pending.' },
+    // STOPPED — StackAudit work halted per CEO directive Feb 2, 2026
+    { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', defaultProgress: 98, defaultStatus: 'stopped', priority: 'P0', note: '⏸️ STOPPED — All work halted per CEO directive.' },
+    // HALTED
+    { id: 'mcphub', name: 'MCPHub', emoji: '🔌', defaultProgress: 60, defaultStatus: 'halted', note: '⏸️ HALTED' },
+    { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', defaultProgress: 45, defaultStatus: 'halted', note: '⏸️ HALTED' },
+    { id: 'aikeysvault', name: 'AIKeysVault', emoji: '🔐', defaultProgress: 30, defaultStatus: 'halted', note: '⏸️ HALTED' }
   ];
   
   return products.map(product => {
-    // Try to extract progress from content
-    const progressMatch = standupContent.match(new RegExp(`${product.name}.*?(\\d+)%`, 'i'));
-    const progress = progressMatch ? parseInt(progressMatch[1]) : product.defaultProgress;
-    
-    // Check status
-    let status = 'development';
-    if (progress >= 100) status = 'live';
-    else if (progress < 20) status = 'planning';
-    
-    // Look for recent updates
-    const updateMatch = standupContent.match(new RegExp(`${product.id}[^\\n]*`, 'gi')) || [];
-    
     return {
       id: product.id,
       name: product.name,
       emoji: product.emoji,
-      progress,
-      status,
-      recentUpdates: updateMatch.length
+      progress: product.defaultProgress,
+      status: product.defaultStatus,
+      priority: product.priority || null,
+      note: product.note || '',
+      recentUpdates: 0
     };
   });
 }
