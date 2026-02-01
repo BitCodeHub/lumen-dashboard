@@ -1094,6 +1094,37 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
+    .productivity-stat-context {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      font-style: italic;
+    }
+    .productivity-insights {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      padding: 0.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .insight-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .insight-icon {
+      font-size: 1rem;
+    }
+    .insight-text {
+      color: var(--text-secondary);
+    }
+    .insight-text strong {
+      color: var(--text-primary);
+    }
     .productivity-chart-container {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -1190,7 +1221,7 @@
     </div>
   </section>
 
-  <!-- 📊 Team Productivity Summary Card -->
+  <!-- 📊 Team Productivity Summary Card (Redesigned) -->
   <section class="productivity-card" id="productivity-card">
     <div class="productivity-header">
       <h3 class="productivity-title">
@@ -1202,19 +1233,39 @@
     <div class="productivity-stats" id="productivity-stats">
       <div class="productivity-stat">
         <div class="productivity-stat-value completed" id="stat-completed">0</div>
-        <div class="productivity-stat-label">Completed</div>
+        <div class="productivity-stat-label">Tasks Completed</div>
+        <div class="productivity-stat-context" id="stat-completed-context">deliverables shipped today</div>
       </div>
       <div class="productivity-stat">
         <div class="productivity-stat-value in-progress" id="stat-in-progress">0</div>
         <div class="productivity-stat-label">In Progress</div>
-      </div>
-      <div class="productivity-stat">
-        <div class="productivity-stat-value blocked" id="stat-blocked">0</div>
-        <div class="productivity-stat-label">Blocked</div>
+        <div class="productivity-stat-context" id="stat-progress-context">tasks actively being worked</div>
       </div>
       <div class="productivity-stat">
         <div class="productivity-stat-value agents" id="stat-active-agents">0</div>
         <div class="productivity-stat-label">Active Agents</div>
+        <div class="productivity-stat-context" id="stat-agents-context">of 147 total headcount</div>
+      </div>
+      <div class="productivity-stat">
+        <div class="productivity-stat-value" id="stat-departments" style="color: var(--lumen-light);">0</div>
+        <div class="productivity-stat-label">Departments</div>
+        <div class="productivity-stat-context" id="stat-dept-context">actively contributing</div>
+      </div>
+    </div>
+    
+    <!-- Productivity Insights -->
+    <div class="productivity-insights" id="productivity-insights">
+      <div class="insight-item">
+        <span class="insight-icon">⚡</span>
+        <span class="insight-text" id="insight-velocity">Loading...</span>
+      </div>
+      <div class="insight-item">
+        <span class="insight-icon">🏆</span>
+        <span class="insight-text" id="insight-top-performer">Loading...</span>
+      </div>
+      <div class="insight-item" id="insight-blocked-row" style="display: none;">
+        <span class="insight-icon">🚧</span>
+        <span class="insight-text" id="insight-blocked">No blockers</span>
       </div>
     </div>
     
@@ -1223,7 +1274,7 @@
     </div>
     
     <div class="active-agents-row">
-      <span class="active-agents-label">Active now:</span>
+      <span class="active-agents-label">Recently active:</span>
       <div class="active-agents-avatars" id="active-agents-avatars">
         <!-- Populated by JS -->
       </div>
@@ -2244,13 +2295,15 @@
       }
     }
     
-    // Calculate productivity stats
+    // Calculate productivity stats (enhanced)
     function calculateProductivityStats(activities) {
       const stats = {
         completed: 0,
         inProgress: 0,
         blocked: 0,
-        activeAgents: new Set()
+        activeAgents: new Set(),
+        departments: new Set(),
+        agentTaskCount: {}
       };
       
       activities.forEach(a => {
@@ -2258,6 +2311,20 @@
         else if (a.status === 'blocked') stats.blocked++;
         else stats.inProgress++;
         stats.activeAgents.add(a.agent);
+        if (a.department) stats.departments.add(a.department);
+        
+        // Track tasks per agent for top performer
+        stats.agentTaskCount[a.agent] = (stats.agentTaskCount[a.agent] || 0) + 1;
+      });
+      
+      // Find top performer
+      let topPerformer = null;
+      let maxTasks = 0;
+      Object.entries(stats.agentTaskCount).forEach(([agent, count]) => {
+        if (count > maxTasks) {
+          maxTasks = count;
+          topPerformer = agent;
+        }
       });
       
       return {
@@ -2265,18 +2332,71 @@
         inProgress: stats.inProgress,
         blocked: stats.blocked,
         activeAgents: stats.activeAgents.size,
-        activeAgentsList: Array.from(stats.activeAgents)
+        activeAgentsList: Array.from(stats.activeAgents),
+        departments: stats.departments.size,
+        departmentsList: Array.from(stats.departments),
+        topPerformer: topPerformer,
+        topPerformerTasks: maxTasks,
+        totalActivities: activities.length
       };
     }
     
-    // Update productivity stats display
+    // Update productivity stats display (enhanced)
     function updateProductivityStats(activities) {
       const stats = calculateProductivityStats(activities);
+      const TOTAL_HEADCOUNT = 147;
       
+      // Update main stats
       document.getElementById('stat-completed').textContent = stats.completed;
       document.getElementById('stat-in-progress').textContent = stats.inProgress;
-      document.getElementById('stat-blocked').textContent = stats.blocked;
       document.getElementById('stat-active-agents').textContent = stats.activeAgents;
+      document.getElementById('stat-departments').textContent = stats.departments;
+      
+      // Update context labels
+      const completedContext = document.getElementById('stat-completed-context');
+      if (completedContext) {
+        completedContext.textContent = stats.completed === 1 ? 'task shipped today' : 'tasks shipped today';
+      }
+      
+      const progressContext = document.getElementById('stat-progress-context');
+      if (progressContext) {
+        progressContext.textContent = stats.inProgress === 1 ? 'task being worked on' : 'tasks being worked on';
+      }
+      
+      const agentsContext = document.getElementById('stat-agents-context');
+      if (agentsContext) {
+        const percentage = Math.round((stats.activeAgents / TOTAL_HEADCOUNT) * 100);
+        agentsContext.textContent = `of ${TOTAL_HEADCOUNT} total (${percentage}% active)`;
+      }
+      
+      const deptContext = document.getElementById('stat-dept-context');
+      if (deptContext) {
+        deptContext.textContent = stats.departmentsList.slice(0, 3).join(', ') + (stats.departments > 3 ? '...' : '');
+      }
+      
+      // Update insights
+      const velocityInsight = document.getElementById('insight-velocity');
+      if (velocityInsight) {
+        const avgPerAgent = stats.activeAgents > 0 ? (stats.totalActivities / stats.activeAgents).toFixed(1) : 0;
+        velocityInsight.innerHTML = `<strong>${avgPerAgent}</strong> avg tasks per active agent today`;
+      }
+      
+      const topPerformerInsight = document.getElementById('insight-top-performer');
+      if (topPerformerInsight && stats.topPerformer) {
+        const emoji = agentEmojis[stats.topPerformer] || '🤖';
+        topPerformerInsight.innerHTML = `Top contributor: <strong>${emoji} ${stats.topPerformer}</strong> with ${stats.topPerformerTasks} tasks`;
+      }
+      
+      const blockedRow = document.getElementById('insight-blocked-row');
+      const blockedInsight = document.getElementById('insight-blocked');
+      if (blockedRow && blockedInsight) {
+        if (stats.blocked > 0) {
+          blockedRow.style.display = 'flex';
+          blockedInsight.innerHTML = `<strong style="color: #ef4444;">${stats.blocked}</strong> tasks blocked — needs attention`;
+        } else {
+          blockedRow.style.display = 'none';
+        }
+      }
       
       // Update date
       document.getElementById('productivity-date').textContent = new Date().toLocaleDateString('en-US', {
