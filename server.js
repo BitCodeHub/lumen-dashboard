@@ -2451,6 +2451,46 @@ app.get('/api/team-activity', (req, res) => {
   });
 });
 
+// DELETE /api/team-activity/clear - Clear activities by keyword
+app.delete('/api/team-activity/clear', async (req, res) => {
+  const apiKey = req.headers['x-api-key'];
+  const expectedKey = process.env.DASHBOARD_API_KEY || '5328cc2a49e94c533a47eaad0409e07d48df07ca265eba69';
+  
+  if (apiKey !== expectedKey) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  const { keyword } = req.query;
+  if (!keyword) {
+    return res.status(400).json({ error: 'keyword query param required' });
+  }
+  
+  try {
+    const result = await pool.query(
+      'DELETE FROM team_activity WHERE action ILIKE $1 RETURNING id',
+      [`%${keyword}%`]
+    );
+    
+    // Also clear from in-memory feed
+    const before = teamActivityFeed.length;
+    teamActivityFeed = teamActivityFeed.filter(a => 
+      !a.action?.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    console.log(`[Team Activity] Cleared ${result.rowCount} DB entries and ${before - teamActivityFeed.length} memory entries matching "${keyword}"`);
+    
+    res.json({
+      success: true,
+      deletedFromDb: result.rowCount,
+      deletedFromMemory: before - teamActivityFeed.length,
+      keyword
+    });
+  } catch (err) {
+    console.error('[Team Activity] Clear error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/team-activity/live - Get who's working right now
 app.get('/api/team-activity/live', (req, res) => {
   const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
