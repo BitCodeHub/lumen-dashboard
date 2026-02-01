@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Roadmap | Lumen AI Solutions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-elevated: #1a1a24;
+      --border: #2a2a3a;
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --lumen-primary: #f59e0b;
+      --lumen-light: #fbbf24;
+      --lumen-dark: #d97706;
+      --lumen-glow: rgba(245, 158, 11, 0.1);
+      --lumen-border: rgba(245, 158, 11, 0.3);
+      --status-live: #22c55e;
+      --status-active: #f59e0b;
+      --status-planning: #8b5cf6;
+      --status-paused: #71717a;
+      --status-pipeline: #06b6d4;
+      --priority-p0: #ef4444;
+      --priority-p1: #f59e0b;
+      --priority-p2: #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-content {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .header-title h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .header-title span {
+      font-size: 1.75rem;
+    }
+    .header-nav {
+      display: flex;
+      gap: 1rem;
+    }
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .nav-link:hover {
+      background: var(--lumen-glow);
+      color: var(--lumen-primary);
+    }
+    .last-updated {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Stats Row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .stat-value.active { color: var(--status-active); }
+    .stat-value.live { color: var(--status-live); }
+    .stat-value.planning { color: var(--status-planning); }
+    .stat-value.pipeline { color: var(--status-pipeline); }
+    .stat-value.paused { color: var(--status-paused); }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Filters */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .filter-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .filter-btn:hover {
+      background: var(--lumen-glow);
+      border-color: var(--lumen-border);
+      color: var(--text-primary);
+    }
+    .filter-btn.active {
+      background: var(--lumen-primary);
+      border-color: var(--lumen-primary);
+      color: #000;
+      font-weight: 600;
+    }
+    .filter-btn .count {
+      background: rgba(0,0,0,0.2);
+      padding: 0.1rem 0.4rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+    }
+
+    /* Timeline Container */
+    .timeline-container {
+      position: relative;
+    }
+
+    /* Product Card */
+    .product-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+    .product-card:hover {
+      border-color: var(--lumen-border);
+      box-shadow: 0 8px 30px rgba(245, 158, 11, 0.1);
+    }
+    .product-card.priority-p0 {
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+    .product-card.priority-p0:hover {
+      border-color: rgba(239, 68, 68, 0.6);
+      box-shadow: 0 8px 30px rgba(239, 68, 68, 0.15);
+    }
+
+    /* Product Header */
+    .product-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .product-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+    }
+    .product-emoji {
+      font-size: 2.5rem;
+    }
+    .product-details h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .product-description {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      max-width: 500px;
+    }
+    .product-badges {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .status-badge.live { background: rgba(34, 197, 94, 0.2); color: var(--status-live); }
+    .status-badge.active { background: rgba(245, 158, 11, 0.2); color: var(--status-active); }
+    .status-badge.planning { background: rgba(139, 92, 246, 0.2); color: var(--status-planning); }
+    .status-badge.pipeline { background: rgba(6, 182, 212, 0.2); color: var(--status-pipeline); }
+    .status-badge.paused { background: rgba(113, 113, 122, 0.2); color: var(--status-paused); }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .priority-badge {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .priority-badge.p0 {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+    }
+    .priority-badge.p1 {
+      background: rgba(245, 158, 11, 0.3);
+      color: var(--lumen-primary);
+    }
+    .priority-badge.p2 {
+      background: rgba(100, 116, 139, 0.3);
+      color: var(--text-secondary);
+    }
+
+    /* Progress Bar */
+    .progress-section {
+      padding: 1rem 1.5rem;
+      background: var(--bg-elevated);
+    }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .progress-label { color: var(--text-secondary); }
+    .progress-percent { color: var(--lumen-primary); font-weight: 600; }
+    .progress-bar {
+      height: 8px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease-out;
+      background: linear-gradient(90deg, var(--lumen-dark), var(--lumen-primary), var(--lumen-light));
+    }
+    .progress-fill.live {
+      background: linear-gradient(90deg, #16a34a, var(--status-live), #4ade80);
+    }
+    .progress-fill.p0 {
+      background: linear-gradient(90deg, #dc2626, #ef4444, #f97316);
+    }
+
+    /* Timeline/Milestones */
+    .milestones-section {
+      padding: 1.5rem;
+      display: none;
+    }
+    .product-card.expanded .milestones-section {
+      display: block;
+    }
+    .milestones-title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+    .milestone-timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+    .milestone-timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .milestone {
+      position: relative;
+      padding-bottom: 1.5rem;
+    }
+    .milestone:last-child {
+      padding-bottom: 0;
+    }
+    .milestone-dot {
+      position: absolute;
+      left: -2rem;
+      top: 0;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      z-index: 1;
+    }
+    .milestone.completed .milestone-dot {
+      background: var(--status-live);
+      border-color: var(--status-live);
+    }
+    .milestone.completed .milestone-dot::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 10px;
+      color: white;
+    }
+    .milestone.current .milestone-dot {
+      background: var(--lumen-primary);
+      border-color: var(--lumen-primary);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+    .milestone.upcoming .milestone-dot {
+      background: var(--bg-elevated);
+      border-color: var(--text-muted);
+    }
+    .milestone-content {
+      background: var(--bg-elevated);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .milestone-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .milestone-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .milestone-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+    }
+    .milestone.current .milestone-date {
+      background: var(--lumen-glow);
+      color: var(--lumen-primary);
+    }
+    .milestone.completed .milestone-date {
+      color: var(--status-live);
+    }
+
+    /* Deliverables */
+    .deliverables {
+      margin-top: 0.75rem;
+    }
+    .deliverable {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .deliverable-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .deliverable.done .deliverable-check {
+      background: var(--status-live);
+      border-color: var(--status-live);
+      color: white;
+    }
+    .deliverable.done {
+      color: var(--text-primary);
+    }
+
+    /* Expand Toggle */
+    .expand-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      gap: 0.5rem;
+    }
+    .expand-toggle:hover {
+      background: var(--lumen-glow);
+      color: var(--lumen-primary);
+    }
+    .expand-icon {
+      transition: transform 0.3s;
+    }
+    .product-card.expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+
+    /* Note */
+    .product-note {
+      padding: 0.75rem 1.5rem;
+      background: rgba(245, 158, 11, 0.05);
+      border-left: 3px solid var(--lumen-primary);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    .product-note strong {
+      color: var(--lumen-primary);
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 4rem;
+      color: var(--text-muted);
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--lumen-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container { padding: 1rem; }
+      .header { padding: 1rem; }
+      .product-header { flex-direction: column; gap: 1rem; }
+      .product-badges { flex-direction: row; align-items: center; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="header-title">
+        <span>🗺️</span>
+        <h1>Product Roadmap</h1>
+      </div>
+      <nav class="header-nav">
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/company-structure.html" class="nav-link">Company</a>
+      </nav>
+      <div class="last-updated">Last updated: <span id="last-updated">Loading...</span></div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Stats -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-value active" id="stat-active">-</div>
+        <div class="stat-label">Active Dev</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value live" id="stat-live">-</div>
+        <div class="stat-label">Live</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value planning" id="stat-planning">-</div>
+        <div class="stat-label">Planning</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value pipeline" id="stat-pipeline">-</div>
+        <div class="stat-label">Pipeline</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value paused" id="stat-paused">-</div>
+        <div class="stat-label">Paused</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-filter="all">All <span class="count" id="count-all">0</span></button>
+      <button class="filter-btn" data-filter="active">⚡ Active <span class="count" id="count-active">0</span></button>
+      <button class="filter-btn" data-filter="live">🚀 Live <span class="count" id="count-live">0</span></button>
+      <button class="filter-btn" data-filter="planning">📋 Planning <span class="count" id="count-planning">0</span></button>
+      <button class="filter-btn" data-filter="pipeline">🔮 Pipeline <span class="count" id="count-pipeline">0</span></button>
+      <button class="filter-btn" data-filter="paused">⏸️ Paused <span class="count" id="count-paused">0</span></button>
+      <button class="filter-btn" data-filter="p0">🔥 P0 Only</button>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline-container" id="timeline-container">
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        <p>Loading product roadmap...</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Milestone data for each product
+    const productMilestones = {
+      'stackaudit': {
+        milestones: [
+          { name: 'MVP Development', date: 'Dec 2025', status: 'completed', deliverables: [
+            { text: 'GitHub OAuth integration', done: true },
+            { text: 'Repository analysis engine', done: true },
+            { text: 'Dependency scanner', done: true },
+            { text: 'Basic UI/Dashboard', done: true }
+          ]},
+          { name: 'Beta Testing', date: 'Jan 2026', status: 'completed', deliverables: [
+            { text: 'Security vulnerability detection', done: true },
+            { text: 'Cost optimization recommendations', done: true },
+            { text: 'PDF report generation', done: true },
+            { text: 'User feedback integration', done: true }
+          ]},
+          { name: 'Launch Prep', date: 'Feb 1-6', status: 'current', deliverables: [
+            { text: 'Marketing materials finalized', done: true },
+            { text: 'Landing page live', done: true },
+            { text: 'Pricing page complete', done: true },
+            { text: 'Final QA testing', done: false }
+          ]},
+          { name: 'Public Launch', date: 'Feb 7, 2026', status: 'upcoming', deliverables: [
+            { text: 'Product Hunt launch', done: false },
+            { text: 'Press release', done: false },
+            { text: 'Email campaign', done: false }
+          ]}
+        ]
+      },
+      'agentshield': {
+        milestones: [
+          { name: 'Sprint 0 - Foundation', date: 'Jan 2026', status: 'current', deliverables: [
+            { text: 'Database schema design', done: true },
+            { text: 'API architecture', done: true },
+            { text: 'Landing page', done: false },
+            { text: 'SEO keyword research', done: true }
+          ]},
+          { name: 'Sprint 1 - Core Features', date: 'Feb 2026', status: 'upcoming', deliverables: [
+            { text: 'Agent identity management', done: false },
+            { text: 'Human binding system', done: false },
+            { text: 'Basic dashboard', done: false }
+          ]},
+          { name: 'Sprint 2 - Governance', date: 'Mar 2026', status: 'upcoming', deliverables: [
+            { text: 'Policy engine', done: false },
+            { text: 'Audit trail', done: false },
+            { text: 'Compliance reports', done: false }
+          ]},
+          { name: 'Beta Launch', date: 'Q2 2026', status: 'upcoming', deliverables: [
+            { text: 'Private beta with partners', done: false },
+            { text: 'Enterprise pilot program', done: false }
+          ]}
+        ]
+      },
+      'ai-code-observability': {
+        milestones: [
+          { name: 'Research & Design', date: 'Dec 2025', status: 'completed', deliverables: [
+            { text: 'Market analysis', done: true },
+            { text: 'Technical architecture', done: true },
+            { text: 'UI/UX wireframes', done: true }
+          ]},
+          { name: 'MVP Build', date: 'Jan 2026', status: 'current', deliverables: [
+            { text: 'Code quality metrics engine', done: true },
+            { text: 'Real-time monitoring', done: true },
+            { text: 'Dashboard UI', done: false },
+            { text: 'Alert system', done: false }
+          ]},
+          { name: 'Staging Deploy', date: 'Feb 2026', status: 'upcoming', deliverables: [
+            { text: 'Staging environment', done: false },
+            { text: 'Integration testing', done: false },
+            { text: 'Performance optimization', done: false }
+          ]}
+        ]
+      },
+      'eu-ai-compliance': {
+        milestones: [
+          { name: 'Research Phase', date: 'Jan 2026', status: 'completed', deliverables: [
+            { text: 'EU AI Act analysis', done: true },
+            { text: 'Compliance requirements mapping', done: true },
+            { text: 'Competitive analysis', done: true }
+          ]},
+          { name: 'Planning', date: 'Feb 2026', status: 'current', deliverables: [
+            { text: 'Product specification', done: false },
+            { text: 'Technical architecture', done: false },
+            { text: 'Investment case ($24K)', done: false }
+          ]},
+          { name: 'Development Start', date: 'Mar 1, 2026', status: 'upcoming', deliverables: [
+            { text: 'Core compliance engine', done: false },
+            { text: 'Risk assessment module', done: false }
+          ]}
+        ]
+      },
+      'dashboard': {
+        milestones: [
+          { name: 'Initial Release', date: 'Jan 2026', status: 'completed', deliverables: [
+            { text: 'Team activity dashboard', done: true },
+            { text: 'Product progress tracking', done: true },
+            { text: 'Real-time updates', done: true }
+          ]},
+          { name: 'Security Update', date: 'Jan 30, 2026', status: 'completed', deliverables: [
+            { text: 'Authentication system', done: true },
+            { text: 'API security headers', done: true },
+            { text: 'Rate limiting', done: true }
+          ]},
+          { name: 'Ongoing', date: 'Continuous', status: 'current', deliverables: [
+            { text: 'Bug fixes & improvements', done: false },
+            { text: 'New feature requests', done: false }
+          ]}
+        ]
+      },
+      'mcphub': {
+        milestones: [
+          { name: 'MVP Complete', date: 'Dec 2025', status: 'completed', deliverables: [
+            { text: 'Server directory', done: true },
+            { text: 'Search functionality', done: true },
+            { text: 'Basic ratings', done: true }
+          ]},
+          { name: 'Paused', date: 'Jan 2026', status: 'current', deliverables: [
+            { text: 'Focus shifted to StackAudit', done: true },
+            { text: 'Awaiting resource allocation', done: false }
+          ]}
+        ]
+      }
+    };
+
+    // Default milestones for products without specific data
+    const defaultMilestones = [
+      { name: 'Planning', date: 'TBD', status: 'upcoming', deliverables: [
+        { text: 'Requirements gathering', done: false },
+        { text: 'Technical design', done: false }
+      ]},
+      { name: 'Development', date: 'TBD', status: 'upcoming', deliverables: [
+        { text: 'Core features', done: false },
+        { text: 'Testing', done: false }
+      ]},
+      { name: 'Launch', date: 'TBD', status: 'upcoming', deliverables: [
+        { text: 'Beta release', done: false },
+        { text: 'Public launch', done: false }
+      ]}
+    ];
+
+    let products = [];
+    let currentFilter = 'all';
+
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/public/company-status');
+        const data = await response.json();
+        
+        if (data.success && data.productProgress) {
+          products = data.productProgress;
+          updateStats();
+          renderProducts();
+          document.getElementById('last-updated').textContent = new Date(data.refreshedAt).toLocaleString();
+        }
+      } catch (err) {
+        console.error('Failed to fetch products:', err);
+        document.getElementById('timeline-container').innerHTML = `
+          <div class="loading">
+            <p>Failed to load products. Please refresh.</p>
+          </div>
+        `;
+      }
+    }
+
+    function updateStats() {
+      const counts = {
+        active: products.filter(p => p.status === 'active').length,
+        live: products.filter(p => p.status === 'live').length,
+        planning: products.filter(p => p.status === 'planning').length,
+        pipeline: products.filter(p => p.status === 'pipeline').length,
+        paused: products.filter(p => p.status === 'paused').length
+      };
+
+      document.getElementById('stat-active').textContent = counts.active;
+      document.getElementById('stat-live').textContent = counts.live;
+      document.getElementById('stat-planning').textContent = counts.planning;
+      document.getElementById('stat-pipeline').textContent = counts.pipeline;
+      document.getElementById('stat-paused').textContent = counts.paused;
+
+      document.getElementById('count-all').textContent = products.length;
+      document.getElementById('count-active').textContent = counts.active;
+      document.getElementById('count-live').textContent = counts.live;
+      document.getElementById('count-planning').textContent = counts.planning;
+      document.getElementById('count-pipeline').textContent = counts.pipeline;
+      document.getElementById('count-paused').textContent = counts.paused;
+    }
+
+    function filterProducts() {
+      if (currentFilter === 'all') return products;
+      if (currentFilter === 'p0') return products.filter(p => p.priority === 'P0');
+      return products.filter(p => p.status === currentFilter);
+    }
+
+    function renderProducts() {
+      const filtered = filterProducts();
+      const container = document.getElementById('timeline-container');
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="loading">
+            <p>No products match this filter.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Sort: P0 first, then by progress descending
+      filtered.sort((a, b) => {
+        const priorityOrder = { 'P0': 0, 'P1': 1, 'P2': 2, undefined: 3 };
+        const diff = priorityOrder[a.priority] - priorityOrder[b.priority];
+        return diff !== 0 ? diff : b.progress - a.progress;
+      });
+
+      container.innerHTML = filtered.map(product => renderProductCard(product)).join('');
+
+      // Add event listeners
+      document.querySelectorAll('.product-header, .expand-toggle').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const card = e.target.closest('.product-card');
+          card.classList.toggle('expanded');
+        });
+      });
+    }
+
+    function renderProductCard(product) {
+      const milestones = productMilestones[product.id]?.milestones || defaultMilestones;
+      const statusClass = product.status || 'active';
+      const priorityClass = product.priority ? product.priority.toLowerCase() : '';
+      const progressClass = product.priority === 'P0' ? 'p0' : (statusClass === 'live' ? 'live' : '');
+
+      return `
+        <div class="product-card ${priorityClass ? 'priority-' + priorityClass : ''}" data-id="${product.id}">
+          <div class="product-header">
+            <div class="product-info">
+              <div class="product-emoji">${product.emoji || '📦'}</div>
+              <div class="product-details">
+                <h3>${product.name}</h3>
+                <p class="product-description">${product.details || ''}</p>
+              </div>
+            </div>
+            <div class="product-badges">
+              <div class="status-badge ${statusClass}">
+                <span class="status-dot"></span>
+                ${statusClass}
+              </div>
+              ${product.priority ? `<div class="priority-badge ${priorityClass}">${product.priority}</div>` : ''}
+            </div>
+          </div>
+
+          ${product.note ? `<div class="product-note"><strong>💡 Note:</strong> ${product.note}</div>` : ''}
+
+          <div class="progress-section">
+            <div class="progress-header">
+              <span class="progress-label">Overall Progress</span>
+              <span class="progress-percent">${product.progress}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill ${progressClass}" style="width: ${product.progress}%"></div>
+            </div>
+          </div>
+
+          <div class="expand-toggle">
+            <span>View Milestones & Deliverables</span>
+            <span class="expand-icon">▼</span>
+          </div>
+
+          <div class="milestones-section">
+            <div class="milestones-title">📅 Timeline & Milestones</div>
+            <div class="milestone-timeline">
+              ${milestones.map(m => renderMilestone(m)).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMilestone(milestone) {
+      return `
+        <div class="milestone ${milestone.status}">
+          <div class="milestone-dot"></div>
+          <div class="milestone-content">
+            <div class="milestone-header">
+              <span class="milestone-name">${milestone.name}</span>
+              <span class="milestone-date">${milestone.date}</span>
+            </div>
+            <div class="deliverables">
+              ${milestone.deliverables.map(d => `
+                <div class="deliverable ${d.done ? 'done' : ''}">
+                  <span class="deliverable-check">${d.done ? '✓' : ''}</span>
+                  <span>${d.text}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Filter handlers
+    document.getElementById('filters').addEventListener('click', (e) => {
+      const btn = e.target.closest('.filter-btn');
+      if (!btn) return;
+
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      renderProducts();
+    });
+
+    // Initialize
+    fetchProducts();
+    setInterval(fetchProducts, 30000);
+  </script>
+</body>
+</html>
