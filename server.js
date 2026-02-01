@@ -1937,20 +1937,21 @@ app.get('/public/company-status', async (req, res) => {
         
         // Full product pipeline - P0 Active Projects First (CEO Directive Jan 31, 2026)
         const staticProducts = [
-          // P0 Active Development (Parallel - 24/7 Operations)
-          { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 95, status: 'development', recentUpdates: 5, priority: 'P0' },
-          { id: 'agentshield', name: 'AgentShield API', emoji: '🛡️', progress: 10, status: 'development', recentUpdates: 3, priority: 'P0' },
+          // P0 - Active Development (Feb 2026 Launch)
+          { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 98, status: 'development', recentUpdates: 8, priority: 'P0', note: 'Launch Feb 7 - Marketing/Testing/Design 100% ready' },
+          { id: 'agentshield', name: 'AgentShield', emoji: '🛡️', progress: 25, status: 'development', recentUpdates: 6, priority: 'P0', note: 'Sprint 0 - Schema done, landing page building, SEO complete' },
+          // P1 - March 2026 Launch
+          { id: 'ai-code-observability', name: 'AI Code Observability', emoji: '📈', progress: 70, status: 'development', recentUpdates: 4, priority: 'P1', note: 'MVP ready for staging - 626% ROI projected' },
+          { id: 'eu-ai-compliance', name: 'EU AI Compliance SaaS', emoji: '🇪🇺', progress: 15, status: 'planning', recentUpdates: 2, priority: 'P1', note: 'March 1 target - $24K investment pending' },
           // Live Products
-          { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 2 },
-          // Pipeline
-          { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'research', recentUpdates: 0 },
-          { id: 'testimonial-engine', name: 'AI Testimonial Engine', emoji: '💬', progress: 15, status: 'planning', recentUpdates: 0 },
-          { id: 'code-review', name: 'AI Code Review Assistant', emoji: '👨‍💻', progress: 25, status: 'planning', recentUpdates: 0 },
-          { id: 'meeting-prep', name: 'AI Meeting Prep Assistant', emoji: '📅', progress: 40, status: 'development', recentUpdates: 0 },
-          { id: 'competitor-api', name: 'Competitor API Monitor', emoji: '📡', progress: 10, status: 'research', recentUpdates: 0 },
-          { id: 'legal-docs', name: 'AI Legal Doc Generator', emoji: '⚖️', progress: 5, status: 'idea', recentUpdates: 0 },
-          { id: 'cs-quality', name: 'AI CS Quality Monitor', emoji: '🎧', progress: 8, status: 'idea', recentUpdates: 0 },
-          { id: 'elderly-care', name: 'AI Elderly Care Companion', emoji: '👴', progress: 3, status: 'idea', recentUpdates: 0 },
+          { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 3, note: 'Security improvements deployed' },
+          // Pipeline (Validated Opportunities)
+          { id: 'ai-code-validator', name: 'AI Code Quality Validator', emoji: '✅', progress: 5, status: 'research', recentUpdates: 1, note: 'New - 66% developer pain point' },
+          { id: 'construction-safety', name: 'Construction Safety AI', emoji: '🏗️', progress: 5, status: 'research', recentUpdates: 1, note: '$13B market - Validation pending' },
+          // On Hold (CEO Directive Jan 31)
+          { id: 'mcphub', name: 'MCPHub', emoji: '🔌', progress: 60, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED' },
+          { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED' },
+          { id: 'aikeysvault', name: 'AIKeysVault', emoji: '🔐', progress: 30, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED' },
         ];
         
         // Merge: static products first, then dynamic from ideas
