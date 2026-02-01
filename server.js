@@ -1761,13 +1761,19 @@ let companyStatusCache = {
   blockers: [],
   productProgress: [
     // P0 Active Projects (Parallel Development - CEO Directive Jan 31, 2026)
-    { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 85, status: 'development', recentUpdates: 5, priority: 'P0', description: 'AI-Powered Tech Stack Analysis - MVP Final Testing' },
-    { id: 'sentinel-api', name: 'Sentinel API', emoji: '🛡️', progress: 15, status: 'development', recentUpdates: 3, priority: 'P0', description: 'Datadog for AI Agents - Sprint 0 Started' },
+    { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 85, status: 'development', recentUpdates: 5, priority: 'P0' },
+    { id: 'sentinel-api', name: 'Sentinel API', emoji: '🛡️', progress: 15, status: 'development', recentUpdates: 3, priority: 'P0' },
     // Live Products
-    { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 2, description: 'Company command center' },
-    // Pipeline (Paused)
-    { id: 'mcphub', name: 'MCPHub', emoji: '🔌', progress: 60, status: 'paused', recentUpdates: 0, description: 'MCP Server Directory - On Hold' },
-    { id: 'aikeyvault', name: 'AIKeyVault', emoji: '🔐', progress: 40, status: 'paused', recentUpdates: 0, description: 'API Key Management - On Hold' }
+    { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 2 },
+    // Pipeline
+    { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'research', recentUpdates: 0 },
+    { id: 'testimonial-engine', name: 'AI Testimonial Engine', emoji: '💬', progress: 15, status: 'planning', recentUpdates: 0 },
+    { id: 'code-review', name: 'AI Code Review Assistant', emoji: '👨‍💻', progress: 25, status: 'planning', recentUpdates: 0 },
+    { id: 'meeting-prep', name: 'AI Meeting Prep Assistant', emoji: '📅', progress: 40, status: 'development', recentUpdates: 0 },
+    { id: 'competitor-api', name: 'Competitor API Monitor', emoji: '📡', progress: 10, status: 'research', recentUpdates: 0 },
+    { id: 'legal-docs', name: 'AI Legal Doc Generator', emoji: '⚖️', progress: 5, status: 'idea', recentUpdates: 0 },
+    { id: 'cs-quality', name: 'AI CS Quality Monitor', emoji: '🎧', progress: 8, status: 'idea', recentUpdates: 0 },
+    { id: 'elderly-care', name: 'AI Elderly Care Companion', emoji: '👴', progress: 3, status: 'idea', recentUpdates: 0 }
   ]
 };
 
@@ -1935,9 +1941,15 @@ app.get('/public/company-status', async (req, res) => {
           { id: 'sentinel-api', name: 'Sentinel API', emoji: '🛡️', progress: 15, status: 'development', recentUpdates: 3, priority: 'P0' },
           // Live Products
           { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 2 },
-          // Paused (Per CEO Directive)
-          { id: 'mcphub', name: 'MCPHub', emoji: '🔌', progress: 60, status: 'paused', recentUpdates: 0 },
-          { id: 'aikeyvault', name: 'AIKeyVault', emoji: '🔐', progress: 40, status: 'paused', recentUpdates: 0 },
+          // Pipeline
+          { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'research', recentUpdates: 0 },
+          { id: 'testimonial-engine', name: 'AI Testimonial Engine', emoji: '💬', progress: 15, status: 'planning', recentUpdates: 0 },
+          { id: 'code-review', name: 'AI Code Review Assistant', emoji: '👨‍💻', progress: 25, status: 'planning', recentUpdates: 0 },
+          { id: 'meeting-prep', name: 'AI Meeting Prep Assistant', emoji: '📅', progress: 40, status: 'development', recentUpdates: 0 },
+          { id: 'competitor-api', name: 'Competitor API Monitor', emoji: '📡', progress: 10, status: 'research', recentUpdates: 0 },
+          { id: 'legal-docs', name: 'AI Legal Doc Generator', emoji: '⚖️', progress: 5, status: 'idea', recentUpdates: 0 },
+          { id: 'cs-quality', name: 'AI CS Quality Monitor', emoji: '🎧', progress: 8, status: 'idea', recentUpdates: 0 },
+          { id: 'elderly-care', name: 'AI Elderly Care Companion', emoji: '👴', progress: 3, status: 'idea', recentUpdates: 0 },
         ];
         
         // Merge: static products first, then dynamic from ideas
