@@ -4,7 +4,9 @@
   "description": "Daily briefings and AI opportunity dashboard for Jimmy",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "security-check": "npm audit && npm outdated",
+    "prestart": "npm audit --audit-level=high || echo 'Warning: High severity vulnerabilities detected'"
   },
   "engines": {
     "node": ">=22.14.0"
@@ -23,7 +25,9 @@
     "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.2.1",
     "express-session": "^1.19.0",
+    "helmet": "^8.1.0",
     "node-cron": "^4.2.1",
     "pg": "^8.17.2"
   },

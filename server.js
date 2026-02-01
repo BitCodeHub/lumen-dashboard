@@ -10,6 +10,8 @@ const cheerio = require('cheerio');
 const { execSync } = require('child_process');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const auth = require('./auth');
 const smartExpenses = require('./smart-expenses');
 const serendipity = require('./serendipity');
@@ -53,6 +55,52 @@ app.use(compression()); // Gzip compression for all responses
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Security middleware (added 2026-01-31 per Casey's security advisory)
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts for dashboard
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "http:"],
+      connectSrc: ["'self'", "https://api.anthropic.com", "https://api.openai.com"],
+    }
+  },
+  crossOriginEmbedderPolicy: false, // Allow iframe embedding for dashboard widgets
+}));
+
+// Rate limiting configuration
+const generalApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per 15 minutes
+  message: 'Too many requests from this IP, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 login attempts per 15 minutes
+  message: 'Too many login attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful logins
+});
+
+const aiApiLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 50, // 50 AI requests per hour
+  message: 'AI API rate limit exceeded, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiters
+app.use('/api/', generalApiLimiter);
+app.use('/auth/', authLimiter);
+app.use('/public/ai', aiApiLimiter);
 
 // ============================================
 // HEALTH CHECK ENDPOINT (Public, no auth)
