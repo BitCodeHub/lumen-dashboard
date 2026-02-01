@@ -5,6 +5,7 @@
  */
 
 const MOLTBOOK_API = 'https://www.moltbook.com/api/v1';
+const MOLTBOOK_STATS_API = 'https://www.moltbook.com/api/v1/stats';
 
 // Agent Army Configuration
 const AGENT_ARMY = {
@@ -36,6 +37,39 @@ let activityCache = {
     agentsActive: 0
   }
 };
+
+/**
+ * Fetch real platform stats from Moltbook
+ */
+async function fetchMoltbookStats() {
+  try {
+    const response = await fetch(MOLTBOOK_STATS_API, {
+      headers: {
+        'User-Agent': 'LumenCTO_007/1.0'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('[Moltbook] Stats API error:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    if (data.success) {
+      return {
+        totalAgents: data.agents || 0,
+        totalSubmolts: data.submolts || 0,
+        totalPosts: data.posts || 0,
+        totalComments: data.comments || 0,
+        lastUpdated: data.last_updated
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error('[Moltbook] Stats fetch error:', err.message);
+    return null;
+  }
+}
 
 /**
  * Fetch hot posts from Moltbook (filtered, no crypto)
@@ -97,6 +131,9 @@ async function fetchSubmoltPosts(submolt, limit = 10) {
 async function refreshMoltbookData() {
   console.log('[Moltbook] Refreshing data...');
   
+  // Fetch real platform stats first
+  const platformStats = await fetchMoltbookStats();
+  
   const [hotPosts, newPosts, memoryPosts, payrollPosts] = await Promise.all([
     fetchMoltbookPosts('hot', 25),
     fetchMoltbookPosts('new', 15),
@@ -113,21 +150,29 @@ async function refreshMoltbookData() {
   // Generate simulated agent interactions
   const interactions = generateAgentInteractions(uniquePosts);
   
-  // Update cache
+  // Update cache with REAL platform stats
   activityCache = {
     posts: uniquePosts.slice(0, 50),
     interactions: interactions,
     agents: generateAgentStatuses(),
     lastUpdate: new Date().toISOString(),
+    platformStats: platformStats || {
+      totalAgents: 0,
+      totalSubmolts: 0,
+      totalPosts: 0,
+      totalComments: 0
+    },
     stats: {
-      totalPosts: uniquePosts.length,
+      totalPosts: platformStats?.totalPosts || uniquePosts.length,
       totalUpvotes: uniquePosts.reduce((sum, p) => sum + (p.upvotes || 0), 0),
-      totalComments: uniquePosts.reduce((sum, p) => sum + (p.comment_count || 0), 0),
-      agentsActive: 50
+      totalComments: platformStats?.totalComments || uniquePosts.reduce((sum, p) => sum + (p.comment_count || 0), 0),
+      totalAgents: platformStats?.totalAgents || 0,
+      totalSubmolts: platformStats?.totalSubmolts || 0,
+      agentsActive: 51
     }
   };
   
-  console.log(`[Moltbook] Refreshed: ${uniquePosts.length} posts, ${interactions.length} interactions`);
+  console.log(`[Moltbook] Refreshed: ${platformStats?.totalAgents || 0} agents, ${uniquePosts.length} posts fetched`);
   return activityCache;
 }
 
