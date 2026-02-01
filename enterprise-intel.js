@@ -512,18 +512,22 @@ async function runSquadAgent(squad, query, context) {
   }
   
   // AI Analysis - This squad's specialized agent analyzes the data
+  // Analyze up to 50 items for better coverage
+  const itemsToAnalyze = rawData.slice(0, 50);
+  
   const aiPrompt = `You are ${squad.name}, an expert in ${squad.specialty}.
 
-MISSION: Analyze these ${rawData.length} items for the query "${query}" with context "${context || 'general search'}".
+MISSION: Analyze these ${itemsToAnalyze.length} items for the query "${query}" with context "${context || 'general search'}".
 
 RULES:
-- US English content ONLY (reject foreign languages, non-US regions)
-- Must be DIRECTLY relevant to the query AND context
-- Score each item 0-100 for relevance
+- Include items that are related to the query (even loosely related)
+- Include reviews, discussions, news, and mentions
+- Score each item 0-100 (30+ = include)
+- Be INCLUSIVE, not exclusive - more results is better
 - Extract key insights
 
 DATA TO ANALYZE:
-${rawData.slice(0, 20).map((item, i) => `[${i}] ${item.title}\n${item.content?.substring(0, 200) || ''}`).join('\n\n')}
+${itemsToAnalyze.map((item, i) => `[${i}] ${item.title}\n${item.content?.substring(0, 150) || ''}`).join('\n\n')}
 
 Respond with JSON:
 {
@@ -548,11 +552,14 @@ Respond with JSON:
     }
   }
   
-  // Build filtered results
+  // Build filtered results - lower threshold to 30%
   const results = [];
+  const includedIndices = new Set();
+  
   for (const item of (analysis.relevant_items || [])) {
-    if (item.score >= 50 && rawData[item.index]) {
+    if (item.score >= 30 && rawData[item.index]) {
       const data = rawData[item.index];
+      includedIndices.add(item.index);
       results.push({
         ...data,
         relevanceScore: item.score,
@@ -561,6 +568,28 @@ Respond with JSON:
         foundBy: squad.name,
         squadEmoji: squad.emoji
       });
+    }
+  }
+  
+  // Fallback: Include items that match query keywords but weren't analyzed
+  const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+  for (let i = 0; i < rawData.length && results.length < 30; i++) {
+    if (includedIndices.has(i)) continue;
+    
+    const item = rawData[i];
+    const text = `${item.title} ${item.content || ''}`.toLowerCase();
+    const matchCount = queryTerms.filter(term => text.includes(term)).length;
+    
+    if (matchCount >= 1) {
+      results.push({
+        ...item,
+        relevanceScore: 25 + (matchCount * 15), // 40-70 based on matches
+        reason: `Keyword match: ${queryTerms.filter(term => text.includes(term)).join(', ')}`,
+        sentiment: analysis.sentiment || 'neutral',
+        foundBy: squad.name,
+        squadEmoji: squad.emoji
+      });
+      includedIndices.add(i);
     }
   }
   
@@ -758,7 +787,7 @@ async function runEnterpriseResearch(query, context = '') {
     query,
     context,
     strategy,
-    results: allResults.slice(0, 50),
+    results: allResults.slice(0, 75),
     synthesis,
     insights: [...new Set(allInsights)].slice(0, 10),
     themes: [...new Set(allThemes)].slice(0, 10),
