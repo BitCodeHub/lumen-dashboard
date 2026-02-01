@@ -1175,7 +1175,454 @@
       color: var(--lumen-primary);
       margin-left: -8px;
     }
-  </style>
+  
+   section -->
+<style>
+  /* Interactive Product Timeline Styles */
+  .product-timeline-section {
+    background: var(--bg-card);
+    border: 1px solid var(--lumen-border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .product-timeline-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--lumen-dark), var(--lumen-primary), var(--lumen-light));
+  }
+  
+  .product-timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .product-timeline-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+  }
+  .product-count-badge {
+    background: var(--lumen-glow);
+    color: var(--lumen-primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid var(--lumen-border);
+  }
+  
+  /* Filter & Sort Controls */
+  .product-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .filter-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+  .filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .filter-btn:hover {
+    background: var(--lumen-glow);
+    border-color: var(--lumen-border);
+    color: var(--text-primary);
+  }
+  .filter-btn.active {
+    background: var(--lumen-primary);
+    border-color: var(--lumen-primary);
+    color: #000;
+    font-weight: 600;
+  }
+  .filter-btn .badge {
+    background: rgba(0,0,0,0.2);
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+    font-size: 0.7rem;
+  }
+  
+  /* Product Cards Grid */
+  .product-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1rem;
+  }
+  @media (max-width: 768px) {
+    .product-cards-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Individual Product Card */
+  .product-timeline-card {
+    background: var(--bg-elevated);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .product-timeline-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    transition: all 0.3s;
+  }
+  .product-timeline-card.status-active::before { background: var(--lumen-primary); }
+  .product-timeline-card.status-live::before { background: var(--status-live); }
+  .product-timeline-card.status-paused::before { background: var(--text-muted); }
+  .product-timeline-card.status-planning::before { background: var(--luna-primary); }
+  .product-timeline-card.status-pipeline::before { background: var(--luna-light); }
+  
+  .product-timeline-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--lumen-border);
+    box-shadow: 0 12px 30px rgba(245, 158, 11, 0.15);
+  }
+  .product-timeline-card.priority-p0 {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.03);
+  }
+  .product-timeline-card.priority-p0:hover {
+    border-color: rgba(239, 68, 68, 0.6);
+    box-shadow: 0 12px 30px rgba(239, 68, 68, 0.25);
+  }
+  .product-timeline-card.expanded {
+    grid-column: span 1;
+  }
+  
+  /* Card Header */
+  .product-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+  }
+  .product-card-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+  }
+  .product-emoji {
+    font-size: 1.75rem;
+  }
+  .product-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+    flex: 1;
+  }
+  .product-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-end;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .status-pill.active {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--lumen-primary);
+  }
+  .status-pill.live {
+    background: rgba(34, 197, 94, 0.2);
+    color: var(--status-live);
+  }
+  .status-pill.paused {
+    background: rgba(113, 113, 122, 0.2);
+    color: var(--text-muted);
+  }
+  .status-pill.planning {
+    background: var(--luna-glow);
+    color: var(--luna-primary);
+  }
+  .status-pill.pipeline {
+    background: var(--luna-glow);
+    color: var(--luna-light);
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: status-pulse 2s ease-in-out infinite;
+  }
+  .priority-pill {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .priority-pill.p0 {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+    animation: p0-pulse 2s ease-in-out infinite;
+  }
+  .priority-pill.p1 {
+    background: rgba(245, 158, 11, 0.3);
+    color: var(--lumen-primary);
+  }
+  .priority-pill.p2 {
+    background: rgba(148, 163, 184, 0.2);
+    color: var(--luna-primary);
+  }
+  
+  /* Progress Section */
+  .product-progress-section {
+    margin: 1rem 0;
+  }
+  .product-progress-bar-container {
+    height: 8px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+  .product-progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .product-progress-bar-fill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+  }
+  @keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+  .product-progress-bar-fill.active {
+    background: linear-gradient(90deg, var(--lumen-dark), var(--lumen-primary), var(--lumen-light));
+  }
+  .product-progress-bar-fill.live {
+    background: linear-gradient(90deg, #16a34a, var(--status-live), #4ade80);
+  }
+  .product-progress-bar-fill.paused {
+    background: linear-gradient(90deg, #52525b, var(--text-muted), #71717a);
+  }
+  .product-progress-bar-fill.planning, .product-progress-bar-fill.pipeline {
+    background: linear-gradient(90deg, #64748b, var(--luna-primary), var(--luna-light));
+  }
+  .product-progress-bar-fill.p0 {
+    background: linear-gradient(90deg, #dc2626, #ef4444, #f97316);
+  }
+  .product-progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  .product-progress-percent {
+    font-weight: 700;
+    color: var(--lumen-primary);
+    font-size: 0.9rem;
+  }
+  .product-progress-bar-fill.p0 + .product-progress-label .product-progress-percent {
+    color: #ef4444;
+  }
+  
+  /* Card Note */
+  .product-card-note {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0.75rem 0;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    border-left: 2px solid var(--lumen-border);
+  }
+  
+  /* Expandable Details */
+  .product-expand-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--luna-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .product-expand-toggle:hover {
+    background: var(--luna-glow);
+    color: var(--luna-light);
+  }
+  .product-expand-icon {
+    font-size: 0.7rem;
+    transition: transform 0.3s;
+  }
+  .product-timeline-card.expanded .product-expand-icon {
+    transform: rotate(180deg);
+  }
+  .product-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .product-timeline-card.expanded .product-details {
+    max-height: 500px;
+  }
+  .product-details-content {
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .product-detail-section {
+    margin-bottom: 1rem;
+  }
+  .product-detail-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+  .product-detail-value {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+  .product-updates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .product-update-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding: 0.4rem 0.6rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+  }
+  .product-update-icon {
+    color: var(--status-live);
+  }
+  
+  /* Empty State */
+  .product-empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+  }
+  .product-empty-emoji {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  
+  /* Stats Row */
+  .product-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+  }
+  @media (max-width: 768px) {
+    .product-stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  .product-stat-item {
+    text-align: center;
+  }
+  .product-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .product-stat-value.active { color: var(--lumen-primary); }
+  .product-stat-value.live { color: var(--status-live); }
+  .product-stat-value.paused { color: var(--text-muted); }
+  .product-stat-value.pipeline { color: var(--luna-primary); }
+  .product-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+</style>
 </head>
 <body>
   <!-- Live Status Section -->
@@ -2901,6 +3348,245 @@
       div.textContent = text;
       return div.innerHTML;
     }
+  
+     section -->
+<script>
+  // Interactive Product Timeline Manager
+  const ProductTimeline = {
+    products: [],
+    filteredProducts: [],
+    currentStatusFilter: 'all',
+    currentPriorityFilter: 'all',
+    currentSort: 'priority',
+    
+    init() {
+      this.setupEventListeners();
+      this.fetchProducts();
+      setInterval(() => this.fetchProducts(), 30000); // Refresh every 30s
+    },
+    
+    setupEventListeners() {
+      // Status filters
+      document.querySelectorAll('#status-filters .filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('#status-filters .filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.currentStatusFilter = btn.dataset.filter;
+          this.applyFiltersAndSort();
+        });
+      });
+      
+      // Priority filters
+      document.querySelectorAll('#priority-filters .filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('#priority-filters .filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.currentPriorityFilter = btn.dataset.priority;
+          this.applyFiltersAndSort();
+        });
+      });
+      
+      // Sort options
+      document.querySelectorAll('#sort-options .filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('#sort-options .filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.currentSort = btn.dataset.sort;
+          this.applyFiltersAndSort();
+        });
+      });
+    },
+    
+    async fetchProducts() {
+      try {
+        const response = await fetch('/public/company-status');
+        const data = await response.json();
+        if (data.success && data.productProgress) {
+          this.products = data.productProgress;
+          this.updateStats();
+          this.applyFiltersAndSort();
+        }
+      } catch (err) {
+        console.error('Failed to fetch products:', err);
+      }
+    },
+    
+    updateStats() {
+      const stats = {
+        active: this.products.filter(p => p.status === 'active').length,
+        live: this.products.filter(p => p.status === 'live').length,
+        pipeline: this.products.filter(p => p.status === 'pipeline').length,
+        paused: this.products.filter(p => p.status === 'paused').length,
+        planning: this.products.filter(p => p.status === 'planning').length,
+        p0: this.products.filter(p => p.priority === 'P0').length,
+        p1: this.products.filter(p => p.priority === 'P1').length,
+        p2: this.products.filter(p => p.priority === 'P2').length,
+      };
+      
+      document.getElementById('product-total-count').textContent = `${this.products.length} products`;
+      document.getElementById('stat-active-products').textContent = stats.active;
+      document.getElementById('stat-live-products').textContent = stats.live;
+      document.getElementById('stat-pipeline-products').textContent = stats.pipeline + stats.planning;
+      document.getElementById('stat-paused-products').textContent = stats.paused;
+      
+      // Update filter badges
+      document.getElementById('filter-count-all').textContent = this.products.length;
+      document.getElementById('filter-count-active').textContent = stats.active;
+      document.getElementById('filter-count-live').textContent = stats.live;
+      document.getElementById('filter-count-planning').textContent = stats.planning;
+      document.getElementById('filter-count-pipeline').textContent = stats.pipeline;
+      document.getElementById('filter-count-paused').textContent = stats.paused;
+      document.getElementById('priority-count-all').textContent = this.products.length;
+      document.getElementById('priority-count-p0').textContent = stats.p0;
+      document.getElementById('priority-count-p1').textContent = stats.p1;
+      document.getElementById('priority-count-p2').textContent = stats.p2 || this.products.filter(p => !p.priority || p.priority === 'P2').length;
+    },
+    
+    applyFiltersAndSort() {
+      // Filter by status
+      let filtered = this.currentStatusFilter === 'all' 
+        ? [...this.products]
+        : this.products.filter(p => p.status === this.currentStatusFilter);
+      
+      // Filter by priority
+      if (this.currentPriorityFilter !== 'all') {
+        filtered = filtered.filter(p => p.priority === this.currentPriorityFilter);
+      }
+      
+      // Sort
+      filtered.sort((a, b) => {
+        if (this.currentSort === 'priority') {
+          const priorityOrder = { 'P0': 0, 'P1': 1, 'P2': 2, undefined: 3 };
+          const diff = priorityOrder[a.priority] - priorityOrder[b.priority];
+          return diff !== 0 ? diff : b.progress - a.progress;
+        } else if (this.currentSort === 'progress') {
+          return b.progress - a.progress;
+        } else if (this.currentSort === 'status') {
+          const statusOrder = { 'live': 0, 'active': 1, 'planning': 2, 'pipeline': 3, 'paused': 4 };
+          return statusOrder[a.status] - statusOrder[b.status];
+        } else { // name
+          return a.name.localeCompare(b.name);
+        }
+      });
+      
+      this.filteredProducts = filtered;
+      this.renderProducts();
+    },
+    
+    renderProducts() {
+      const grid = document.getElementById('product-cards-grid');
+      
+      if (this.filteredProducts.length === 0) {
+        grid.innerHTML = `
+          <div class="product-empty-state">
+            <div class="product-empty-emoji">📦</div>
+            <p>No products match your filters</p>
+          </div>
+        `;
+        return;
+      }
+      
+      grid.innerHTML = this.filteredProducts.map(product => this.renderProductCard(product)).join('');
+      
+      // Add click handlers for expand toggles
+      document.querySelectorAll('.product-expand-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const card = toggle.closest('.product-timeline-card');
+          card.classList.toggle('expanded');
+        });
+      });
+      
+      // Add click handlers for cards
+      document.querySelectorAll('.product-timeline-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (!e.target.closest('.product-expand-toggle')) {
+            card.classList.toggle('expanded');
+          }
+        });
+      });
+    },
+    
+    renderProductCard(product) {
+      const statusClass = product.status || 'active';
+      const priorityClass = product.priority ? product.priority.toLowerCase() : 'p2';
+      const progressBarClass = product.priority === 'P0' ? 'p0' : statusClass;
+      
+      return `
+        <div class="product-timeline-card status-${statusClass} priority-${priorityClass}" data-id="${product.id}">
+          <div class="product-card-header">
+            <div class="product-card-title-row">
+              <div class="product-emoji">${product.emoji || '📦'}</div>
+              <h4 class="product-card-title">${product.name}</h4>
+            </div>
+            <div class="product-badges">
+              <div class="status-pill ${statusClass}">
+                <span class="status-dot"></span>
+                ${statusClass}
+              </div>
+              ${product.priority ? `<div class="priority-pill ${priorityClass}">${product.priority}</div>` : ''}
+            </div>
+          </div>
+          
+          <div class="product-progress-section">
+            <div class="product-progress-bar-container">
+              <div class="product-progress-bar-fill ${progressBarClass}" style="width: ${product.progress}%"></div>
+            </div>
+            <div class="product-progress-label">
+              <span>${statusClass === 'live' ? 'Deployed' : statusClass === 'paused' ? 'On Hold' : 'In Progress'}</span>
+              <span class="product-progress-percent">${product.progress}%</span>
+            </div>
+          </div>
+          
+          ${product.note ? `<div class="product-card-note">💡 ${product.note}</div>` : ''}
+          
+          <div class="product-expand-toggle">
+            <span>View Details</span>
+            <span class="product-expand-icon">▼</span>
+          </div>
+          
+          <div class="product-details">
+            <div class="product-details-content">
+              ${product.details ? `
+                <div class="product-detail-section">
+                  <div class="product-detail-label">Description</div>
+                  <div class="product-detail-value">${product.details}</div>
+                </div>
+              ` : ''}
+              
+              ${product.recentUpdates > 0 ? `
+                <div class="product-detail-section">
+                  <div class="product-detail-label">Recent Activity</div>
+                  <div class="product-updates-list">
+                    <div class="product-update-item">
+                      <span class="product-update-icon">✅</span>
+                      <span>${product.recentUpdates} updates in the last 7 days</span>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+              
+              <div class="product-detail-section">
+                <div class="product-detail-label">Status</div>
+                <div class="product-detail-value">
+                  ${statusClass === 'live' ? '🚀 Live in production' : 
+                    statusClass === 'active' ? '⚡ Active development' :
+                    statusClass === 'paused' ? '⏸️ Development paused' :
+                    statusClass === 'planning' ? '📋 Planning phase' : '🔮 In pipeline'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  };
+  
+  // Initialize when DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    ProductTimeline.init();
+  });
+
   </script>
 </body>
 </html>

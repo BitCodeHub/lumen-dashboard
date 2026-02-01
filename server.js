@@ -1938,20 +1938,20 @@ app.get('/public/company-status', async (req, res) => {
         // Full product pipeline - P0 Active Projects First (CEO Directive Jan 31, 2026)
         const staticProducts = [
           // P0 - Active Development (Feb 2026 Launch)
-          { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 98, status: 'development', recentUpdates: 8, priority: 'P0', note: 'Launch Feb 7 - Marketing/Testing/Design 100% ready' },
-          { id: 'agentshield', name: 'AgentShield', emoji: '🛡️', progress: 25, status: 'development', recentUpdates: 6, priority: 'P0', note: 'Sprint 0 - Schema done, landing page building, SEO complete' },
+          { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 98, status: 'active', recentUpdates: 8, priority: 'P0', note: 'Launch Feb 7 - Marketing/Testing/Design 100% ready', details: 'AI-powered tech stack analyzer for GitHub repos. Comprehensive dependency analysis, security scanning, and cost optimization recommendations.' },
+          { id: 'agentshield', name: 'AgentShield', emoji: '🛡️', progress: 25, status: 'active', recentUpdates: 6, priority: 'P0', note: 'Sprint 0 - Schema done, landing page building, SEO complete', details: 'AI Agent governance platform with identity management, human-binding, and compliance tracking. Critical for enterprise AI adoption.' },
           // P1 - March 2026 Launch
-          { id: 'ai-code-observability', name: 'AI Code Observability', emoji: '📈', progress: 70, status: 'development', recentUpdates: 4, priority: 'P1', note: 'MVP ready for staging - 626% ROI projected' },
-          { id: 'eu-ai-compliance', name: 'EU AI Compliance SaaS', emoji: '🇪🇺', progress: 15, status: 'planning', recentUpdates: 2, priority: 'P1', note: 'March 1 target - $24K investment pending' },
+          { id: 'ai-code-observability', name: 'AI Code Observability', emoji: '📈', progress: 70, status: 'active', recentUpdates: 4, priority: 'P1', note: 'MVP ready for staging - 626% ROI projected', details: 'Real-time monitoring and analytics for AI-generated code. Track quality, detect anomalies, ensure compliance.' },
+          { id: 'eu-ai-compliance', name: 'EU AI Compliance SaaS', emoji: '🇪🇺', progress: 15, status: 'planning', recentUpdates: 2, priority: 'P1', note: 'March 1 target - $24K investment pending', details: 'Automated compliance monitoring for EU AI Act. Risk assessments, documentation generation, audit trails.' },
           // Live Products
-          { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 3, note: 'Security improvements deployed' },
+          { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 3, note: 'Security improvements deployed', details: 'Internal operations hub for Lumen AI. Real-time team activity, product tracking, and business intelligence.' },
           // Pipeline (Validated Opportunities)
-          { id: 'ai-code-validator', name: 'AI Code Quality Validator', emoji: '✅', progress: 5, status: 'research', recentUpdates: 1, note: 'New - 66% developer pain point' },
-          { id: 'construction-safety', name: 'Construction Safety AI', emoji: '🏗️', progress: 5, status: 'research', recentUpdates: 1, note: '$13B market - Validation pending' },
+          { id: 'ai-code-validator', name: 'AI Code Quality Validator', emoji: '✅', progress: 5, status: 'pipeline', recentUpdates: 1, priority: 'P2', note: 'New - 66% developer pain point', details: 'Pre-commit validation for AI-generated code. Quality gates, style enforcement, security checks.' },
+          { id: 'construction-safety', name: 'Construction Safety AI', emoji: '🏗️', progress: 5, status: 'pipeline', recentUpdates: 1, priority: 'P2', note: '$13B market - Validation pending', details: 'Computer vision for construction site safety monitoring. Real-time hazard detection, compliance tracking.' },
           // On Hold (CEO Directive Jan 31)
-          { id: 'mcphub', name: 'MCPHub', emoji: '🔌', progress: 60, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED' },
-          { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED' },
-          { id: 'aikeysvault', name: 'AIKeysVault', emoji: '🔐', progress: 30, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED' },
+          { id: 'mcphub', name: 'MCPHub', emoji: '🔌', progress: 60, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED', details: 'MCP server marketplace and discovery platform. Directory, ratings, one-click installation.' },
+          { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED', details: 'Track and verify AI-generated code origins for compliance and governance.' },
+          { id: 'aikeysvault', name: 'AIKeysVault', emoji: '🔐', progress: 30, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED', details: 'Secure API key management for AI services with rotation, access control, and auditing.' },
         ];
         
         // Merge: static products first, then dynamic from ideas
@@ -1965,7 +1965,7 @@ app.get('/public/company-status', async (req, res) => {
           teamStatus: Object.values(teamMap),
           recentWins,
           blockers,
-          productProgress: allProducts.slice(0, 12)
+          productProgress: allProducts // REMOVED .slice(0, 12) - show ALL products
         });
       }
     } catch (dbErr) {
@@ -6801,12 +6801,12 @@ app.post('/api/product-progress/:productId', async (req, res) => {
     // Log the update to team activity
     await pool.query(
       'INSERT INTO team_activity (agent, emoji, department, action, status) VALUES ($1, $2, $3, $4, $5)',
-      ['System', '📊', 'Product', \`Updated \${data.products[productIndex].name} progress to \${progress}%\`, 'completed']
+      ['System', '📊', 'Product', `Updated ${data.products[productIndex].name} progress to ${progress}%`, 'completed']
     );
     
     res.json({ 
       success: true, 
-      message: \`Updated \${productId} progress\`,
+      message: `Updated ${productId} progress`,
       product: data.products[productIndex]
     });
   } catch (err) {
