@@ -1244,7 +1244,7 @@
       <div class="productivity-stat">
         <div class="productivity-stat-value agents" id="stat-active-agents">146</div>
         <div class="productivity-stat-label">Total Workforce</div>
-        <div class="productivity-stat-context" id="stat-agents-context">14 reporting activity today</div>
+        <div class="productivity-stat-context" id="stat-agents-context">via 14 team leads reporting</div>
       </div>
       <div class="productivity-stat">
         <div class="productivity-stat-value" id="stat-departments" style="color: var(--lumen-light);">0</div>
@@ -2378,7 +2378,7 @@
       
       const agentsContext = document.getElementById('stat-agents-context');
       if (agentsContext) {
-        agentsContext.textContent = `${stats.activeAgents} reporting activity today`;
+        agentsContext.textContent = `via ${stats.activeAgents} team leads reporting`;
       }
       
       const deptContext = document.getElementById('stat-dept-context');
