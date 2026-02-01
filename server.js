@@ -6664,7 +6664,12 @@ app.get('/moltbook-public/activity', (req, res) => {
   });
 });
 
-// Catch-all route for SPA
+// Initialize Moltbook Agent Army Integration (MUST be before catch-all)
+initMoltbookIntegration(app).catch(err => {
+  console.error('[Moltbook] Failed to initialize:', err.message);
+});
+
+// Catch-all route for SPA (MUST be last)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -6724,11 +6729,6 @@ dealRadar.registerRoutes(app, pool);
 
 // Register Expense Analytics routes
 setupExpenseAnalyticsRoutes(app, pool);
-
-// Initialize Moltbook Agent Army Integration
-initMoltbookIntegration(app).catch(err => {
-  console.error('[Moltbook] Failed to initialize:', err.message);
-});
 
 // Start server
 app.listen(PORT, () => {
