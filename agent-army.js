@@ -513,9 +513,12 @@ async function initAgentArmy(app) {
   // Register routes
   registerAgentArmyRoutes(app);
   
-  // Run initial scan
-  console.log('[AgentArmy] Running initial scan...');
-  await runAgentScan();
+  // Register research route
+  addResearchRoute(app);
+  
+  // Run initial scan (background, don't block startup)
+  console.log('[AgentArmy] Starting background scan...');
+  runAgentScan().catch(err => console.error('[AgentArmy] Initial scan error:', err.message));
   
   // Schedule scans every 5 minutes
   setInterval(async () => {
@@ -526,12 +529,230 @@ async function initAgentArmy(app) {
     }
   }, 5 * 60 * 1000);
   
-  console.log('[AgentArmy] Initialized with 51 agents, scanning every 5 minutes');
+  console.log('[AgentArmy] Initialized with 51 agents, research API ready');
+}
+
+// ==========================================
+// INTELLIGENT RESEARCH API
+// ==========================================
+
+async function searchReddit(query, limit = 50) {
+  try {
+    // Search Reddit using their search API
+    const encodedQuery = encodeURIComponent(query);
+    const url = `${REDDIT_BASE}/search.json?q=${encodedQuery}&sort=relevance&limit=${limit}&t=month`;
+    const data = await rateLimitedFetch(url);
+    
+    if (!data.data || !data.data.children) {
+      return [];
+    }
+    
+    return data.data.children.map(post => ({
+      id: post.data.id,
+      title: post.data.title,
+      selftext: post.data.selftext || '',
+      url: `https://reddit.com${post.data.permalink}`,
+      subreddit: post.data.subreddit,
+      author: post.data.author,
+      score: post.data.score,
+      numComments: post.data.num_comments,
+      created: new Date(post.data.created_utc * 1000).toISOString(),
+      source: 'reddit'
+    }));
+  } catch (err) {
+    console.error('[AgentArmy] Reddit search error:', err.message);
+    return [];
+  }
+}
+
+async function searchWeb(query) {
+  // Use DuckDuckGo instant answers (free, no API key)
+  try {
+    const encodedQuery = encodeURIComponent(query);
+    const url = `https://api.duckduckgo.com/?q=${encodedQuery}&format=json&no_redirect=1`;
+    
+    const response = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT }
+    });
+    
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    const results = [];
+    
+    // Abstract
+    if (data.Abstract) {
+      results.push({
+        id: 'ddg-abstract',
+        title: data.Heading || query,
+        snippet: data.Abstract,
+        url: data.AbstractURL || `https://duckduckgo.com/?q=${encodedQuery}`,
+        source: 'web',
+        score: 100
+      });
+    }
+    
+    // Related topics
+    if (data.RelatedTopics) {
+      for (const topic of data.RelatedTopics.slice(0, 10)) {
+        if (topic.Text && topic.FirstURL) {
+          results.push({
+            id: `ddg-${topic.FirstURL.slice(-20)}`,
+            title: topic.Text.split(' - ')[0] || topic.Text.substring(0, 100),
+            snippet: topic.Text,
+            url: topic.FirstURL,
+            source: 'web',
+            score: 50
+          });
+        }
+      }
+    }
+    
+    return results;
+  } catch (err) {
+    console.error('[AgentArmy] Web search error:', err.message);
+    return [];
+  }
+}
+
+function scoreRelevance(item, keywords, context) {
+  const content = `${item.title || ''} ${item.selftext || ''} ${item.snippet || ''}`.toLowerCase();
+  const keywordList = keywords.toLowerCase().split(/\s+/);
+  const contextWords = context ? context.toLowerCase().split(/\s+/).filter(w => w.length > 3) : [];
+  
+  let score = 0;
+  const matches = [];
+  
+  // Keyword matches (high weight)
+  for (const kw of keywordList) {
+    if (kw.length > 2 && content.includes(kw)) {
+      score += 30;
+      matches.push(kw);
+    }
+  }
+  
+  // Context word matches (medium weight)
+  for (const cw of contextWords) {
+    if (content.includes(cw)) {
+      score += 10;
+      if (!matches.includes(cw)) matches.push(cw);
+    }
+  }
+  
+  // High-intent phrases
+  const highIntent = ['looking for', 'need help', 'recommend', 'alternative', 'best', 'anyone using', 'how do', 'struggling'];
+  for (const phrase of highIntent) {
+    if (content.includes(phrase)) {
+      score += 25;
+      matches.push(phrase);
+    }
+  }
+  
+  // Engagement boost
+  if (item.score) score += Math.min(item.score / 10, 20);
+  if (item.numComments) score += Math.min(item.numComments / 5, 15);
+  
+  return { score, matches: [...new Set(matches)] };
+}
+
+async function runIntelligentResearch(keyword, context, sources) {
+  console.log(`[AgentArmy] Starting research: "${keyword}" with sources: ${sources.join(', ')}`);
+  
+  const startTime = Date.now();
+  const allResults = [];
+  let sourcesScanned = 0;
+  
+  // Reddit search
+  if (sources.includes('reddit')) {
+    const redditResults = await searchReddit(keyword);
+    sourcesScanned += redditResults.length;
+    
+    for (const result of redditResults) {
+      const { score, matches } = scoreRelevance(result, keyword, context);
+      if (score >= 30) { // Relevance threshold
+        allResults.push({
+          ...result,
+          relevanceScore: score,
+          matches,
+          priority: score >= 80 ? 'hot' : score >= 50 ? 'warm' : 'monitor',
+          foundBy: 'LumenSec'
+        });
+      }
+    }
+  }
+  
+  // Web search
+  if (sources.includes('web')) {
+    const webResults = await searchWeb(keyword);
+    sourcesScanned += webResults.length;
+    
+    for (const result of webResults) {
+      const { score, matches } = scoreRelevance(result, keyword, context);
+      if (score >= 20) {
+        allResults.push({
+          ...result,
+          relevanceScore: score,
+          matches,
+          priority: score >= 60 ? 'hot' : score >= 40 ? 'warm' : 'monitor',
+          foundBy: 'LumenRes'
+        });
+      }
+    }
+  }
+  
+  // Sort by relevance score
+  allResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
+  
+  const duration = Date.now() - startTime;
+  console.log(`[AgentArmy] Research complete: ${allResults.length} relevant results from ${sourcesScanned} sources (${duration}ms)`);
+  
+  return {
+    results: allResults.slice(0, 50), // Top 50 results
+    stats: {
+      sourcesScanned,
+      totalResults: allResults.length,
+      hotCount: allResults.filter(r => r.priority === 'hot').length,
+      duration
+    }
+  };
+}
+
+// Add research endpoint to routes
+function addResearchRoute(app) {
+  app.post('/api/agent-army/research', async (req, res) => {
+    try {
+      const { keyword, context, sources } = req.body;
+      
+      if (!keyword) {
+        return res.status(400).json({ success: false, error: 'Keyword required' });
+      }
+      
+      const validSources = (sources || ['reddit', 'web']).filter(s => ['reddit', 'web'].includes(s));
+      
+      const { results, stats } = await runIntelligentResearch(keyword, context || '', validSources);
+      
+      res.json({
+        success: true,
+        query: keyword,
+        context: context || null,
+        sources: validSources,
+        results,
+        stats
+      });
+    } catch (err) {
+      console.error('[AgentArmy] Research API error:', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+  
+  console.log('[AgentArmy] Research API route added');
 }
 
 module.exports = {
   initAgentArmy,
   runAgentScan,
+  runIntelligentResearch,
+  addResearchRoute,
   getAgentState: () => agentState,
   AGENT_SQUADS,
   COMMANDER

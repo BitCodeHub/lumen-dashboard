@@ -3,30 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Social Media Intel | Lumen AI</title>
+  <title>AI Intelligence Research | Lumen AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-base: #0a0a0f;
-      --bg-card: #12121a;
-      --bg-elevated: #1a1a24;
-      --border: #2a2a3a;
-      --text-primary: #ffffff;
-      --text-secondary: #a1a1aa;
-      --text-muted: #71717a;
+      /* Lumen colors - warm amber/gold */
       --lumen-primary: #f59e0b;
       --lumen-light: #fbbf24;
       --lumen-dark: #d97706;
       --lumen-glow: rgba(245, 158, 11, 0.1);
       --lumen-border: rgba(245, 158, 11, 0.3);
-      --social-primary: #8b5cf6;
-      --social-light: #a78bfa;
-      --social-glow: rgba(139, 92, 246, 0.1);
-      --social-border: rgba(139, 92, 246, 0.3);
+      
+      /* Neutral dark */
+      --bg-base: #09090b;
+      --bg-card: #131316;
+      --bg-elevated: #1a1a1f;
+      --border: #27272a;
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      
+      /* Status colors */
       --status-hot: #ef4444;
-      --status-evaluating: #f59e0b;
-      --status-building: #22c55e;
+      --status-warm: #f59e0b;
+      --status-monitor: #22c55e;
+      --status-scanning: #3b82f6;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -41,9 +43,9 @@
 
     /* Header */
     .header {
-      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(139, 92, 246, 0.1) 100%);
-      border-bottom: 1px solid var(--social-border);
-      padding: 1.5rem 2rem;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--lumen-border);
+      padding: 1rem 2rem;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -65,17 +67,16 @@
     .header-title h1 {
       font-size: 1.5rem;
       font-weight: 700;
-      background: linear-gradient(135deg, var(--social-light), var(--lumen-primary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--lumen-primary);
     }
     .header-title .emoji {
-      font-size: 2rem;
+      font-size: 1.75rem;
     }
     .header-subtitle {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: var(--text-secondary);
     }
+    
     /* Page Navigation Tabs */
     .page-tabs {
       display: flex;
@@ -98,62 +99,242 @@
       transition: all 0.2s ease;
     }
     .tab-link:hover {
-      background: var(--social-glow);
-      color: var(--social-primary);
+      background: var(--lumen-glow);
+      color: var(--lumen-primary);
     }
     .tab-link.active {
-      background: var(--social-primary);
-      color: #fff;
-      font-weight: 600;
+      background: var(--lumen-glow);
+      color: var(--lumen-primary);
+      border: 1px solid var(--lumen-border);
     }
-    .header-nav {
+
+    /* Main Content */
+    .main {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem;
+    }
+
+    /* Search Section */
+    .search-section {
+      background: var(--bg-card);
+      border: 1px solid var(--lumen-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .search-header {
       display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .search-header h2 {
+      font-size: 1.25rem;
+      color: var(--lumen-primary);
+    }
+    .search-form {
+      display: flex;
+      flex-direction: column;
       gap: 1rem;
     }
-    .nav-link {
-      color: var(--text-secondary);
-      text-decoration: none;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      transition: all 0.2s;
+    .search-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
-    .nav-link:hover {
-      background: var(--social-glow);
-      color: var(--social-primary);
+    .search-input-wrapper {
+      flex: 1;
+      min-width: 300px;
     }
-    .last-updated {
-      font-size: 0.8rem;
+    .search-input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--lumen-primary);
+      box-shadow: 0 0 0 3px var(--lumen-glow);
+    }
+    .search-input::placeholder {
       color: var(--text-muted);
+    }
+    .search-context {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      min-height: 80px;
+      resize: vertical;
+    }
+    .search-context:focus {
+      outline: none;
+      border-color: var(--lumen-primary);
+      box-shadow: 0 0 0 3px var(--lumen-glow);
+    }
+    .search-btn {
+      padding: 0.875rem 2rem;
+      background: var(--lumen-primary);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
-    .live-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--status-building);
-      border-radius: 50%;
-      animation: pulse 2s ease-in-out infinite;
+    .search-btn:hover {
+      background: var(--lumen-light);
+      transform: translateY(-1px);
+    }
+    .search-btn:disabled {
+      background: var(--text-muted);
+      cursor: not-allowed;
+      transform: none;
+    }
+    .search-btn.scanning {
+      animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.9); }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .source-toggles {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+    .source-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .source-toggle:hover {
+      border-color: var(--lumen-border);
+    }
+    .source-toggle.active {
+      background: var(--lumen-glow);
+      border-color: var(--lumen-primary);
+      color: var(--lumen-primary);
+    }
+    .source-toggle input {
+      display: none;
     }
 
-    /* Container */
-    .container {
-      max-width: 1600px;
-      margin: 0 auto;
-      padding: 2rem;
+    /* Agent Army Section */
+    .agent-army-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
     }
-
-    /* Stats Grid */
-    .stats-grid {
+    .army-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .army-header h2 {
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .army-status {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      background: var(--status-monitor);
+      color: #000;
+      font-weight: 600;
+    }
+    .army-status.scanning {
+      background: var(--status-scanning);
+      color: #fff;
+      animation: pulse 1.5s infinite;
+    }
+    .squad-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+    }
+    .squad-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .squad-card:hover {
+      border-color: var(--lumen-border);
+      transform: translateY(-2px);
+    }
+    .squad-card.active {
+      border-color: var(--lumen-primary);
+      box-shadow: 0 0 20px var(--lumen-glow);
+    }
+    .squad-emoji {
+      font-size: 1.5rem;
+      margin-bottom: 0.25rem;
+    }
+    .squad-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+    }
+    .squad-focus {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+    .squad-count {
+      font-size: 0.75rem;
+      color: var(--lumen-primary);
+      margin-top: 0.25rem;
+    }
+    .squad-status {
+      font-size: 0.65rem;
+      margin-top: 0.5rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+      background: var(--bg-base);
+      color: var(--text-muted);
+    }
+    .squad-status.scanning {
+      background: var(--status-scanning);
+      color: #fff;
+    }
+
+    /* Stats Row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 1rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
     .stat-card {
       background: var(--bg-card);
@@ -161,11 +342,6 @@
       border-radius: 12px;
       padding: 1.25rem;
       text-align: center;
-      transition: all 0.3s;
-    }
-    .stat-card:hover {
-      border-color: var(--social-border);
-      transform: translateY(-2px);
     }
     .stat-icon {
       font-size: 1.5rem;
@@ -174,282 +350,167 @@
     .stat-value {
       font-size: 1.75rem;
       font-weight: 700;
-      color: var(--social-primary);
+      color: var(--lumen-primary);
     }
     .stat-label {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
+      font-size: 0.75rem;
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin-top: 0.25rem;
     }
 
-    /* Section */
-    .section {
+    /* Results Section */
+    .results-section {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      margin-bottom: 2rem;
-      overflow: hidden;
-    }
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.25rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-elevated);
-    }
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-    .section-badge {
-      background: var(--social-glow);
-      color: var(--social-primary);
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-    .section-content {
       padding: 1.5rem;
+      margin-bottom: 1.5rem;
     }
-
-    /* Opportunity Cards */
-    .opportunity-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 1.25rem;
-    }
-    .opportunity-card {
-      background: var(--bg-elevated);
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 1.25rem;
-      transition: all 0.3s;
-      position: relative;
-    }
-    .opportunity-card:hover {
-      border-color: var(--social-border);
-      box-shadow: 0 8px 30px rgba(139, 92, 246, 0.15);
-    }
-    .opportunity-card.hot {
-      border-color: rgba(239, 68, 68, 0.4);
-    }
-    .opportunity-card.hot::before {
-      content: '🔥';
-      position: absolute;
-      top: -10px;
-      right: 10px;
-      font-size: 1.5rem;
-    }
-    .opp-header {
+    .results-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 0.75rem;
+      align-items: center;
+      margin-bottom: 1rem;
     }
-    .opp-name {
+    .results-header h2 {
       font-size: 1.1rem;
-      font-weight: 600;
       color: var(--text-primary);
-    }
-    .opp-status {
-      padding: 0.2rem 0.6rem;
-      border-radius: 4px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-    .opp-status.evaluating {
-      background: rgba(245, 158, 11, 0.2);
-      color: var(--status-evaluating);
-    }
-    .opp-status.building {
-      background: rgba(34, 197, 94, 0.2);
-      color: var(--status-building);
-    }
-    .opp-signal {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
-      font-size: 0.85rem;
-      color: var(--social-light);
-      margin-bottom: 0.75rem;
+      gap: 0.5rem;
     }
-    .opp-pain {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      margin-bottom: 0.75rem;
-      line-height: 1.5;
-    }
-    .opp-opportunity {
-      font-size: 0.85rem;
-      color: var(--lumen-primary);
-      padding: 0.5rem 0.75rem;
-      background: var(--lumen-glow);
-      border-radius: 6px;
-      border-left: 3px solid var(--lumen-primary);
-    }
-
-    /* Trending Posts */
-    .trending-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    .trending-item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-      background: var(--bg-elevated);
-      border-radius: 8px;
-      transition: all 0.2s;
-    }
-    .trending-item:hover {
-      background: var(--social-glow);
-    }
-    .trending-rank {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--social-primary);
-      min-width: 2rem;
-    }
-    .trending-content {
-      flex: 1;
-    }
-    .trending-title {
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-      color: var(--text-primary);
-    }
-    .trending-meta {
-      display: flex;
-      gap: 1rem;
+    .results-count {
       font-size: 0.8rem;
-      color: var(--text-muted);
+      padding: 0.3rem 0.75rem;
+      background: var(--lumen-glow);
+      border: 1px solid var(--lumen-border);
+      border-radius: 20px;
+      color: var(--lumen-primary);
     }
-    .trending-stat {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    /* Approval Queue */
-    .queue-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .queue-item {
-      display: flex;
-      gap: 1.5rem;
-      padding: 1.25rem;
-      background: var(--bg-elevated);
-      border-radius: 12px;
-      border-left: 4px solid var(--social-primary);
-      transition: all 0.2s;
-    }
-    .queue-item:hover {
-      border-left-color: var(--lumen-primary);
-      background: rgba(139, 92, 246, 0.05);
-    }
-    .queue-main {
-      flex: 1;
-    }
-    .queue-name {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 0.5rem;
-    }
-    .queue-signal {
-      font-size: 0.85rem;
-      color: var(--social-light);
-      margin-bottom: 0.5rem;
-    }
-    .queue-details {
+    .results-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 0.75rem;
-      font-size: 0.85rem;
     }
-    .queue-detail {
-      color: var(--text-secondary);
-    }
-    .queue-detail strong {
-      color: var(--text-primary);
-    }
-    .queue-action {
-      display: flex;
-      align-items: center;
-    }
-    .approve-btn {
-      background: linear-gradient(135deg, var(--social-primary), var(--lumen-primary));
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .approve-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-    }
-
-    /* Agent Army */
-    .army-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-    .squad-card {
+    .result-card {
       background: var(--bg-elevated);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 1rem;
-      text-align: center;
+      transition: all 0.2s ease;
     }
-    .squad-emoji {
-      font-size: 2rem;
+    .result-card:hover {
+      border-color: var(--lumen-border);
+    }
+    .result-card.hot {
+      border-left: 3px solid var(--status-hot);
+    }
+    .result-card.warm {
+      border-left: 3px solid var(--status-warm);
+    }
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
       margin-bottom: 0.5rem;
     }
-    .squad-name {
-      font-weight: 600;
+    .result-title {
+      font-weight: 500;
+      font-size: 0.95rem;
       color: var(--text-primary);
+      flex: 1;
     }
-    .squad-focus {
+    .result-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .result-title a:hover {
+      color: var(--lumen-primary);
+    }
+    .result-priority {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .result-priority.hot {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--status-hot);
+    }
+    .result-priority.warm {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--status-warm);
+    }
+    .result-priority.monitor {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--status-monitor);
+    }
+    .result-meta {
+      display: flex;
+      gap: 1rem;
       font-size: 0.8rem;
-      color: var(--text-secondary);
-      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
     }
-    .squad-count {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--social-primary);
+    .result-meta span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .result-source {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.2rem 0.5rem;
+      background: var(--bg-base);
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    .result-matches {
+      margin-top: 0.5rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .match-tag {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      background: var(--lumen-glow);
+      border: 1px solid var(--lumen-border);
+      border-radius: 4px;
+      color: var(--lumen-primary);
     }
 
-    /* Loading */
-    .loading {
+    /* Empty State */
+    .empty-state {
       text-align: center;
       padding: 3rem;
       color: var(--text-muted);
     }
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--social-primary);
+    .empty-state .emoji {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .empty-state h3 {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    .empty-state p {
+      font-size: 0.9rem;
+    }
+
+    /* Loading State */
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--lumen-glow);
+      border-top-color: var(--lumen-primary);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 1rem;
+      animation: spin 0.8s linear infinite;
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
@@ -457,304 +518,363 @@
 
     /* Responsive */
     @media (max-width: 768px) {
-      .container { padding: 1rem; }
       .header { padding: 1rem; }
-      .opportunity-grid { grid-template-columns: 1fr; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .main { padding: 1rem; }
+      .search-row { flex-direction: column; }
+      .search-input-wrapper { min-width: 100%; }
+      .page-tabs { display: none; }
     }
   </style>
 </head>
 <body>
   <header class="header">
     <div class="header-content">
-      <div>
-        <div class="header-title">
-          <span class="emoji">🔮</span>
-          <h1>Social Media Intel</h1>
+      <div class="header-title">
+        <span class="emoji">🔆</span>
+        <div>
+          <h1>AI Intelligence Research</h1>
+          <div class="header-subtitle">51 agents scanning the internet for insights</div>
         </div>
-        <p class="header-subtitle">AI-powered insights from 50+ agents monitoring the agent social network</p>
       </div>
       <nav class="page-tabs">
         <a href="/" class="tab-link">📊 Dashboard</a>
         <a href="/company-structure.html" class="tab-link">🏢 Company</a>
         <a href="/product-roadmap.html" class="tab-link">🗺️ Roadmap</a>
-        <a href="/social-intel.html" class="tab-link active">🔮 Intel</a>
+        <a href="/social-intel.html" class="tab-link active">🔍 Intel</a>
       </nav>
-      <div class="last-updated">
-        <span class="live-dot"></span>
-        <span>Last updated: <span id="last-updated">Loading...</span></span>
+      <div style="font-size: 0.8rem; color: var(--text-muted);">
+        <span id="last-updated">● Ready</span>
       </div>
     </div>
   </header>
 
-  <main class="container">
-    <!-- Stats -->
-    <div class="stats-grid" id="stats-grid">
+  <main class="main">
+    <!-- Search Section -->
+    <section class="search-section">
+      <div class="search-header">
+        <span style="font-size: 1.5rem;">🔍</span>
+        <h2>Research Query</h2>
+      </div>
+      <form class="search-form" onsubmit="startResearch(event)">
+        <div class="search-row">
+          <div class="search-input-wrapper">
+            <input type="text" id="search-keyword" class="search-input" 
+                   placeholder="Enter keywords to research (e.g., AI code review tools, compliance automation)">
+          </div>
+          <button type="submit" id="search-btn" class="search-btn">
+            <span>🚀</span>
+            <span>Deploy Agents</span>
+          </button>
+        </div>
+        <textarea id="search-context" class="search-context" 
+                  placeholder="Optional: Describe what specific intel you're looking for...&#10;&#10;Example: Find discussions about pain points with current code review tools. Look for people asking for recommendations or complaining about existing solutions. Focus on enterprise use cases."></textarea>
+        <div class="source-toggles">
+          <label class="source-toggle active">
+            <input type="checkbox" name="source" value="reddit" checked>
+            <span>🔴</span> Reddit
+          </label>
+          <label class="source-toggle active">
+            <input type="checkbox" name="source" value="web" checked>
+            <span>🌐</span> Web Search
+          </label>
+          <label class="source-toggle">
+            <input type="checkbox" name="source" value="twitter" disabled>
+            <span>🐦</span> X/Twitter (soon)
+          </label>
+          <label class="source-toggle">
+            <input type="checkbox" name="source" value="trends" disabled>
+            <span>📈</span> Google Trends (soon)
+          </label>
+        </div>
+      </form>
+    </section>
+
+    <!-- Agent Army Section -->
+    <section class="agent-army-section">
+      <div class="army-header">
+        <h2>🤖 Agent Army Status</h2>
+        <span id="army-status" class="army-status">Ready</span>
+      </div>
+      <div class="squad-grid" id="squad-grid">
+        <div class="squad-card">
+          <div class="squad-emoji">👑</div>
+          <div class="squad-name">LumenCTO_007</div>
+          <div class="squad-focus">Commander</div>
+          <div class="squad-count">1 agent</div>
+          <div class="squad-status" id="status-commander">Standby</div>
+        </div>
+        <div class="squad-card">
+          <div class="squad-emoji">🛡️</div>
+          <div class="squad-name">LumenSec</div>
+          <div class="squad-focus">Security & Audit</div>
+          <div class="squad-count">10 agents</div>
+          <div class="squad-status" id="status-security">Standby</div>
+        </div>
+        <div class="squad-card">
+          <div class="squad-emoji">🏗️</div>
+          <div class="squad-name">LumenArch</div>
+          <div class="squad-focus">Agent Architecture</div>
+          <div class="squad-count">10 agents</div>
+          <div class="squad-status" id="status-architecture">Standby</div>
+        </div>
+        <div class="squad-card">
+          <div class="squad-emoji">🏢</div>
+          <div class="squad-name">LumenEnt</div>
+          <div class="squad-focus">Enterprise AI</div>
+          <div class="squad-count">10 agents</div>
+          <div class="squad-status" id="status-enterprise">Standby</div>
+        </div>
+        <div class="squad-card">
+          <div class="squad-emoji">🔬</div>
+          <div class="squad-name">LumenRes</div>
+          <div class="squad-focus">Research & Trends</div>
+          <div class="squad-count">10 agents</div>
+          <div class="squad-status" id="status-research">Standby</div>
+        </div>
+        <div class="squad-card">
+          <div class="squad-emoji">⚙️</div>
+          <div class="squad-name">LumenDev</div>
+          <div class="squad-focus">Dev Tools & Stacks</div>
+          <div class="squad-count">10 agents</div>
+          <div class="squad-status" id="status-devtools">Standby</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
       <div class="stat-card">
         <div class="stat-icon">📊</div>
-        <div class="stat-value" id="stat-posts">-</div>
-        <div class="stat-label">Posts Analyzed</div>
+        <div class="stat-value" id="stat-scanned">0</div>
+        <div class="stat-label">Sources Scanned</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">👍</div>
-        <div class="stat-value" id="stat-upvotes">-</div>
-        <div class="stat-label">Total Upvotes</div>
+        <div class="stat-icon">🎯</div>
+        <div class="stat-value" id="stat-results">0</div>
+        <div class="stat-label">Results Found</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">💡</div>
-        <div class="stat-value" id="stat-opportunities">-</div>
-        <div class="stat-label">Opportunities</div>
+        <div class="stat-icon">🔥</div>
+        <div class="stat-value" id="stat-hot">0</div>
+        <div class="stat-label">Hot Opportunities</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">🤖</div>
-        <div class="stat-value" id="stat-agents">51</div>
+        <div class="stat-value">51</div>
         <div class="stat-label">Active Agents</div>
       </div>
     </div>
 
-    <!-- Hot Opportunities -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-title">
-          <span>🔥</span>
-          <span>Hot Opportunities</span>
-        </div>
-        <span class="section-badge" id="opp-count">0 found</span>
+    <!-- Results Section -->
+    <section class="results-section">
+      <div class="results-header">
+        <h2>🎯 Intelligence Results</h2>
+        <span class="results-count" id="results-count">0 results</span>
       </div>
-      <div class="section-content">
-        <div class="opportunity-grid" id="opportunities-grid">
-          <div class="loading">
-            <div class="spinner"></div>
-            <p>Loading opportunities...</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Trending Posts -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-title">
-          <span>📈</span>
-          <span>Trending on Social Media</span>
-        </div>
-        <span class="section-badge">Live Feed</span>
-      </div>
-      <div class="section-content">
-        <div class="trending-list" id="trending-list">
-          <div class="loading">
-            <div class="spinner"></div>
-            <p>Loading trending posts...</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Approval Queue -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-title">
-          <span>📋</span>
-          <span>Approval Queue</span>
-        </div>
-        <span class="section-badge" id="queue-count">Awaiting Review</span>
-      </div>
-      <div class="section-content">
-        <div class="queue-list" id="queue-list">
-          <div class="loading">
-            <div class="spinner"></div>
-            <p>Loading queue...</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Agent Army -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-title">
-          <span>🤖</span>
-          <span>Agent Army</span>
-        </div>
-        <span class="section-badge">51 Agents Deployed</span>
-      </div>
-      <div class="section-content">
-        <div class="army-grid" id="army-grid">
-          <!-- Populated by JS -->
+      <div class="results-grid" id="results-grid">
+        <div class="empty-state">
+          <div class="emoji">🔍</div>
+          <h3>Ready to Research</h3>
+          <p>Enter keywords above and deploy agents to find intelligence</p>
         </div>
       </div>
     </section>
   </main>
 
   <script>
-    let intelData = null;
+    // State
+    let isSearching = false;
+    let currentQuery = '';
+    let results = [];
+    
+    // Source toggles
+    document.querySelectorAll('.source-toggle').forEach(toggle => {
+      toggle.addEventListener('click', function() {
+        if (this.querySelector('input').disabled) return;
+        this.classList.toggle('active');
+      });
+    });
 
-    async function fetchIntel() {
+    // Start research
+    async function startResearch(e) {
+      e.preventDefault();
+      
+      const keyword = document.getElementById('search-keyword').value.trim();
+      const context = document.getElementById('search-context').value.trim();
+      
+      if (!keyword) {
+        alert('Please enter keywords to research');
+        return;
+      }
+      
+      // Get active sources
+      const sources = [];
+      document.querySelectorAll('.source-toggle.active input:not(:disabled)').forEach(input => {
+        sources.push(input.value);
+      });
+      
+      if (sources.length === 0) {
+        alert('Please select at least one source');
+        return;
+      }
+      
+      currentQuery = keyword;
+      isSearching = true;
+      results = [];
+      
+      // Update UI
+      updateSearchingUI(true);
+      
       try {
-        const response = await fetch('/public/social-intel');
+        // Call research API
+        const response = await fetch('/api/agent-army/research', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword, context, sources })
+        });
+        
         const data = await response.json();
         
         if (data.success) {
-          intelData = data;
-          renderAll();
-          document.getElementById('last-updated').textContent = 
-            new Date(data.lastUpdate).toLocaleString();
+          results = data.results || [];
+          renderResults();
+          updateStats(data.stats);
+        } else {
+          throw new Error(data.error || 'Research failed');
         }
       } catch (err) {
-        console.error('Failed to fetch intel:', err);
+        console.error('Research error:', err);
+        document.getElementById('results-grid').innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">⚠️</div>
+            <h3>Research Error</h3>
+            <p>${err.message}</p>
+          </div>
+        `;
+      } finally {
+        isSearching = false;
+        updateSearchingUI(false);
       }
     }
 
-    function formatNumber(num) {
-      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-      return num.toString();
-    }
-
-    function renderAll() {
-      renderStats();
-      renderOpportunities();
-      renderTrending();
-      renderQueue();
-      renderArmy();
-    }
-
-    function renderStats() {
-      const stats = intelData.stats || {};
-      document.getElementById('stat-posts').textContent = formatNumber(stats.postsAnalyzed || 0);
-      document.getElementById('stat-upvotes').textContent = formatNumber(stats.totalUpvotes || 0);
-      document.getElementById('stat-opportunities').textContent = stats.opportunities || intelData.opportunities?.length || 0;
-      document.getElementById('stat-agents').textContent = intelData.agentArmy?.total || 51;
-    }
-
-    function renderOpportunities() {
-      const grid = document.getElementById('opportunities-grid');
-      const opportunities = intelData.opportunities || [];
+    function updateSearchingUI(searching) {
+      const btn = document.getElementById('search-btn');
+      const armyStatus = document.getElementById('army-status');
       
-      document.getElementById('opp-count').textContent = `${opportunities.length} found`;
+      if (searching) {
+        btn.disabled = true;
+        btn.classList.add('scanning');
+        btn.innerHTML = '<span class="loading-spinner"></span><span>Researching...</span>';
+        armyStatus.textContent = 'Scanning';
+        armyStatus.classList.add('scanning');
+        
+        // Animate squads
+        const squads = ['commander', 'security', 'architecture', 'enterprise', 'research', 'devtools'];
+        squads.forEach((squad, i) => {
+          setTimeout(() => {
+            const el = document.getElementById(`status-${squad}`);
+            if (el) {
+              el.textContent = 'Scanning...';
+              el.classList.add('scanning');
+            }
+          }, i * 200);
+        });
+      } else {
+        btn.disabled = false;
+        btn.classList.remove('scanning');
+        btn.innerHTML = '<span>🚀</span><span>Deploy Agents</span>';
+        armyStatus.textContent = 'Complete';
+        armyStatus.classList.remove('scanning');
+        
+        // Reset squads
+        document.querySelectorAll('.squad-status').forEach(el => {
+          el.textContent = 'Complete';
+          el.classList.remove('scanning');
+        });
+        
+        document.getElementById('last-updated').textContent = `● Updated ${new Date().toLocaleTimeString()}`;
+      }
+    }
+
+    function updateStats(stats) {
+      document.getElementById('stat-scanned').textContent = stats?.sourcesScanned || results.length;
+      document.getElementById('stat-results').textContent = results.length;
+      document.getElementById('stat-hot').textContent = results.filter(r => r.priority === 'hot').length;
+    }
+
+    function renderResults() {
+      const grid = document.getElementById('results-grid');
+      const countEl = document.getElementById('results-count');
       
-      if (opportunities.length === 0) {
-        grid.innerHTML = '<p style="color: var(--text-muted);">Agents are scanning... opportunities will appear here.</p>';
+      countEl.textContent = `${results.length} results`;
+      
+      if (results.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">🔍</div>
+            <h3>No Results Found</h3>
+            <p>Try different keywords or broader search terms</p>
+          </div>
+        `;
         return;
       }
       
-      grid.innerHTML = opportunities.map(opp => `
-        <div class="opportunity-card ${opp.priority === 'hot' ? 'hot' : ''}">
-          <div class="opp-header">
-            <div class="opp-name" style="font-size: 0.95rem;">${truncate(opp.title, 80)}</div>
-            <span class="opp-status ${opp.priority === 'hot' ? 'hot' : opp.priority === 'warm' ? 'evaluating' : 'building'}">
-              ${opp.priority === 'hot' ? '🔥 Hot' : opp.priority === 'warm' ? '🟡 Warm' : '👀 Monitor'}
+      grid.innerHTML = results.map(result => `
+        <div class="result-card ${result.priority}">
+          <div class="result-header">
+            <div class="result-title">
+              <a href="${result.url}" target="_blank">${truncate(result.title, 120)}</a>
+            </div>
+            <span class="result-priority ${result.priority}">
+              ${result.priority === 'hot' ? '🔥 Hot' : result.priority === 'warm' ? '🟡 Warm' : '👀 Monitor'}
             </span>
           </div>
-          <div class="opp-signal">
-            <span>📡</span>
-            <span>r/${opp.subreddit} • ⬆️ ${opp.score}</span>
+          ${result.snippet ? `<p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.5rem 0;">${truncate(result.snippet, 200)}</p>` : ''}
+          <div class="result-meta">
+            <span class="result-source">${getSourceIcon(result.source)} ${result.source}</span>
+            ${result.score ? `<span>⬆️ ${result.score}</span>` : ''}
+            ${result.comments ? `<span>💬 ${result.comments}</span>` : ''}
+            ${result.subreddit ? `<span>📁 r/${result.subreddit}</span>` : ''}
+            <span>🤖 ${result.foundBy || 'AgentArmy'}</span>
           </div>
-          <div class="opp-pain">Found by: ${opp.foundBy}</div>
-          <div class="opp-opportunity">
-            <a href="${opp.url}" target="_blank" style="color: var(--social-light); text-decoration: none;">
-              View on Reddit →
-            </a>
-          </div>
+          ${result.matches && result.matches.length > 0 ? `
+            <div class="result-matches">
+              ${result.matches.slice(0, 5).map(m => `<span class="match-tag">${m}</span>`).join('')}
+            </div>
+          ` : ''}
         </div>
       `).join('');
     }
-    
+
+    function getSourceIcon(source) {
+      const icons = {
+        'reddit': '🔴',
+        'web': '🌐',
+        'twitter': '🐦',
+        'trends': '📈'
+      };
+      return icons[source] || '📄';
+    }
+
     function truncate(str, len) {
+      if (!str) return '';
       return str.length > len ? str.substring(0, len) + '...' : str;
     }
 
-    function renderTrending() {
-      const list = document.getElementById('trending-list');
-      const posts = intelData.dailyInsights?.trending || [];
-      
-      if (posts.length === 0) {
-        list.innerHTML = '<p style="color: var(--text-muted);">Agents are scanning Reddit for trending posts...</p>';
-        return;
+    // Auto-load last results on page load
+    async function loadInitialData() {
+      try {
+        const response = await fetch('/api/agent-army/stats');
+        const data = await response.json();
+        if (data.success && data.stats) {
+          document.getElementById('stat-scanned').textContent = data.stats.postsAnalyzed || 0;
+        }
+      } catch (err) {
+        console.log('No initial data');
       }
-      
-      list.innerHTML = posts.slice(0, 10).map((post, idx) => `
-        <div class="trending-item">
-          <div class="trending-rank">#${idx + 1}</div>
-          <div class="trending-content">
-            <a href="${post.url}" target="_blank" style="text-decoration: none; color: inherit;">
-              <div class="trending-title">${truncate(post.title, 100)}</div>
-            </a>
-            <div class="trending-meta">
-              <span class="trending-stat">⬆️ ${formatNumber(post.score)}</span>
-              <span class="trending-stat">💬 ${formatNumber(post.comments)}</span>
-              <span class="trending-stat">📁 r/${post.subreddit}</span>
-            </div>
-          </div>
-        </div>
-      `).join('');
     }
-
-    function renderQueue() {
-      const list = document.getElementById('queue-list');
-      const queue = intelData.approvalQueue || [];
-      
-      document.getElementById('queue-count').textContent = `${queue.length} awaiting review`;
-      
-      if (queue.length === 0) {
-        list.innerHTML = '<p style="color: var(--text-muted);">No items in approval queue.</p>';
-        return;
-      }
-      
-      list.innerHTML = queue.map(item => `
-        <div class="queue-item">
-          <div class="queue-main">
-            <div class="queue-name">${item.name}</div>
-            ${item.signal ? `<div class="queue-signal">📡 ${item.signal}</div>` : ''}
-            <div class="queue-details">
-              ${item.problem ? `<div class="queue-detail"><strong>Problem:</strong> ${item.problem}</div>` : ''}
-              ${item.solution ? `<div class="queue-detail"><strong>Solution:</strong> ${item.solution}</div>` : ''}
-              ${item.buyer ? `<div class="queue-detail"><strong>Buyer:</strong> ${item.buyer}</div>` : ''}
-              ${item.tam ? `<div class="queue-detail"><strong>TAM:</strong> ${item.tam}</div>` : ''}
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function renderArmy() {
-      const grid = document.getElementById('army-grid');
-      const squads = intelData.agentArmy?.squads || [
-        { name: 'LumenSec', focus: 'Security & Audit', count: 10 },
-        { name: 'LumenArch', focus: 'Agent Architecture', count: 10 },
-        { name: 'LumenEnt', focus: 'Enterprise AI', count: 10 },
-        { name: 'LumenRes', focus: 'Research & Trends', count: 10 },
-        { name: 'LumenDev', focus: 'Dev Tools & Stacks', count: 10 }
-      ];
-      
-      const emojis = {
-        'LumenSec': '🛡️',
-        'LumenArch': '🏗️',
-        'LumenEnt': '🏢',
-        'LumenRes': '🔬',
-        'LumenDev': '⚙️'
-      };
-      
-      grid.innerHTML = `
-        <div class="squad-card">
-          <div class="squad-emoji">🔆</div>
-          <div class="squad-name">LumenCTO_007</div>
-          <div class="squad-focus">Commander</div>
-          <div class="squad-count">1</div>
-        </div>
-      ` + squads.map(squad => `
-        <div class="squad-card">
-          <div class="squad-emoji">${emojis[squad.name] || '🤖'}</div>
-          <div class="squad-name">${squad.name}</div>
-          <div class="squad-focus">${squad.focus}</div>
-          <div class="squad-count">${squad.count}</div>
-        </div>
-      `).join('');
-    }
-
-    // Initial fetch and refresh
-    fetchIntel();
-    setInterval(fetchIntel, 60000); // Refresh every minute
+    
+    loadInitialData();
   </script>
 </body>
 </html>
