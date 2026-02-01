@@ -1,12 +1,17 @@
 /**
  * AI Agent Army - Social Media Intelligence System
- * 51 agents monitoring Reddit, Twitter, and other platforms
+ * 51 REAL AI agents monitoring Reddit, Twitter, and other platforms
+ * Uses Claude API for intelligent filtering and relevance scoring
  * 
  * Created: 2026-02-01
  * Author: Lumen 🔆
  */
 
 const fetch = require('node-fetch');
+
+// Claude API Configuration
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+const CLAUDE_MODEL = 'claude-3-haiku-20240307'; // Fast + cheap for filtering
 
 // ==========================================
 // AGENT ARMY CONFIGURATION
@@ -751,6 +756,228 @@ function analyzeSentiment(text) {
   return { label: 'Neutral', emoji: '😐', color: '#f59e0b', score: 0 };
 }
 
+// ==========================================
+// REAL AI AGENT - CLAUDE FILTERING
+// ==========================================
+
+async function callClaudeAPI(prompt, maxTokens = 500) {
+  if (!ANTHROPIC_API_KEY) {
+    console.warn('[AgentArmy] No Anthropic API key - falling back to keyword matching');
+    return null;
+  }
+  
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    
+    if (!response.ok) {
+      console.error('[AgentArmy] Claude API error:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    return data.content?.[0]?.text || null;
+  } catch (err) {
+    console.error('[AgentArmy] Claude API call failed:', err.message);
+    return null;
+  }
+}
+
+async function aiFilterResults(results, keyword, context, options = {}) {
+  const { region = 'US', language = 'English' } = options;
+  
+  if (!ANTHROPIC_API_KEY || results.length === 0) {
+    console.log('[AgentArmy] No API key or no results - using basic filtering');
+    return basicFilter(results, keyword, context, region);
+  }
+  
+  console.log(`[AgentArmy] AI filtering ${results.length} results with Claude...`);
+  
+  // Batch results for efficiency (analyze 10 at a time)
+  const batchSize = 10;
+  const filteredResults = [];
+  
+  for (let i = 0; i < results.length; i += batchSize) {
+    const batch = results.slice(i, i + batchSize);
+    
+    const prompt = `You are an AI research agent. Your job is to filter search results for relevance.
+
+USER QUERY: "${keyword}"
+USER CONTEXT: "${context || 'No additional context'}"
+REQUIRED REGION: ${region} (reject content from other regions/countries)
+REQUIRED LANGUAGE: ${language} (reject non-${language} content)
+
+Analyze each result below and respond with a JSON array of objects with format:
+{"index": number, "relevant": boolean, "reason": "brief reason", "relevanceScore": 0-100}
+
+STRICT RULES:
+1. Result MUST directly relate to BOTH the query AND the context
+2. Reject results about different topics even if they mention the keyword
+3. Reject results from other countries/regions (e.g., reject German, UK, Europe content if US required)
+4. Reject results in other languages
+5. For app-related queries, only include results about that SPECIFIC app issue mentioned
+6. A result about "climate control" is NOT relevant to "app crash issues"
+7. Be VERY strict - when in doubt, reject
+
+RESULTS TO ANALYZE:
+${batch.map((r, idx) => `[${idx}] Title: ${r.title}\nContent: ${(r.selftext || r.snippet || '').substring(0, 300)}\nSource: ${r.source}${r.subreddit ? ` (r/${r.subreddit})` : ''}`).join('\n\n')}
+
+Respond ONLY with the JSON array, no other text.`;
+
+    try {
+      const response = await callClaudeAPI(prompt, 1000);
+      
+      if (response) {
+        // Parse JSON response
+        const jsonMatch = response.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const analysis = JSON.parse(jsonMatch[0]);
+          
+          for (const item of analysis) {
+            if (item.relevant && item.relevanceScore >= 50) {
+              const result = batch[item.index];
+              if (result) {
+                filteredResults.push({
+                  ...result,
+                  aiRelevanceScore: item.relevanceScore,
+                  aiReason: item.reason,
+                  relevanceScore: item.relevanceScore,
+                  priority: item.relevanceScore >= 80 ? 'hot' : item.relevanceScore >= 60 ? 'warm' : 'monitor'
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[AgentArmy] AI filtering batch error:', err.message);
+      // Fall back to basic filtering for this batch
+      filteredResults.push(...basicFilter(batch, keyword, context, region));
+    }
+    
+    // Small delay between batches to respect rate limits
+    if (i + batchSize < results.length) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+  }
+  
+  console.log(`[AgentArmy] AI filtered to ${filteredResults.length} relevant results`);
+  return filteredResults;
+}
+
+function basicFilter(results, keyword, context, region) {
+  // STRICT fallback filtering when Claude API is not available
+  const keywordLower = keyword.toLowerCase();
+  const keywordParts = keywordLower.split(/\s+/).filter(w => w.length > 2);
+  const contextLower = (context || '').toLowerCase();
+  const contextWords = contextLower.split(/\s+/).filter(w => w.length > 3);
+  
+  // Region-specific rejection patterns
+  const regionFilters = {
+    'US': {
+      reject: ['deutschland', 'german', 'français', 'french', 'españa', 'spanish', 'italiano', 
+               'uk only', 'australia', 'canadian', 'india', 'brasil', 'россия', 'china', 
+               '€', '£', '¥', 'europe only', 'eu only', 'nicht', 'keine', 'très', 'molto'],
+      require: [] // US is default, no specific requirements
+    },
+    'UK': {
+      reject: ['usa only', 'us only', 'america only', '$', 'deutschland', 'français'],
+      require: []
+    },
+    'EU': {
+      reject: ['usa only', 'us only', 'uk only'],
+      require: []
+    },
+    'Global': {
+      reject: [],
+      require: []
+    }
+  };
+  
+  const filter = regionFilters[region] || regionFilters['US'];
+  
+  return results.filter(r => {
+    const content = `${r.title || ''} ${r.selftext || ''} ${r.snippet || ''}`.toLowerCase();
+    
+    // STRICT: Must contain ALL keyword parts (not just first word)
+    for (const part of keywordParts) {
+      if (!content.includes(part)) return false;
+    }
+    
+    // STRICT: Reject non-matching regions
+    for (const indicator of filter.reject) {
+      if (content.includes(indicator)) return false;
+    }
+    
+    // STRICT: If context provided, must match context meaning
+    if (contextWords.length > 0) {
+      let contextMatchCount = 0;
+      for (const word of contextWords) {
+        if (content.includes(word)) {
+          contextMatchCount++;
+        }
+      }
+      // Must match at least 30% of context words, or at least 2 words
+      const threshold = Math.max(2, Math.floor(contextWords.length * 0.3));
+      if (contextMatchCount < Math.min(threshold, contextWords.length)) return false;
+    }
+    
+    // Calculate relevance score
+    let score = 50;
+    
+    // Boost for keyword density
+    for (const part of keywordParts) {
+      const matches = (content.match(new RegExp(part, 'g')) || []).length;
+      score += matches * 5;
+    }
+    
+    // Boost for context matches
+    for (const word of contextWords) {
+      if (content.includes(word)) score += 10;
+    }
+    
+    // Boost for high-intent phrases in context
+    const intentPhrases = ['crash', 'issue', 'problem', 'bug', 'error', 'fail', 'broken', 'not working', 'help'];
+    for (const phrase of intentPhrases) {
+      if (contextLower.includes(phrase) && content.includes(phrase)) {
+        score += 20;
+      }
+    }
+    
+    return true;
+  }).map(r => {
+    let score = 50;
+    const content = `${r.title || ''} ${r.selftext || ''} ${r.snippet || ''}`.toLowerCase();
+    
+    // Calculate final score
+    for (const part of keywordParts) {
+      const matches = (content.match(new RegExp(part, 'g')) || []).length;
+      score += matches * 5;
+    }
+    for (const word of contextWords) {
+      if (content.includes(word)) score += 10;
+    }
+    
+    return {
+      ...r,
+      relevanceScore: Math.min(score, 100),
+      priority: score >= 80 ? 'hot' : score >= 60 ? 'warm' : 'monitor',
+      aiReason: 'Matched via keyword + context filtering'
+    };
+  }).sort((a, b) => b.relevanceScore - a.relevanceScore);
+}
+
 function scoreRelevance(item, keywords, context) {
   const content = `${item.title || ''} ${item.selftext || ''} ${item.snippet || ''}`.toLowerCase();
   const keywordList = keywords.toLowerCase().split(/\s+/);
@@ -791,52 +1018,44 @@ function scoreRelevance(item, keywords, context) {
   return { score, matches: [...new Set(matches)] };
 }
 
-async function runIntelligentResearch(keyword, context, sources) {
-  console.log(`[AgentArmy] Starting research: "${keyword}" with sources: ${sources.join(', ')}`);
+async function runIntelligentResearch(keyword, context, sources, options = {}) {
+  const { region = 'US', language = 'English' } = options;
+  
+  console.log(`[AgentArmy] Starting REAL AI research: "${keyword}" | Context: "${context}" | Region: ${region}`);
   
   const startTime = Date.now();
-  const allResults = [];
+  const rawResults = [];
   let sourcesScanned = 0;
   
-  // Reddit search
+  // Reddit search - add region-specific search
   if (sources.includes('reddit')) {
-    const redditResults = await searchReddit(keyword);
+    // Search with keyword + region context
+    const searchQuery = `${keyword}`;
+    const redditResults = await searchReddit(searchQuery, 100); // Get more results for AI to filter
     sourcesScanned += redditResults.length;
     
     for (const result of redditResults) {
-      const { score, matches } = scoreRelevance(result, keyword, context);
       const sentiment = analyzeSentiment(`${result.title} ${result.selftext}`);
-      if (score >= 30) { // Relevance threshold
-        allResults.push({
-          ...result,
-          relevanceScore: score,
-          matches,
-          sentiment,
-          priority: score >= 80 ? 'hot' : score >= 50 ? 'warm' : 'monitor',
-          foundBy: 'LumenSec'
-        });
-      }
+      rawResults.push({
+        ...result,
+        sentiment,
+        foundBy: 'LumenSec'
+      });
     }
   }
   
   // Web search
   if (sources.includes('web')) {
-    const webResults = await searchWeb(keyword);
+    const webResults = await searchWeb(`${keyword} ${context || ''}`);
     sourcesScanned += webResults.length;
     
     for (const result of webResults) {
-      const { score, matches } = scoreRelevance(result, keyword, context);
       const sentiment = analyzeSentiment(`${result.title} ${result.snippet}`);
-      if (score >= 20) {
-        allResults.push({
-          ...result,
-          relevanceScore: score,
-          matches,
-          sentiment,
-          priority: score >= 60 ? 'hot' : score >= 40 ? 'warm' : 'monitor',
-          foundBy: 'LumenRes'
-        });
-      }
+      rawResults.push({
+        ...result,
+        sentiment,
+        foundBy: 'LumenRes'
+      });
     }
   }
   
@@ -851,43 +1070,36 @@ async function runIntelligentResearch(keyword, context, sources) {
       sourcesScanned += reviews.length;
       
       // Add app info
-      allResults.push({
+      rawResults.push({
         id: app.id,
         title: `📱 ${app.name} - iOS App`,
         snippet: `By ${app.developer} • ⭐ ${app.rating?.toFixed(1) || 'N/A'} (${app.ratingCount?.toLocaleString() || 0} ratings) • ${app.price}`,
+        selftext: '',
         url: app.url,
         source: 'appstore',
         platform: 'ios',
         appInfo: app,
-        relevanceScore: 70,
-        matches: [keyword],
         sentiment: getSentiment(Math.round(app.rating || 3)),
-        priority: app.rating >= 4 ? 'hot' : app.rating >= 3 ? 'warm' : 'monitor',
         foundBy: 'LumenEnt'
       });
       
-      // Add relevant reviews
-      for (const review of reviews.slice(0, 5)) {
-        const { score, matches } = scoreRelevance({ title: review.title, selftext: review.content }, keyword, context);
-        if (score >= 20 || context.toLowerCase().includes('review') || context.toLowerCase().includes('sentiment')) {
-          allResults.push({
-            id: review.id,
-            title: `⭐${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)} ${review.title}`,
-            snippet: review.content,
-            fullContent: review.content,
-            url: review.url || app.url,
-            source: 'appstore-review',
-            platform: 'ios',
-            author: review.author,
-            rating: review.rating,
-            appName: app.name,
-            relevanceScore: score + (review.rating <= 2 ? 20 : 0), // Boost negative reviews for insights
-            matches,
-            sentiment: review.sentiment,
-            priority: review.rating <= 2 ? 'hot' : review.rating <= 3 ? 'warm' : 'monitor',
-            foundBy: 'LumenArch'
-          });
-        }
+      // Add ALL reviews - let AI filter them
+      for (const review of reviews) {
+        rawResults.push({
+          id: review.id,
+          title: `⭐${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)} ${review.title}`,
+          snippet: review.content,
+          selftext: review.content,
+          fullContent: review.content,
+          url: review.url || app.url,
+          source: 'appstore-review',
+          platform: 'ios',
+          author: review.author,
+          rating: review.rating,
+          appName: app.name,
+          sentiment: review.sentiment,
+          foundBy: 'LumenArch'
+        });
       }
     }
   }
@@ -898,41 +1110,53 @@ async function runIntelligentResearch(keyword, context, sources) {
     sourcesScanned += apps.length;
     
     for (const app of apps) {
-      allResults.push({
+      rawResults.push({
         id: app.id,
         title: `📱 ${app.name} - Android App`,
         snippet: app.snippet,
+        selftext: app.snippet,
         url: app.url,
         source: 'playstore',
         platform: 'android',
-        relevanceScore: 60,
-        matches: [keyword],
         sentiment: { label: 'Unknown', emoji: '❓', color: '#71717a' },
-        priority: 'warm',
         foundBy: 'LumenDev'
       });
     }
   }
   
-  // Sort by relevance score
-  allResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
+  console.log(`[AgentArmy] Collected ${rawResults.length} raw results, now AI filtering...`);
+  
+  // USE REAL AI TO FILTER RESULTS
+  const filteredResults = await aiFilterResults(rawResults, keyword, context, { region, language });
+  
+  // Add sentiment analysis to filtered results
+  for (const result of filteredResults) {
+    if (!result.sentiment) {
+      result.sentiment = analyzeSentiment(`${result.title} ${result.selftext || result.snippet || ''}`);
+    }
+  }
+  
+  // Sort by AI relevance score
+  filteredResults.sort((a, b) => (b.aiRelevanceScore || b.relevanceScore || 0) - (a.aiRelevanceScore || a.relevanceScore || 0));
   
   const duration = Date.now() - startTime;
-  console.log(`[AgentArmy] Research complete: ${allResults.length} relevant results from ${sourcesScanned} sources (${duration}ms)`);
+  console.log(`[AgentArmy] AI Research complete: ${filteredResults.length} RELEVANT results from ${sourcesScanned} raw sources (${duration}ms)`);
   
   // Calculate sentiment summary
   const sentimentSummary = {
-    positive: allResults.filter(r => r.sentiment?.label === 'Positive').length,
-    neutral: allResults.filter(r => r.sentiment?.label === 'Neutral').length,
-    negative: allResults.filter(r => r.sentiment?.label === 'Negative').length
+    positive: filteredResults.filter(r => r.sentiment?.label === 'Positive').length,
+    neutral: filteredResults.filter(r => r.sentiment?.label === 'Neutral').length,
+    negative: filteredResults.filter(r => r.sentiment?.label === 'Negative').length
   };
   
   return {
-    results: allResults.slice(0, 50), // Top 50 results
+    results: filteredResults.slice(0, 50), // Top 50 relevant results
     stats: {
       sourcesScanned,
-      totalResults: allResults.length,
-      hotCount: allResults.filter(r => r.priority === 'hot').length,
+      rawResults: rawResults.length,
+      filteredResults: filteredResults.length,
+      aiFiltered: ANTHROPIC_API_KEY ? true : false,
+      hotCount: filteredResults.filter(r => r.priority === 'hot').length,
       duration,
       sentiment: sentimentSummary
     }
@@ -943,21 +1167,31 @@ async function runIntelligentResearch(keyword, context, sources) {
 function addResearchRoute(app) {
   app.post('/api/agent-army/research', async (req, res) => {
     try {
-      const { keyword, context, sources } = req.body;
+      const { keyword, context, sources, region = 'US', language = 'English' } = req.body;
       
       if (!keyword) {
         return res.status(400).json({ success: false, error: 'Keyword required' });
       }
       
-      const validSources = (sources || ['reddit', 'web']).filter(s => ['reddit', 'web'].includes(s));
+      const validSources = (sources || ['reddit', 'web', 'appstore', 'playstore']).filter(s => 
+        ['reddit', 'web', 'appstore', 'playstore'].includes(s)
+      );
       
-      const { results, stats } = await runIntelligentResearch(keyword, context || '', validSources);
+      const { results, stats } = await runIntelligentResearch(
+        keyword, 
+        context || '', 
+        validSources,
+        { region, language }
+      );
       
       res.json({
         success: true,
         query: keyword,
         context: context || null,
         sources: validSources,
+        region,
+        language,
+        aiPowered: !!ANTHROPIC_API_KEY,
         results,
         stats
       });
@@ -967,7 +1201,7 @@ function addResearchRoute(app) {
     }
   });
   
-  console.log('[AgentArmy] Research API route added');
+  console.log('[AgentArmy] Research API route added (AI-powered:', !!ANTHROPIC_API_KEY, ')');
 }
 
 module.exports = {

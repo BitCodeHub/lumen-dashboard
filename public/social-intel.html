@@ -720,10 +720,20 @@
             <input type="checkbox" name="source" value="playstore" checked>
             <span>🤖</span> Google Play
           </label>
-          <label class="source-toggle">
-            <input type="checkbox" name="source" value="twitter" disabled>
-            <span>🐦</span> X/Twitter (soon)
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem; align-items: center;">
+          <label style="font-size: 0.85rem; color: var(--text-secondary);">
+            🌎 Region:
+            <select id="search-region" style="margin-left: 0.5rem; padding: 0.4rem 0.8rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;">
+              <option value="US" selected>🇺🇸 United States</option>
+              <option value="UK">🇬🇧 United Kingdom</option>
+              <option value="EU">🇪🇺 Europe</option>
+              <option value="Global">🌍 Global (All)</option>
+            </select>
           </label>
+          <span id="ai-badge" style="font-size: 0.75rem; padding: 0.3rem 0.6rem; background: var(--lumen-glow); border: 1px solid var(--lumen-border); border-radius: 20px; color: var(--lumen-primary);">
+            🤖 AI-Powered Filtering
+          </span>
         </div>
       </form>
     </section>
@@ -880,15 +890,18 @@
       isSearching = true;
       results = [];
       
+      // Get region
+      const region = document.getElementById('search-region').value;
+      
       // Update UI
       updateSearchingUI(true);
       
       try {
-        // Call research API
+        // Call research API with AI filtering
         const response = await fetch('/api/agent-army/research', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keyword, context, sources })
+          body: JSON.stringify({ keyword, context, sources, region, language: 'English' })
         });
         
         const data = await response.json();
@@ -896,7 +909,7 @@
         if (data.success) {
           results = data.results || [];
           renderResults();
-          updateStats(data.stats);
+          updateStats(data.stats, data.aiPowered);
         } else {
           throw new Error(data.error || 'Research failed');
         }
@@ -954,10 +967,24 @@
       }
     }
 
-    function updateStats(stats) {
+    function updateStats(stats, aiPowered) {
       document.getElementById('stat-scanned').textContent = stats?.sourcesScanned || results.length;
       document.getElementById('stat-results').textContent = results.length;
-      document.getElementById('stat-hot').textContent = results.filter(r => r.priority === 'hot').length;
+      document.getElementById('stat-hot').textContent = stats?.hotCount || results.filter(r => r.priority === 'hot').length;
+      
+      // Update AI badge
+      const aiBadge = document.getElementById('ai-badge');
+      if (aiPowered) {
+        aiBadge.textContent = '🤖 AI Filtered (' + (stats?.rawResults || 0) + ' → ' + (stats?.filteredResults || results.length) + ')';
+        aiBadge.style.background = 'rgba(34, 197, 94, 0.2)';
+        aiBadge.style.borderColor = '#22c55e';
+        aiBadge.style.color = '#22c55e';
+      } else {
+        aiBadge.textContent = '⚠️ Basic Filtering (No AI)';
+        aiBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+        aiBadge.style.borderColor = '#f59e0b';
+        aiBadge.style.color = '#f59e0b';
+      }
     }
 
     function renderResults() {
