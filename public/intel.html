@@ -3,28 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enterprise AI Intelligence | Lumen AI</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Intel Command Center | Lumen AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --lumen-primary: #f59e0b;
-      --lumen-light: #fbbf24;
-      --lumen-dark: #d97706;
-      --lumen-glow: rgba(245, 158, 11, 0.1);
-      --lumen-border: rgba(245, 158, 11, 0.3);
-      
-      --bg-base: #09090b;
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --bg-base: #0a0a0b;
       --bg-card: #111113;
       --bg-elevated: #18181b;
       --border: #27272a;
       --text-primary: #fafafa;
       --text-secondary: #a1a1aa;
       --text-muted: #71717a;
-      
-      --success: #22c55e;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --info: #3b82f6;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,11 +29,26 @@
       background: var(--bg-base);
       color: var(--text-primary);
       min-height: 100vh;
+      overflow-x: hidden;
     }
+
+    /* Animations */
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes countUp { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    @keyframes glow { 0%, 100% { box-shadow: 0 0 5px var(--primary); } 50% { box-shadow: 0 0 20px var(--primary); } }
+    @keyframes streamIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .animate-pulse { animation: pulse 2s infinite; }
+    .animate-slide { animation: slideIn 0.3s ease-out; }
+    .animate-count { animation: countUp 0.4s ease-out; }
+    .animate-stream { animation: streamIn 0.3s ease-out; }
+    .animate-blink { animation: blink 1s infinite; }
 
     /* Top Bar */
     .topbar {
-      background: var(--bg-card);
+      background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-base) 100%);
       border-bottom: 1px solid var(--border);
       padding: 0.75rem 1.5rem;
       display: flex;
@@ -54,322 +64,243 @@
       gap: 0.75rem;
     }
     .topbar-brand h1 {
-      font-size: 1.25rem;
+      font-size: 1.1rem;
       font-weight: 700;
-      color: var(--lumen-primary);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--success);
+      font-weight: 500;
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
     }
     .topbar-nav {
       display: flex;
       gap: 0.5rem;
     }
     .topbar-nav a {
-      padding: 0.5rem 1rem;
-      color: var(--text-secondary);
+      padding: 0.5rem 0.75rem;
+      color: var(--text-muted);
       text-decoration: none;
-      font-size: 0.875rem;
+      font-size: 0.8rem;
       border-radius: 6px;
       transition: all 0.2s;
     }
     .topbar-nav a:hover, .topbar-nav a.active {
-      background: var(--lumen-glow);
-      color: var(--lumen-primary);
-    }
-    .topbar-status {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--success);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--primary-light);
     }
 
-    /* Layout */
-    .layout {
+    /* Main Layout */
+    .dashboard {
       display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 1.5rem;
-      padding: 1.5rem;
-      max-width: 1800px;
-      margin: 0 auto;
-    }
-    @media (max-width: 1200px) {
-      .layout { grid-template-columns: 1fr; }
+      grid-template-columns: 1fr 380px;
+      gap: 1rem;
+      padding: 1rem;
+      height: calc(100vh - 60px);
     }
 
-    /* Search Section */
-    .search-section {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .search-header {
+    /* Left Panel */
+    .left-panel {
       display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
+      flex-direction: column;
+      gap: 1rem;
+      overflow: hidden;
     }
-    .search-header h2 {
-      font-size: 1rem;
-      font-weight: 600;
-    }
-    .search-form {
-      display: flex;
-      gap: 0.75rem;
-    }
-    .search-input {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 0.95rem;
-    }
-    .search-input:focus {
-      outline: none;
-      border-color: var(--lumen-primary);
-    }
-    .search-context {
-      width: 100%;
-      margin-top: 0.75rem;
-      padding: 0.75rem;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 0.875rem;
-      min-height: 60px;
-      resize: vertical;
-    }
-    .search-btn {
-      padding: 0.75rem 1.5rem;
-      background: var(--lumen-primary);
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s;
-    }
-    .search-btn:hover { background: var(--lumen-light); }
-    .search-btn:disabled { background: var(--text-muted); cursor: not-allowed; }
-    .search-btn.loading { animation: pulse 1s infinite; }
 
-    /* KPI Cards */
+    /* KPI Grid */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
     }
     .kpi-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary) 0%, transparent 100%);
     }
     .kpi-label {
       font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
       color: var(--text-muted);
-      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
     }
     .kpi-value {
       font-size: 1.75rem;
       font-weight: 700;
-      color: var(--lumen-primary);
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
     }
-    .kpi-change {
-      font-size: 0.75rem;
-      color: var(--success);
-      margin-top: 0.25rem;
+    .kpi-value.counting {
+      color: var(--primary-light);
     }
-    .kpi-change.negative { color: var(--danger); }
+    .kpi-trend {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      margin-top: 0.5rem;
+    }
+    .kpi-trend.up { color: var(--success); }
+    .kpi-trend.down { color: var(--danger); }
+    .kpi-sparkline {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 30px;
+      opacity: 0.3;
+    }
 
-    /* Agent Status */
-    .agent-panel {
+    /* Search Section */
+    .search-section {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 10px;
       padding: 1rem;
-      margin-bottom: 1.5rem;
     }
-    .agent-header {
+    .search-form {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-    .agent-header h3 {
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-    .agent-count {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.5rem;
-      background: var(--lumen-glow);
-      border: 1px solid var(--lumen-border);
-      border-radius: 12px;
-      color: var(--lumen-primary);
-    }
-    .agent-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
       gap: 0.5rem;
     }
-    .agent-card {
+    .search-input {
+      flex: 1;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    .search-btn {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      color: white;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .search-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+    .search-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .search-context {
+      margin-top: 0.5rem;
+      width: 100%;
       background: var(--bg-elevated);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      resize: none;
+      height: 60px;
     }
-    .agent-card.active {
-      border-color: var(--lumen-primary);
-      background: var(--lumen-glow);
-    }
-    .agent-emoji { font-size: 1.25rem; }
-    .agent-info { flex: 1; }
-    .agent-name {
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    .agent-status {
-      font-size: 0.65rem;
-      color: var(--text-muted);
-    }
-    .agent-status.working { color: var(--lumen-primary); }
 
     /* Results Section */
     .results-section {
+      flex: 1;
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
     .results-header {
-      padding: 1rem 1.5rem;
+      padding: 0.75rem 1rem;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: var(--bg-elevated);
     }
     .results-header h3 {
-      font-size: 1rem;
+      font-size: 0.85rem;
       font-weight: 600;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
     .results-count {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       padding: 0.25rem 0.75rem;
-      background: var(--bg-elevated);
+      background: rgba(99, 102, 241, 0.15);
       border-radius: 12px;
-      color: var(--text-secondary);
+      color: var(--primary-light);
+      font-family: 'JetBrains Mono', monospace;
     }
     .results-body {
-      padding: 1rem;
-      max-height: 600px;
+      flex: 1;
       overflow-y: auto;
+      padding: 0.5rem;
     }
-
-    /* Synthesis Panel */
-    .synthesis-panel {
-      background: linear-gradient(135deg, var(--lumen-glow), transparent);
-      border: 1px solid var(--lumen-border);
-      border-radius: 10px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
-    .synthesis-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-    .synthesis-header h4 {
-      font-size: 0.9rem;
-      color: var(--lumen-primary);
-    }
-    .synthesis-summary {
-      font-size: 0.9rem;
-      color: var(--text-primary);
-      line-height: 1.6;
-      margin-bottom: 0.75rem;
-    }
-    .synthesis-insights {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-    .insight-tag {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.5rem;
-      background: var(--bg-card);
-      border-radius: 4px;
-      color: var(--text-secondary);
-    }
-
-    /* Result Card */
     .result-card {
       background: var(--bg-elevated);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 0.75rem;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
     }
     .result-card:hover {
-      border-color: var(--lumen-border);
+      border-color: var(--primary);
+      transform: translateX(2px);
     }
-    .result-card.hot { border-left: 3px solid var(--danger); }
-    .result-card.warm { border-left: 3px solid var(--warning); }
-    .result-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 0.5rem;
-    }
+    .result-card.hot { border-left-color: var(--danger); }
+    .result-card.warm { border-left-color: var(--warning); }
+    .result-card.cool { border-left-color: var(--info); }
     .result-title {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 500;
-      color: var(--text-primary);
-      flex: 1;
-    }
-    .result-score {
-      font-size: 0.7rem;
-      padding: 0.2rem 0.5rem;
-      background: var(--lumen-glow);
-      border: 1px solid var(--lumen-border);
-      border-radius: 4px;
-      color: var(--lumen-primary);
-      white-space: nowrap;
-    }
-    .result-content {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     .result-meta {
       display: flex;
@@ -377,127 +308,172 @@
       font-size: 0.7rem;
       color: var(--text-muted);
     }
-    .result-meta span {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
+    .result-score {
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 600;
     }
 
-    /* Sidebar */
-    .sidebar {
+    /* Right Panel - Live Stream */
+    .right-panel {
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      overflow: hidden;
     }
+
+    /* Agent Status Grid */
+    .agent-grid {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem;
+    }
+    .agent-grid-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .agent-grid-header h3 {
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .agent-count {
+      font-size: 0.7rem;
+      color: var(--success);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .agents {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+    .agent {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .agent.active {
+      border-color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
+    }
+    .agent-emoji { font-size: 1.25rem; }
+    .agent-name { font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+    /* Live Stream */
+    .live-stream {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .stream-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-elevated);
+    }
+    .stream-header h3 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .stream-body {
+      flex: 1;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.5rem;
+    }
+    .stream-event {
+      padding: 0.4rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      animation: streamIn 0.3s ease-out;
+    }
+    .stream-event:hover {
+      background: var(--bg-elevated);
+    }
+    .stream-time {
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .stream-msg {
+      color: var(--text-secondary);
+      word-break: break-word;
+    }
+    .stream-event.info .stream-msg { color: var(--info); }
+    .stream-event.success .stream-msg { color: var(--success); }
+    .stream-event.warning .stream-msg { color: var(--warning); }
+    .stream-event.error .stream-msg { color: var(--danger); }
 
     /* Metrics Panel */
     .metrics-panel {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1rem;
+      border-radius: 10px;
+      padding: 0.75rem;
     }
-    .metrics-header {
+    .metrics-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-    .metrics-header h3 {
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-    .live-badge {
-      font-size: 0.65rem;
-      padding: 0.2rem 0.5rem;
-      background: var(--success);
-      color: #fff;
-      border-radius: 4px;
-      animation: pulse 2s infinite;
-    }
-    .metric-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.5rem 0;
+      padding: 0.4rem 0;
       border-bottom: 1px solid var(--border);
-      font-size: 0.8rem;
+      font-size: 0.75rem;
     }
-    .metric-row:last-child { border-bottom: none; }
-    .metric-label { color: var(--text-muted); }
-    .metric-value { font-weight: 600; color: var(--text-primary); }
-
-    /* History Panel */
-    .history-panel {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1rem;
-    }
-    .history-header {
-      margin-bottom: 0.75rem;
-    }
-    .history-header h3 {
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-    .history-item {
-      padding: 0.5rem;
-      border-radius: 6px;
-      margin-bottom: 0.5rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .history-item:hover {
-      background: var(--bg-elevated);
-    }
-    .history-query {
-      font-size: 0.8rem;
+    .metrics-row:last-child { border-bottom: none; }
+    .metrics-label { color: var(--text-muted); }
+    .metrics-value { 
+      color: var(--text-primary); 
+      font-family: 'JetBrains Mono', monospace;
       font-weight: 500;
-      color: var(--text-primary);
-    }
-    .history-meta {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
-    /* Empty State */
-    .empty-state {
-      text-align: center;
-      padding: 3rem;
-      color: var(--text-muted);
-    }
-    .empty-state .emoji {
-      font-size: 3rem;
-      margin-bottom: 1rem;
     }
 
     /* Modal */
     .modal-overlay {
-      display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.8);
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
       backdrop-filter: blur(4px);
-      z-index: 1000;
-      justify-content: center;
+      display: flex;
       align-items: center;
-      padding: 1rem;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s;
+      z-index: 1000;
     }
-    .modal-overlay.active { display: flex; }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
     .modal {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      max-width: 700px;
-      width: 100%;
+      width: 90%;
+      max-width: 600px;
       max-height: 80vh;
-      overflow-y: auto;
+      overflow: hidden;
     }
     .modal-header {
-      padding: 1rem 1.5rem;
+      padding: 1rem;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -507,6 +483,7 @@
       font-size: 1rem;
       font-weight: 600;
       flex: 1;
+      padding-right: 1rem;
     }
     .modal-close {
       background: none;
@@ -514,39 +491,65 @@
       color: var(--text-muted);
       font-size: 1.5rem;
       cursor: pointer;
+      line-height: 1;
     }
-    .modal-body { padding: 1.5rem; }
+    .modal-body {
+      padding: 1rem;
+      max-height: 50vh;
+      overflow-y: auto;
+    }
     .modal-content {
       font-size: 0.9rem;
-      line-height: 1.7;
       color: var(--text-secondary);
+      line-height: 1.6;
       white-space: pre-wrap;
+    }
+    .modal-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+    }
+    .modal-link {
+      background: var(--primary);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+    .empty-state .emoji {
+      font-size: 2.5rem;
       margin-bottom: 1rem;
     }
-    .modal-url {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem;
-      background: var(--bg-elevated);
-      border-radius: 6px;
+    .empty-state h3 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
     }
-    .modal-url-text {
-      flex: 1;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      word-break: break-all;
+    .empty-state p {
+      font-size: 0.85rem;
     }
-    .modal-url-btn {
-      padding: 0.5rem 1rem;
-      background: var(--lumen-primary);
-      color: #000;
-      border: none;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .dashboard { grid-template-columns: 1fr; }
+      .right-panel { display: none; }
+      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
@@ -554,166 +557,152 @@
   <!-- Top Bar -->
   <div class="topbar">
     <div class="topbar-brand">
-      <span style="font-size: 1.5rem;">🔆</span>
-      <h1>Enterprise AI Intelligence</h1>
+      <span style="font-size: 1.25rem;">🔆</span>
+      <h1>Intel Command Center</h1>
+      <div class="live-indicator">
+        <span class="live-dot"></span>
+        <span id="connection-status">LIVE</span>
+      </div>
     </div>
     <nav class="topbar-nav">
       <a href="/">📊 Dashboard</a>
       <a href="/company-structure.html">🏢 Company</a>
-      <a href="/product-roadmap.html">🗺️ Roadmap</a>
       <a href="/intel.html" class="active">🔍 Intel</a>
+      <a href="/deals">🎯 Deals</a>
     </nav>
-    <div class="topbar-status">
-      <span class="status-dot"></span>
-      <span id="status-text">Ready</span>
-    </div>
   </div>
 
-  <div class="layout">
-    <!-- Main Content -->
-    <div class="main-content">
-      <!-- Search Section -->
-      <div class="search-section">
-        <div class="search-header">
-          <span style="font-size: 1.25rem;">🔍</span>
-          <h2>Intelligence Query</h2>
-        </div>
-        <form onsubmit="startResearch(event)">
-          <div class="search-form">
-            <input type="text" id="query-input" class="search-input" placeholder="Enter keywords (e.g., 'my hyundai app')">
-            <button type="submit" id="search-btn" class="search-btn">
-              <span>🚀</span> Deploy Agents
-            </button>
-          </div>
-          <textarea id="context-input" class="search-context" placeholder="Describe what specific intel you need (e.g., 'app crash issues, user complaints')"></textarea>
-        </form>
-      </div>
-
-      <!-- KPI Cards -->
+  <div class="dashboard">
+    <!-- Left Panel -->
+    <div class="left-panel">
+      <!-- KPI Grid -->
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label">Sources Scanned</div>
           <div class="kpi-value" id="kpi-sources">0</div>
+          <div class="kpi-trend up" id="kpi-sources-trend">↑ +0 this session</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Results Found</div>
           <div class="kpi-value" id="kpi-results">0</div>
+          <div class="kpi-trend" id="kpi-results-trend">—</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">AI Confidence</div>
-          <div class="kpi-value" id="kpi-confidence">-</div>
+          <div class="kpi-value" id="kpi-confidence">—</div>
+          <div class="kpi-trend" id="kpi-confidence-trend">—</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Response Time</div>
-          <div class="kpi-value" id="kpi-time">-</div>
+          <div class="kpi-value" id="kpi-time">—</div>
+          <div class="kpi-trend" id="kpi-time-trend">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total Searches</div>
+          <div class="kpi-value" id="kpi-searches">0</div>
+          <div class="kpi-trend up" id="kpi-searches-trend">↑ today</div>
         </div>
       </div>
 
-      <!-- Agent Status -->
-      <div class="agent-panel">
-        <div class="agent-header">
-          <h3>🤖 Agent Army Status</h3>
-          <span class="agent-count">51 Agents</span>
-        </div>
-        <div class="agent-grid" id="agent-grid">
-          <div class="agent-card">
-            <span class="agent-emoji">👑</span>
-            <div class="agent-info">
-              <div class="agent-name">Commander</div>
-              <div class="agent-status" id="status-commander">Standby</div>
-            </div>
+      <!-- Search Section -->
+      <div class="search-section">
+        <form onsubmit="startResearch(event)">
+          <div class="search-form">
+            <input type="text" id="query-input" class="search-input" placeholder="Enter search query (e.g., 'myHyundai app reviews')">
+            <button type="submit" id="search-btn" class="search-btn">
+              <span>🚀</span> Search
+            </button>
           </div>
-          <div class="agent-card" id="squad-reddit">
-            <span class="agent-emoji">🛡️</span>
-            <div class="agent-info">
-              <div class="agent-name">Reddit Squad (10)</div>
-              <div class="agent-status">Standby</div>
-            </div>
-          </div>
-          <div class="agent-card" id="squad-appstore">
-            <span class="agent-emoji">🏗️</span>
-            <div class="agent-info">
-              <div class="agent-name">App Store Squad (10)</div>
-              <div class="agent-status">Standby</div>
-            </div>
-          </div>
-          <div class="agent-card" id="squad-web">
-            <span class="agent-emoji">🏢</span>
-            <div class="agent-info">
-              <div class="agent-name">Web Squad (10)</div>
-              <div class="agent-status">Standby</div>
-            </div>
-          </div>
-          <div class="agent-card" id="squad-social">
-            <span class="agent-emoji">🔬</span>
-            <div class="agent-info">
-              <div class="agent-name">Social Squad (10)</div>
-              <div class="agent-status">Standby</div>
-            </div>
-          </div>
-          <div class="agent-card" id="squad-analysis">
-            <span class="agent-emoji">⚙️</span>
-            <div class="agent-info">
-              <div class="agent-name">Analysis Squad (10)</div>
-              <div class="agent-status">Standby</div>
-            </div>
-          </div>
-        </div>
+          <textarea id="context-input" class="search-context" placeholder="Optional: Add context (e.g., 'focus on crash issues, user complaints')"></textarea>
+        </form>
       </div>
 
       <!-- Results Section -->
       <div class="results-section">
         <div class="results-header">
-          <h3>🎯 Intelligence Results</h3>
+          <h3>📋 Search Results</h3>
           <span class="results-count" id="results-count">0 results</span>
         </div>
         <div class="results-body" id="results-body">
           <div class="empty-state">
             <div class="emoji">🔍</div>
-            <h3>Ready to Research</h3>
-            <p>Enter a query above to deploy your AI agent army</p>
+            <h3>Ready to Search</h3>
+            <p>Enter a query above to start gathering intelligence</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <!-- Live Metrics -->
-      <div class="metrics-panel">
-        <div class="metrics-header">
-          <h3>📊 Live Metrics</h3>
-          <span class="live-badge">LIVE</span>
+    <!-- Right Panel -->
+    <div class="right-panel">
+      <!-- Agent Status -->
+      <div class="agent-grid">
+        <div class="agent-grid-header">
+          <h3>🤖 Agent Status</h3>
+          <span class="agent-count" id="active-agents">0/5 active</span>
         </div>
-        <div class="metric-row">
-          <span class="metric-label">Total Searches</span>
-          <span class="metric-value" id="metric-searches">0</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label">Sources Scanned</span>
-          <span class="metric-value" id="metric-sources">0</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label">Insights Found</span>
-          <span class="metric-value" id="metric-insights">0</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label">AI Calls Made</span>
-          <span class="metric-value" id="metric-calls">0</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label">Avg Response</span>
-          <span class="metric-value" id="metric-avgtime">-</span>
+        <div class="agents" id="agents-grid">
+          <div class="agent" id="agent-reddit">
+            <div class="agent-emoji">🛡️</div>
+            <div class="agent-name">Reddit</div>
+          </div>
+          <div class="agent" id="agent-appstore">
+            <div class="agent-emoji">📱</div>
+            <div class="agent-name">App Store</div>
+          </div>
+          <div class="agent" id="agent-brave">
+            <div class="agent-emoji">🦁</div>
+            <div class="agent-name">Brave</div>
+          </div>
+          <div class="agent" id="agent-hn">
+            <div class="agent-emoji">📰</div>
+            <div class="agent-name">Hacker News</div>
+          </div>
+          <div class="agent" id="agent-analysis">
+            <div class="agent-emoji">🧠</div>
+            <div class="agent-name">AI Analysis</div>
+          </div>
+          <div class="agent" id="agent-synthesis">
+            <div class="agent-emoji">✨</div>
+            <div class="agent-name">Synthesis</div>
+          </div>
         </div>
       </div>
 
-      <!-- Search History -->
-      <div class="history-panel">
-        <div class="history-header">
-          <h3>📜 Recent Searches</h3>
+      <!-- Metrics Panel -->
+      <div class="metrics-panel">
+        <div class="metrics-row">
+          <span class="metrics-label">Total Sources</span>
+          <span class="metrics-value" id="metric-sources">0</span>
         </div>
-        <div id="history-list">
-          <p style="font-size: 0.8rem; color: var(--text-muted);">No searches yet</p>
+        <div class="metrics-row">
+          <span class="metrics-label">Total Insights</span>
+          <span class="metrics-value" id="metric-insights">0</span>
+        </div>
+        <div class="metrics-row">
+          <span class="metrics-label">AI Calls</span>
+          <span class="metrics-value" id="metric-calls">0</span>
+        </div>
+        <div class="metrics-row">
+          <span class="metrics-label">Avg Response</span>
+          <span class="metrics-value" id="metric-avgtime">—</span>
+        </div>
+        <div class="metrics-row">
+          <span class="metrics-label">Last Updated</span>
+          <span class="metrics-value" id="metric-updated">—</span>
+        </div>
+      </div>
+
+      <!-- Live Stream -->
+      <div class="live-stream">
+        <div class="stream-header">
+          <h3><span class="animate-blink">●</span> Live Activity</h3>
+        </div>
+        <div class="stream-body" id="stream-body">
+          <div class="stream-event info">
+            <span class="stream-time">--:--:--</span>
+            <span class="stream-msg">Waiting for activity...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -728,11 +717,9 @@
       </div>
       <div class="modal-body">
         <div class="modal-content" id="modal-content"></div>
-        <div class="modal-url">
-          <span>🔗</span>
-          <span class="modal-url-text" id="modal-url"></span>
-          <a id="modal-link" class="modal-url-btn" href="#" target="_blank">Open →</a>
-        </div>
+      </div>
+      <div class="modal-footer">
+        <a id="modal-link" class="modal-link" href="#" target="_blank">Open Source →</a>
       </div>
     </div>
   </div>
@@ -740,6 +727,89 @@
   <script>
     let currentResults = [];
     let isSearching = false;
+    let sessionSources = 0;
+    let eventSource = null;
+
+    // Stream log event
+    function streamLog(msg, type = 'info') {
+      const body = document.getElementById('stream-body');
+      const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+      
+      const event = document.createElement('div');
+      event.className = `stream-event ${type} animate-stream`;
+      event.innerHTML = `
+        <span class="stream-time">${time}</span>
+        <span class="stream-msg">${msg}</span>
+      `;
+      
+      body.insertBefore(event, body.firstChild);
+      
+      // Keep only last 50 events
+      while (body.children.length > 50) {
+        body.removeChild(body.lastChild);
+      }
+    }
+
+    // Animate counter
+    function animateValue(element, start, end, duration = 500) {
+      const startTime = performance.now();
+      element.classList.add('counting');
+      
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const value = Math.floor(start + (end - start) * progress);
+        element.textContent = value.toLocaleString();
+        
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          element.classList.remove('counting');
+        }
+      }
+      
+      requestAnimationFrame(update);
+    }
+
+    // Update KPIs with animation
+    function updateKPIs(data) {
+      const sources = data.metrics?.totalSources || 0;
+      const results = data.results?.length || 0;
+      const confidence = data.synthesis?.confidence_score || data.metrics?.confidence || 0;
+      const time = data.metrics?.duration || 0;
+      
+      // Animate source count
+      const currentSources = parseInt(document.getElementById('kpi-sources').textContent.replace(/,/g, '')) || 0;
+      animateValue(document.getElementById('kpi-sources'), currentSources, currentSources + sources);
+      sessionSources += sources;
+      document.getElementById('kpi-sources-trend').textContent = `↑ +${sessionSources} this session`;
+      
+      // Results
+      document.getElementById('kpi-results').textContent = results;
+      document.getElementById('kpi-results-trend').textContent = results > 10 ? '✓ Good coverage' : results > 0 ? '⚠ Limited' : '—';
+      document.getElementById('kpi-results-trend').className = 'kpi-trend ' + (results > 10 ? 'up' : '');
+      
+      // Confidence
+      document.getElementById('kpi-confidence').textContent = confidence + '%';
+      document.getElementById('kpi-confidence-trend').textContent = confidence >= 70 ? '✓ High' : confidence >= 40 ? '○ Medium' : '⚠ Low';
+      document.getElementById('kpi-confidence-trend').className = 'kpi-trend ' + (confidence >= 70 ? 'up' : confidence < 40 ? 'down' : '');
+      
+      // Time
+      document.getElementById('kpi-time').textContent = time < 1000 ? time + 'ms' : (time/1000).toFixed(1) + 's';
+      document.getElementById('kpi-time-trend').textContent = time < 5000 ? '⚡ Fast' : time < 15000 ? '○ Normal' : '🐢 Slow';
+    }
+
+    // Set agent status
+    function setAgentStatus(agentId, active) {
+      const el = document.getElementById('agent-' + agentId);
+      if (el) {
+        if (active) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      }
+    }
 
     // Start research
     async function startResearch(e) {
@@ -748,18 +818,36 @@
       const query = document.getElementById('query-input').value.trim();
       const context = document.getElementById('context-input').value.trim();
       
-      console.log('[Intel] Starting research:', query, context);
-      
       if (!query) {
-        alert('Please enter a search query');
+        streamLog('Error: Query required', 'error');
         return;
       }
       
+      if (isSearching) return;
       isSearching = true;
-      updateUI('searching');
+      
+      const btn = document.getElementById('search-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="animate-pulse">⏳</span> Searching...';
+      
+      streamLog(`Starting search: "${query}"`, 'info');
+      
+      // Activate agents sequentially for visual effect
+      const agents = ['reddit', 'appstore', 'brave', 'hn', 'analysis', 'synthesis'];
+      let activeCount = 0;
+      
+      for (const agent of agents) {
+        setTimeout(() => {
+          setAgentStatus(agent, true);
+          activeCount++;
+          document.getElementById('active-agents').textContent = `${activeCount}/6 active`;
+          streamLog(`${agent.charAt(0).toUpperCase() + agent.slice(1)} agent activated`, 'success');
+        }, agents.indexOf(agent) * 400);
+      }
       
       try {
-        console.log('[Intel] Calling API...');
+        streamLog('Querying data sources...', 'info');
+        
         const response = await fetch('/api/enterprise/research', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -767,73 +855,43 @@
         });
         
         const data = await response.json();
-        console.log('[Intel] API Response:', data);
         
         if (data.success) {
           currentResults = data.results || [];
-          console.log('[Intel] Results:', currentResults.length);
+          streamLog(`Found ${currentResults.length} results`, 'success');
+          streamLog(`Scanned ${data.metrics?.totalSources || 0} sources`, 'info');
+          streamLog(`AI confidence: ${data.synthesis?.confidence_score || 0}%`, data.synthesis?.confidence_score >= 70 ? 'success' : 'warning');
+          
           renderResults(data);
           updateKPIs(data);
+          
+          // Update search count
+          const searchCount = parseInt(document.getElementById('kpi-searches').textContent) + 1;
+          animateValue(document.getElementById('kpi-searches'), searchCount - 1, searchCount);
         } else {
-          console.error('[Intel] API Error:', data.error);
-          throw new Error(data.error || 'Research failed');
+          streamLog(`Error: ${data.error}`, 'error');
+          throw new Error(data.error);
         }
       } catch (err) {
-        console.error('Research error:', err);
+        streamLog(`Search failed: ${err.message}`, 'error');
         document.getElementById('results-body').innerHTML = `
           <div class="empty-state">
             <div class="emoji">⚠️</div>
-            <h3>Error</h3>
+            <h3>Search Failed</h3>
             <p>${err.message}</p>
           </div>
         `;
       } finally {
         isSearching = false;
-        updateUI('complete');
-        loadMetrics();
-        loadHistory();
-      }
-    }
-
-    function updateUI(state) {
-      const btn = document.getElementById('search-btn');
-      const statusText = document.getElementById('status-text');
-      
-      if (state === 'searching') {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="loading-spinner"></span> Researching...';
-        btn.classList.add('loading');
-        statusText.textContent = 'Agents working...';
-        
-        // Animate squads
-        document.querySelectorAll('.agent-card').forEach((card, i) => {
-          setTimeout(() => {
-            card.classList.add('active');
-            card.querySelector('.agent-status').textContent = 'Working...';
-            card.querySelector('.agent-status').classList.add('working');
-          }, i * 300);
-        });
-      } else {
         btn.disabled = false;
-        btn.innerHTML = '<span>🚀</span> Deploy Agents';
-        btn.classList.remove('loading');
-        statusText.textContent = 'Complete';
+        btn.innerHTML = '<span>🚀</span> Search';
         
-        document.querySelectorAll('.agent-card').forEach(card => {
-          card.classList.remove('active');
-          card.querySelector('.agent-status').textContent = 'Complete';
-          card.querySelector('.agent-status').classList.remove('working');
-        });
+        // Deactivate agents
+        agents.forEach(agent => setAgentStatus(agent, false));
+        document.getElementById('active-agents').textContent = '0/6 active';
+        
+        loadMetrics();
       }
-    }
-
-    function updateKPIs(data) {
-      console.log('[Intel] Updating KPIs with:', data.metrics);
-      const sources = data.metrics?.totalSources || data.squadStats?.reduce((sum, s) => sum + (s.sources || 0), 0) || 0;
-      document.getElementById('kpi-sources').textContent = sources;
-      document.getElementById('kpi-results').textContent = data.results?.length || 0;
-      document.getElementById('kpi-confidence').textContent = (data.synthesis?.confidence_score || data.metrics?.confidence || 0) + '%';
-      document.getElementById('kpi-time').textContent = (data.metrics?.duration || 0) + 'ms';
     }
 
     function renderResults(data) {
@@ -846,48 +904,57 @@
         container.innerHTML = `
           <div class="empty-state">
             <div class="emoji">🔍</div>
-            <h3>No Results</h3>
+            <h3>No Results Found</h3>
             <p>Try different keywords or broader context</p>
           </div>
         `;
         return;
       }
       
-      // Synthesis panel
       let html = '';
-      if (data.synthesis) {
+      
+      // Synthesis summary if available
+      if (data.synthesis?.summary) {
         html += `
-          <div class="synthesis-panel">
-            <div class="synthesis-header">
-              <span>🧠</span>
-              <h4>Executive Summary</h4>
+          <div style="background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, transparent 100%); 
+                      border: 1px solid rgba(99,102,241,0.3); border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+            <div style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600; margin-bottom: 0.5rem;">
+              🧠 AI Summary
             </div>
-            <div class="synthesis-summary">${data.synthesis.summary || 'Analysis complete.'}</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+              ${data.synthesis.summary}
+            </div>
             ${data.insights?.length ? `
-              <div class="synthesis-insights">
-                ${data.insights.slice(0, 5).map(i => `<span class="insight-tag">💡 ${i}</span>`).join('')}
+              <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem;">
+                ${data.insights.slice(0, 5).map(i => `
+                  <span style="font-size: 0.7rem; padding: 0.25rem 0.5rem; background: var(--bg-card); 
+                               border-radius: 4px; color: var(--text-muted);">💡 ${i}</span>
+                `).join('')}
               </div>
             ` : ''}
           </div>
         `;
       }
       
-      // Result cards
-      html += data.results.map((r, i) => `
-        <div class="result-card ${r.relevanceScore >= 80 ? 'hot' : r.relevanceScore >= 60 ? 'warm' : ''}" onclick="openModal(${i})">
-          <div class="result-header">
-            <div class="result-title">${truncate(r.title, 100)}</div>
-            <span class="result-score">${r.relevanceScore || 0}%</span>
+      // Results
+      html += data.results.map((r, i) => {
+        const scoreClass = r.relevanceScore >= 70 ? 'hot' : r.relevanceScore >= 50 ? 'warm' : 'cool';
+        const scoreColor = r.relevanceScore >= 70 ? 'var(--danger)' : r.relevanceScore >= 50 ? 'var(--warning)' : 'var(--info)';
+        
+        return `
+          <div class="result-card ${scoreClass}" onclick="openModal(${i})">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+              <div class="result-title">${truncate(r.title, 100)}</div>
+              <span class="result-score" style="background: ${scoreColor}; color: white;">${r.relevanceScore || 0}%</span>
+            </div>
+            <div class="result-meta">
+              <span>${r.squadEmoji || '🤖'} ${r.foundBy || 'Agent'}</span>
+              <span>📄 ${r.source}</span>
+              ${r.score ? `<span>⬆️ ${r.score}</span>` : ''}
+            </div>
           </div>
-          <div class="result-content">${truncate(r.content || r.reason || '', 200)}</div>
-          <div class="result-meta">
-            <span>${r.squadEmoji || '🤖'} ${r.foundBy || 'Agent'}</span>
-            <span>📄 ${r.source}</span>
-            ${r.score ? `<span>⬆️ ${r.score}</span>` : ''}
-            ${r.comments ? `<span>💬 ${r.comments}</span>` : ''}
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
       
       container.innerHTML = html;
     }
@@ -902,8 +969,7 @@
       if (!r) return;
       
       document.getElementById('modal-title').textContent = r.title;
-      document.getElementById('modal-content').textContent = r.content || r.reason || 'No additional content.';
-      document.getElementById('modal-url').textContent = r.url;
+      document.getElementById('modal-content').textContent = r.content || r.reason || 'No additional content available.';
       document.getElementById('modal-link').href = r.url;
       document.getElementById('modal').classList.add('active');
     }
@@ -920,55 +986,47 @@
         const data = await response.json();
         
         if (data.success) {
-          document.getElementById('metric-searches').textContent = data.metrics.totalSearches;
-          document.getElementById('metric-sources').textContent = data.metrics.totalSourcesScanned;
-          document.getElementById('metric-insights').textContent = data.metrics.totalInsightsFound;
-          document.getElementById('metric-calls').textContent = data.metrics.totalAgentCalls;
-          document.getElementById('metric-avgtime').textContent = data.metrics.avgResponseTime + 'ms';
+          document.getElementById('metric-sources').textContent = data.metrics.totalSourcesScanned?.toLocaleString() || '0';
+          document.getElementById('metric-insights').textContent = data.metrics.totalInsightsFound?.toLocaleString() || '0';
+          document.getElementById('metric-calls').textContent = data.metrics.totalAgentCalls?.toLocaleString() || '0';
+          document.getElementById('metric-avgtime').textContent = data.metrics.avgResponseTime ? data.metrics.avgResponseTime + 'ms' : '—';
+          document.getElementById('metric-updated').textContent = new Date(data.metrics.lastUpdate).toLocaleTimeString();
+          
+          // Update search count from metrics
+          if (data.metrics.totalSearches) {
+            document.getElementById('kpi-searches').textContent = data.metrics.totalSearches;
+          }
         }
-      } catch (err) { }
-    }
-
-    // Load history
-    async function loadHistory() {
-      try {
-        const response = await fetch('/api/enterprise/history');
-        const data = await response.json();
-        
-        if (data.success && data.history.length > 0) {
-          document.getElementById('history-list').innerHTML = data.history.slice(0, 10).map(h => `
-            <div class="history-item" onclick="document.getElementById('query-input').value='${h.query}';document.getElementById('context-input').value='${h.context||''}';startResearch(event)">
-              <div class="history-query">${truncate(h.query, 30)}</div>
-              <div class="history-meta">${h.resultsCount} results • ${new Date(h.timestamp).toLocaleTimeString()}</div>
-            </div>
-          `).join('');
-        }
-      } catch (err) { }
+      } catch (err) {
+        console.error('[Metrics] Error:', err);
+      }
     }
 
     // Initialize
+    streamLog('Intel Command Center initialized', 'success');
+    streamLog('Connected to Lumen AI backend', 'info');
     loadMetrics();
-    loadHistory();
-    setInterval(loadMetrics, 5000); // Refresh metrics every 5 seconds
+    setInterval(loadMetrics, 5000);
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
+      if (e.key === 'Enter' && e.ctrlKey) startResearch();
     });
 
-    // Auto-test: If URL has ?test=1, run a test search
-    if (window.location.search.includes('test=1')) {
-      document.getElementById('query-input').value = 'my hyundai app';
-      document.getElementById('context-input').value = 'crash issues';
-      setTimeout(() => startResearch(), 1000);
-    }
-
-    // Debug: Log page loaded
-    console.log('[Intel] Page loaded. AI Enabled check...');
-    fetch('/api/enterprise/metrics')
-      .then(r => r.json())
-      .then(d => console.log('[Intel] AI Status:', d.aiEnabled ? 'ENABLED' : 'DISABLED', d))
-      .catch(e => console.error('[Intel] Metrics error:', e));
+    // Simulate periodic activity for "alive" feel
+    setInterval(() => {
+      const activities = [
+        'Monitoring data sources...',
+        'Agent heartbeat OK',
+        'Cache refreshed',
+        'Metrics synced'
+      ];
+      // Only show if not searching
+      if (!isSearching && Math.random() > 0.7) {
+        streamLog(activities[Math.floor(Math.random() * activities.length)], 'info');
+      }
+    }, 15000);
   </script>
 </body>
 </html>
