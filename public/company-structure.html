@@ -2684,7 +2684,7 @@
     
     async function fetchActivityFeed() {
       try {
-        const response = await fetch('/public/team-activity?limit=50');
+        const response = await fetch('/public/team-activity?limit=200');
         const data = await response.json();
         renderActivityFeed(data);
       } catch (err) {
@@ -2748,7 +2748,7 @@
       fetchStatus();
       // Initial fetch to populate cache
       try {
-        const response = await fetch('/public/team-activity?limit=50');
+        const response = await fetch('/public/team-activity?limit=200');
         const data = await response.json();
         activityCache = data.activities || [];
         renderActivityFeed(data);
