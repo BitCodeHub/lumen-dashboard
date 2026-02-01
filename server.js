@@ -1989,16 +1989,36 @@ app.get('/public/company-status', async (req, res) => {
         }
         
         // Fallback to hardcoded if JSON read failed
+        // ACTIVE projects FIRST, stopped/halted LAST
         if (staticProducts.length === 0) {
           staticProducts = [
-            { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 98, status: 'stopped', priority: 'P0', note: 'Development complete. Launch prep paused.' },
-            { id: 'agentshield', name: 'AgentShield', emoji: '🛡️', progress: 35, status: 'active', priority: 'P0', note: 'Active development.' },
-            { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', note: 'Operational.' }
+            // ACTIVE
+            { id: 'agentshield', name: 'AgentShield', emoji: '🛡️', progress: 35, status: 'active', priority: 'P0', note: 'Active development. Sprint 0.' },
+            { id: 'ai-code-observability', name: 'AI Code Observability', emoji: '📈', progress: 80, status: 'active', priority: 'P1', note: 'MVP complete. Testing.' },
+            // LIVE
+            { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', priority: 'P1', note: 'Operational.' },
+            // PLANNING
+            { id: 'eu-ai-compliance', name: 'EU AI Compliance SaaS', emoji: '🇪🇺', progress: 25, status: 'planning', priority: 'P1', note: 'March 1 target.' },
+            // STOPPED - StackAudit at bottom per CEO directive
+            { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 98, status: 'stopped', priority: null, note: '⏸️ STOPPED - All work halted.' }
           ];
         }
         
         // Merge: static products first, then dynamic from ideas
-        const allProducts = [...staticProducts, ...productProgress.filter(p => !staticProducts.some(sp => sp.id === p.id))];
+        let allProducts = [...staticProducts, ...productProgress.filter(p => !staticProducts.some(sp => sp.id === p.id))];
+        
+        // ALWAYS sort after merge: active first, stopped/halted last
+        const finalStatusOrder = { 'active': 1, 'live': 2, 'planning': 3, 'pipeline': 4, 'development': 4, 'research': 4, 'stopped': 8, 'halted': 9, 'paused': 9 };
+        const finalPriorityOrder = { 'P0': 1, 'P1': 2, 'P2': 3 };
+        allProducts.sort((a, b) => {
+          const statusA = finalStatusOrder[a.status] || 7;
+          const statusB = finalStatusOrder[b.status] || 7;
+          if (statusA !== statusB) return statusA - statusB;
+          const priorityA = finalPriorityOrder[a.priority] || 99;
+          const priorityB = finalPriorityOrder[b.priority] || 99;
+          if (priorityA !== priorityB) return priorityA - priorityB;
+          return (b.progress || 0) - (a.progress || 0);
+        });
         
         return res.json({
           success: true,
@@ -2008,7 +2028,7 @@ app.get('/public/company-status', async (req, res) => {
           teamStatus: Object.values(teamMap),
           recentWins,
           blockers,
-          productProgress: allProducts // REMOVED .slice(0, 12) - show ALL products
+          productProgress: allProducts
         });
       }
     } catch (dbErr) {
