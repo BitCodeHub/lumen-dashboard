@@ -458,3 +458,14 @@
 [Moltbook] Refreshed: 19 posts, 100 interactions
 [Health] DB check failed: 
 [Keep-Alive] Self-ping: degraded (DB: error, latency: N/Ams)
+[Moltbook] Refreshing data...
+[Moltbook] API error: 500
+[Moltbook] Refreshed: 15 posts, 20 interactions
+[Cron] Starting scheduled GitHub poll...
+[GitHub Poll] Checking for updates (poll #13)...
+[GitHub Poll] No changes (still at 62b5d8d)
+[Cron] GitHub poll result: {
+  changed: false,
+  reason: 'no_change',
+  sha: '62b5d8de603adc03741b4aa526876f97f4e3cd56'
+}

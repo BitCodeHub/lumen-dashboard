@@ -743,10 +743,12 @@
 
     // Start research
     async function startResearch(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       
       const query = document.getElementById('query-input').value.trim();
       const context = document.getElementById('context-input').value.trim();
+      
+      console.log('[Intel] Starting research:', query, context);
       
       if (!query) {
         alert('Please enter a search query');
@@ -757,6 +759,7 @@
       updateUI('searching');
       
       try {
+        console.log('[Intel] Calling API...');
         const response = await fetch('/api/enterprise/research', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -764,12 +767,15 @@
         });
         
         const data = await response.json();
+        console.log('[Intel] API Response:', data);
         
         if (data.success) {
           currentResults = data.results || [];
+          console.log('[Intel] Results:', currentResults.length);
           renderResults(data);
           updateKPIs(data);
         } else {
+          console.error('[Intel] API Error:', data.error);
           throw new Error(data.error || 'Research failed');
         }
       } catch (err) {
