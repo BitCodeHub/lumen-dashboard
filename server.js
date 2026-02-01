@@ -3718,16 +3718,25 @@ app.get('/api/expenses', async (req, res) => {
     }
 
     if (month && year) {
+      // Use explicit date range for month filtering
+      const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
+      const endDate = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
       paramCount++;
-      query += ` AND EXTRACT(MONTH FROM date) = $${paramCount}`;
-      params.push(parseInt(month));
+      query += ` AND date >= $${paramCount}::date`;
+      params.push(startDate);
       paramCount++;
-      query += ` AND EXTRACT(YEAR FROM date) = $${paramCount}`;
-      params.push(parseInt(year));
+      query += ` AND date < $${paramCount}::date`;
+      params.push(endDate);
     } else if (year) {
+      // Year only - use date range for the entire year
+      const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+      const endDate = new Date(Date.UTC(year + 1, 0, 1, 0, 0, 0, 0));
       paramCount++;
-      query += ` AND EXTRACT(YEAR FROM date) = $${paramCount}`;
-      params.push(parseInt(year));
+      query += ` AND date >= $${paramCount}::date`;
+      params.push(startDate);
+      paramCount++;
+      query += ` AND date < $${paramCount}::date`;
+      params.push(endDate);
     }
 
     if (category) {
@@ -3767,26 +3776,30 @@ app.get('/api/expenses/summary', async (req, res) => {
       year = parseInt(req.query.year) || now.getFullYear();
     }
 
+    // Calculate explicit date range for the month
+    const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
+
     const summary = await pool.query(`
       SELECT 
         COALESCE(SUM(amount), 0) as total,
         COUNT(*) as count
       FROM lumen_expenses 
-      WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2
-    `, [month, year]);
+      WHERE date >= $1::date AND date < $2::date
+    `, [startDate, endDate]);
 
     const byCategory = await pool.query(`
       SELECT category, SUM(amount) as total
       FROM lumen_expenses 
-      WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2
+      WHERE date >= $1::date AND date < $2::date
       GROUP BY category
-    `, [month, year]);
+    `, [startDate, endDate]);
 
     const recent = await pool.query(`
       SELECT * FROM lumen_expenses 
-      WHERE EXTRACT(MONTH FROM date) = $1 AND EXTRACT(YEAR FROM date) = $2
+      WHERE date >= $1::date AND date < $2::date
       ORDER BY date DESC LIMIT 10
-    `, [month, year]);
+    `, [startDate, endDate]);
 
     const s = summary.rows[0];
     res.json({
