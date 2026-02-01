@@ -958,8 +958,41 @@
       } catch (err) { }
     }
 
-    // Load Agent Army opportunities
+    // Load Agent Army opportunities with real-time SSE
     let armyOpportunities = [];
+    let armyEventSource = null;
+    
+    function connectAgentArmySSE() {
+      if (armyEventSource) {
+        armyEventSource.close();
+      }
+      
+      armyEventSource = new EventSource('/api/agent-army/stream');
+      
+      armyEventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'init' || data.type === 'update') {
+            armyOpportunities = data.opportunities || [];
+            renderAgentArmy(armyOpportunities);
+            document.getElementById('army-count').textContent = `${armyOpportunities.length} opportunities • LIVE`;
+            document.getElementById('army-count').style.color = 'var(--success)';
+          }
+        } catch (e) {
+          console.error('[AgentArmy] SSE parse error:', e);
+        }
+      };
+      
+      armyEventSource.onerror = () => {
+        console.log('[AgentArmy] SSE disconnected, falling back to polling');
+        armyEventSource.close();
+        document.getElementById('army-count').style.color = '';
+        loadAgentArmy(); // Fallback to regular fetch
+      };
+      
+      console.log('[AgentArmy] SSE connected for real-time updates');
+    }
+    
     async function loadAgentArmy() {
       try {
         const response = await fetch('/api/agent-army/opportunities?limit=50');
@@ -1030,9 +1063,16 @@
     // Initialize
     loadMetrics();
     loadHistory();
-    loadAgentArmy();
+    
+    // Try SSE first for real-time updates, fallback to polling
+    if (typeof EventSource !== 'undefined') {
+      connectAgentArmySSE();
+    } else {
+      loadAgentArmy();
+      setInterval(loadAgentArmy, 30000); // Fallback polling every 30s
+    }
+    
     setInterval(loadMetrics, 5000); // Refresh metrics every 5 seconds
-    setInterval(loadAgentArmy, 60000); // Refresh Agent Army every 60 seconds
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {

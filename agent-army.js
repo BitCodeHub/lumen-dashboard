@@ -342,6 +342,11 @@ async function runAgentScan() {
   const duration = Date.now() - startTime;
   console.log(`[AgentArmy] Scan complete: ${postsScanned} posts, ${uniqueNew.length} new opportunities, ${duration}ms`);
   
+  // Broadcast to SSE clients if available
+  if (agentState.broadcast && uniqueNew.length > 0) {
+    agentState.broadcast(agentState.opportunities);
+  }
+  
   return {
     postsScanned,
     newOpportunities: uniqueNew.length,
@@ -371,6 +376,60 @@ function registerAgentArmyRoutes(app) {
       totalAgents: agentState.agents.length
     });
   });
+  
+  // SSE clients for real-time opportunity updates
+  const armySseClients = new Set();
+  
+  // SSE endpoint for real-time Agent Army updates
+  app.get('/api/agent-army/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.flushHeaders();
+    
+    // Send initial data
+    res.write(`data: ${JSON.stringify({ 
+      type: 'init', 
+      opportunities: agentState.opportunities.slice(0, 50),
+      stats: agentState.stats,
+      lastUpdate: agentState.lastUpdate 
+    })}\n\n`);
+    
+    armySseClients.add(res);
+    console.log(`[AgentArmy] SSE client connected. Total: ${armySseClients.size}`);
+    
+    // Heartbeat every 30s
+    const heartbeat = setInterval(() => {
+      res.write(`: heartbeat\n\n`);
+    }, 30000);
+    
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      armySseClients.delete(res);
+      console.log(`[AgentArmy] SSE client disconnected. Total: ${armySseClients.size}`);
+    });
+  });
+  
+  // Broadcast function for new opportunities
+  function broadcastOpportunities(opportunities) {
+    const message = JSON.stringify({ 
+      type: 'update', 
+      opportunities: opportunities.slice(0, 50),
+      stats: agentState.stats,
+      lastUpdate: agentState.lastUpdate 
+    });
+    armySseClients.forEach(client => {
+      try {
+        client.write(`data: ${message}\n\n`);
+      } catch (e) {
+        armySseClients.delete(client);
+      }
+    });
+  }
+  
+  // Export broadcast for use in scan cycle
+  agentState.broadcast = broadcastOpportunities;
   
   // Get current opportunities
   app.get('/api/agent-army/opportunities', (req, res) => {

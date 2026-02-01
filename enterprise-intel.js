@@ -168,6 +168,67 @@ async function callAzureOpenAI(prompt, maxTokens = 1000) {
 }
 
 // ==========================================
+// SMART QUERY PROCESSING
+// ==========================================
+
+/**
+ * Parse and clean query for different search sources
+ * Removes redundant platform terms, creates search variations
+ */
+function processQuery(query, source) {
+  const original = query.trim().toLowerCase();
+  
+  // Terms that are redundant for specific sources
+  const redundantTerms = {
+    appstore: ['ios', 'iphone', 'ipad', 'apple', 'app store', 'appstore', 'mobile app'],
+    reddit: ['reddit'],
+    hackernews: ['hacker news', 'hn'],
+    web: []
+  };
+  
+  let processed = original;
+  const toRemove = redundantTerms[source] || [];
+  
+  for (const term of toRemove) {
+    // Remove term but keep surrounding words
+    processed = processed.replace(new RegExp(`\\b${term}\\b`, 'gi'), ' ').trim();
+  }
+  
+  // Clean up multiple spaces
+  processed = processed.replace(/\s+/g, ' ').trim();
+  
+  // If query becomes too short after processing, use original
+  if (processed.length < 3) {
+    processed = original;
+  }
+  
+  return processed;
+}
+
+/**
+ * Generate search variations for better coverage
+ */
+function getSearchVariations(query) {
+  const words = query.trim().split(/\s+/);
+  const variations = [query]; // Original first
+  
+  // If query has multiple words, also search without common modifiers
+  const modifiers = ['ios', 'android', 'app', 'mobile', 'application'];
+  const filteredWords = words.filter(w => !modifiers.includes(w.toLowerCase()));
+  
+  if (filteredWords.length > 0 && filteredWords.join(' ') !== query) {
+    variations.push(filteredWords.join(' '));
+  }
+  
+  // Also try just the main terms (first 2 words)
+  if (words.length > 2) {
+    variations.push(words.slice(0, 2).join(' '));
+  }
+  
+  return [...new Set(variations)]; // Remove duplicates
+}
+
+// ==========================================
 // DATA SOURCE FETCHERS
 // ==========================================
 
@@ -183,22 +244,47 @@ async function fetchReddit(query, limit = 50) {
   lastRedditRequest = Date.now();
   
   try {
-    const url = `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&sort=relevance&limit=${limit}&t=month`;
-    const response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
-    if (!response.ok) return [];
+    // Try search variations for better coverage
+    const variations = getSearchVariations(query);
+    const allResults = [];
+    const seenIds = new Set();
     
-    const data = await response.json();
-    return (data.data?.children || []).map(post => ({
-      id: post.data.id,
-      title: post.data.title,
-      content: post.data.selftext || '',
-      url: `https://reddit.com${post.data.permalink}`,
-      source: 'reddit',
-      subreddit: post.data.subreddit,
-      score: post.data.score,
-      comments: post.data.num_comments,
-      created: new Date(post.data.created_utc * 1000).toISOString()
-    }));
+    for (const searchQuery of variations.slice(0, 2)) { // Max 2 variations
+      const cleanQuery = processQuery(searchQuery, 'reddit');
+      const url = `https://www.reddit.com/search.json?q=${encodeURIComponent(cleanQuery)}&sort=relevance&limit=${limit}&t=month`;
+      
+      try {
+        const response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+        if (!response.ok) continue;
+        
+        const data = await response.json();
+        for (const post of (data.data?.children || [])) {
+          if (!seenIds.has(post.data.id)) {
+            seenIds.add(post.data.id);
+            allResults.push({
+              id: post.data.id,
+              title: post.data.title,
+              content: post.data.selftext || '',
+              url: `https://reddit.com${post.data.permalink}`,
+              source: 'reddit',
+              subreddit: post.data.subreddit,
+              score: post.data.score,
+              comments: post.data.num_comments,
+              created: new Date(post.data.created_utc * 1000).toISOString()
+            });
+          }
+        }
+        
+        // If we got results, don't need more variations
+        if (allResults.length >= 10) break;
+        
+        // Small delay between variation searches
+        await new Promise(r => setTimeout(r, 500));
+      } catch (e) { /* continue to next variation */ }
+    }
+    
+    console.log(`[EnterpriseIntel] Reddit: "${query}" -> ${allResults.length} results`);
+    return allResults;
   } catch (err) {
     console.error('[EnterpriseIntel] Reddit fetch error:', err.message);
     return [];
@@ -207,7 +293,11 @@ async function fetchReddit(query, limit = 50) {
 
 async function fetchAppStore(query) {
   try {
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=software&limit=10&country=us`;
+    // Remove iOS-specific terms since we're already searching iOS App Store
+    const cleanQuery = processQuery(query, 'appstore');
+    console.log(`[EnterpriseIntel] AppStore: "${query}" -> cleaned: "${cleanQuery}"`);
+    
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(cleanQuery)}&entity=software&limit=10&country=us`;
     const response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
     if (!response.ok) return [];
     
