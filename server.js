@@ -1320,6 +1320,15 @@ async function initDatabase() {
     await client.query('CREATE INDEX IF NOT EXISTS idx_team_activity_created ON team_activity(created_at DESC)');
     
     console.log('[DB] Company status and team activity tables initialized');
+    
+    // Create ai_ideas view pointing to lumen_ideas (for company status dashboard compatibility)
+    await client.query(`
+      CREATE OR REPLACE VIEW ai_ideas AS 
+      SELECT id, name, status, priority, category, revenue_potential, build_time, description, notes, tags, created_at, updated_at
+      FROM lumen_ideas
+    `);
+    console.log('[DB] ai_ideas view created');
+    
     console.log('[DB] PostgreSQL tables initialized');
   } finally {
     client.release();
