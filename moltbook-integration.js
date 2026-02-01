@@ -617,8 +617,28 @@ function addIntelRoutes(app) {
       lastUpdate: intelCache.lastUpdate
     });
   });
+
+  // ALIAS ROUTES for social-intel (renamed from moltbook)
+  app.get('/public/social-intel', async (req, res) => {
+    if (!intelCache.lastUpdate || Date.now() - new Date(intelCache.lastUpdate).getTime() > 300000) {
+      await refreshIntelData();
+    }
+    res.json({
+      success: true,
+      source: 'social-media',
+      lastUpdate: intelCache.lastUpdate,
+      opportunities: intelCache.opportunities,
+      dailyInsights: intelCache.dailyInsights,
+      approvalQueue: intelCache.approvalQueue,
+      stats: intelCache.dailyInsights.stats || {},
+      agentArmy: {
+        total: 51,
+        squads: AGENT_ARMY.squads.map(s => ({ name: s.prefix, focus: s.focus, count: s.count }))
+      }
+    });
+  });
   
-  console.log('[Moltbook Intel] API routes added');
+  console.log('[Social Intel] API routes added');
 }
 
 // Update initMoltbookIntegration to include intel routes

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moltbook Product Intelligence | Lumen AI</title>
+  <title>Social Media Intel | Lumen AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -20,10 +20,10 @@
       --lumen-dark: #d97706;
       --lumen-glow: rgba(245, 158, 11, 0.1);
       --lumen-border: rgba(245, 158, 11, 0.3);
-      --moltbook-primary: #8b5cf6;
-      --moltbook-light: #a78bfa;
-      --moltbook-glow: rgba(139, 92, 246, 0.1);
-      --moltbook-border: rgba(139, 92, 246, 0.3);
+      --social-primary: #8b5cf6;
+      --social-light: #a78bfa;
+      --social-glow: rgba(139, 92, 246, 0.1);
+      --social-border: rgba(139, 92, 246, 0.3);
       --status-hot: #ef4444;
       --status-evaluating: #f59e0b;
       --status-building: #22c55e;
@@ -42,7 +42,7 @@
     /* Header */
     .header {
       background: linear-gradient(135deg, var(--bg-card) 0%, rgba(139, 92, 246, 0.1) 100%);
-      border-bottom: 1px solid var(--moltbook-border);
+      border-bottom: 1px solid var(--social-border);
       padding: 1.5rem 2rem;
       position: sticky;
       top: 0;
@@ -65,7 +65,7 @@
     .header-title h1 {
       font-size: 1.5rem;
       font-weight: 700;
-      background: linear-gradient(135deg, var(--moltbook-light), var(--lumen-primary));
+      background: linear-gradient(135deg, var(--social-light), var(--lumen-primary));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -98,11 +98,11 @@
       transition: all 0.2s ease;
     }
     .tab-link:hover {
-      background: var(--moltbook-glow);
-      color: var(--moltbook-primary);
+      background: var(--social-glow);
+      color: var(--social-primary);
     }
     .tab-link.active {
-      background: var(--moltbook-primary);
+      background: var(--social-primary);
       color: #fff;
       font-weight: 600;
     }
@@ -119,8 +119,8 @@
       transition: all 0.2s;
     }
     .nav-link:hover {
-      background: var(--moltbook-glow);
-      color: var(--moltbook-primary);
+      background: var(--social-glow);
+      color: var(--social-primary);
     }
     .last-updated {
       font-size: 0.8rem;
@@ -164,7 +164,7 @@
       transition: all 0.3s;
     }
     .stat-card:hover {
-      border-color: var(--moltbook-border);
+      border-color: var(--social-border);
       transform: translateY(-2px);
     }
     .stat-icon {
@@ -174,7 +174,7 @@
     .stat-value {
       font-size: 1.75rem;
       font-weight: 700;
-      color: var(--moltbook-primary);
+      color: var(--social-primary);
     }
     .stat-label {
       font-size: 0.8rem;
@@ -208,8 +208,8 @@
       font-weight: 600;
     }
     .section-badge {
-      background: var(--moltbook-glow);
-      color: var(--moltbook-primary);
+      background: var(--social-glow);
+      color: var(--social-primary);
       padding: 0.25rem 0.75rem;
       border-radius: 20px;
       font-size: 0.8rem;
@@ -234,7 +234,7 @@
       position: relative;
     }
     .opportunity-card:hover {
-      border-color: var(--moltbook-border);
+      border-color: var(--social-border);
       box-shadow: 0 8px 30px rgba(139, 92, 246, 0.15);
     }
     .opportunity-card.hot {
@@ -278,7 +278,7 @@
       align-items: center;
       gap: 0.4rem;
       font-size: 0.85rem;
-      color: var(--moltbook-light);
+      color: var(--social-light);
       margin-bottom: 0.75rem;
     }
     .opp-pain {
@@ -312,12 +312,12 @@
       transition: all 0.2s;
     }
     .trending-item:hover {
-      background: var(--moltbook-glow);
+      background: var(--social-glow);
     }
     .trending-rank {
       font-size: 1.25rem;
       font-weight: 700;
-      color: var(--moltbook-primary);
+      color: var(--social-primary);
       min-width: 2rem;
     }
     .trending-content {
@@ -352,7 +352,7 @@
       padding: 1.25rem;
       background: var(--bg-elevated);
       border-radius: 12px;
-      border-left: 4px solid var(--moltbook-primary);
+      border-left: 4px solid var(--social-primary);
       transition: all 0.2s;
     }
     .queue-item:hover {
@@ -370,7 +370,7 @@
     }
     .queue-signal {
       font-size: 0.85rem;
-      color: var(--moltbook-light);
+      color: var(--social-light);
       margin-bottom: 0.5rem;
     }
     .queue-details {
@@ -390,7 +390,7 @@
       align-items: center;
     }
     .approve-btn {
-      background: linear-gradient(135deg, var(--moltbook-primary), var(--lumen-primary));
+      background: linear-gradient(135deg, var(--social-primary), var(--lumen-primary));
       color: white;
       border: none;
       padding: 0.75rem 1.5rem;
@@ -433,7 +433,7 @@
     .squad-count {
       font-size: 1.5rem;
       font-weight: 700;
-      color: var(--moltbook-primary);
+      color: var(--social-primary);
     }
 
     /* Loading */
@@ -446,7 +446,7 @@
       width: 40px;
       height: 40px;
       border: 3px solid var(--border);
-      border-top-color: var(--moltbook-primary);
+      border-top-color: var(--social-primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin: 0 auto 1rem;
@@ -470,7 +470,7 @@
       <div>
         <div class="header-title">
           <span class="emoji">🔮</span>
-          <h1>Moltbook Product Intelligence</h1>
+          <h1>Social Media Intel</h1>
         </div>
         <p class="header-subtitle">AI-powered insights from 50+ agents monitoring the agent social network</p>
       </div>
@@ -478,7 +478,7 @@
         <a href="/" class="tab-link">📊 Dashboard</a>
         <a href="/company-structure.html" class="tab-link">🏢 Company</a>
         <a href="/product-roadmap.html" class="tab-link">🗺️ Roadmap</a>
-        <a href="/moltbook-intel.html" class="tab-link active">🔮 Intel</a>
+        <a href="/social-intel.html" class="tab-link active">🔮 Intel</a>
       </nav>
       <div class="last-updated">
         <span class="live-dot"></span>
@@ -536,7 +536,7 @@
       <div class="section-header">
         <div class="section-title">
           <span>📈</span>
-          <span>Trending on Moltbook</span>
+          <span>Trending on Social Media</span>
         </div>
         <span class="section-badge">Live Feed</span>
       </div>
@@ -591,7 +591,7 @@
 
     async function fetchIntel() {
       try {
-        const response = await fetch('/public/moltbook-intel');
+        const response = await fetch('/public/social-intel');
         const data = await response.json();
         
         if (data.success) {
@@ -648,7 +648,7 @@
           </div>
           <div class="opp-signal">
             <span>📡</span>
-            <span>${opp.source || 'Moltbook'}</span>
+            <span>${opp.source || 'Social Media'}</span>
           </div>
           <div class="opp-pain">${opp.painPoint}</div>
           <div class="opp-opportunity">💡 ${opp.opportunity}</div>
