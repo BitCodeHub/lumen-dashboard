@@ -661,6 +661,20 @@
         </div>
       </div>
 
+      <!-- Agent Army Live Feed -->
+      <div class="results-section" style="margin-bottom: 1.5rem;">
+        <div class="results-header">
+          <h3>🛡️ Agent Army Live Feed</h3>
+          <span class="results-count" id="army-count">Loading...</span>
+        </div>
+        <div class="results-body" id="army-body" style="max-height: 400px;">
+          <div class="empty-state">
+            <div class="emoji">⏳</div>
+            <h3>Loading opportunities...</h3>
+          </div>
+        </div>
+      </div>
+
       <!-- Results Section -->
       <div class="results-section">
         <div class="results-header">
@@ -944,10 +958,81 @@
       } catch (err) { }
     }
 
+    // Load Agent Army opportunities
+    let armyOpportunities = [];
+    async function loadAgentArmy() {
+      try {
+        const response = await fetch('/api/agent-army/opportunities?limit=50');
+        const data = await response.json();
+        
+        if (data.success && data.opportunities?.length > 0) {
+          armyOpportunities = data.opportunities;
+          renderAgentArmy(data.opportunities);
+          document.getElementById('army-count').textContent = `${data.opportunities.length} opportunities`;
+        } else {
+          document.getElementById('army-body').innerHTML = `
+            <div class="empty-state">
+              <div class="emoji">📡</div>
+              <h3>Scanning...</h3>
+              <p>Agent Army is gathering intel from Reddit</p>
+            </div>
+          `;
+          document.getElementById('army-count').textContent = '0 opportunities';
+        }
+      } catch (err) {
+        console.error('[AgentArmy] Error:', err);
+        document.getElementById('army-body').innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">⚠️</div>
+            <h3>Connection Error</h3>
+            <p>Could not reach Agent Army</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderAgentArmy(opportunities) {
+      const container = document.getElementById('army-body');
+      
+      const html = opportunities.map((opp, i) => `
+        <div class="result-card ${opp.analysis?.priority === 'hot' ? 'hot' : opp.analysis?.priority === 'warm' ? 'warm' : ''}" 
+             onclick="openArmyModal(${i})" style="cursor:pointer">
+          <div class="result-header">
+            <div class="result-title">${truncate(opp.post?.title || 'Untitled', 100)}</div>
+            <span class="result-score" style="background: ${opp.analysis?.priority === 'hot' ? 'var(--danger)' : opp.analysis?.priority === 'warm' ? 'var(--warning)' : 'var(--info)'}; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem;">
+              ${opp.analysis?.priority?.toUpperCase() || 'NEW'}
+            </span>
+          </div>
+          <div class="result-content">${truncate(opp.post?.selftext || '', 150)}</div>
+          <div class="result-meta">
+            <span>🤖 ${opp.foundBy || 'Agent'}</span>
+            <span>📍 r/${opp.post?.subreddit || 'unknown'}</span>
+            <span>⬆️ ${opp.post?.score || 0}</span>
+            <span>💬 ${opp.post?.numComments || 0}</span>
+          </div>
+        </div>
+      `).join('');
+      
+      container.innerHTML = html;
+    }
+
+    function openArmyModal(idx) {
+      const opp = armyOpportunities[idx];
+      if (!opp) return;
+      
+      document.getElementById('modal-title').textContent = opp.post?.title || 'Opportunity';
+      document.getElementById('modal-content').textContent = opp.post?.selftext || 'No additional content.';
+      document.getElementById('modal-url').textContent = 'https://reddit.com' + (opp.post?.permalink || '');
+      document.getElementById('modal-link').href = 'https://reddit.com' + (opp.post?.permalink || '');
+      document.getElementById('modal').classList.add('active');
+    }
+
     // Initialize
     loadMetrics();
     loadHistory();
+    loadAgentArmy();
     setInterval(loadMetrics, 5000); // Refresh metrics every 5 seconds
+    setInterval(loadAgentArmy, 60000); // Refresh Agent Army every 60 seconds
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
