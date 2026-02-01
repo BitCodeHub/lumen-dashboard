@@ -593,3 +593,6 @@
   sha: '62b5d8de603adc03741b4aa526876f97f4e3cd56'
 }
 [Moltbook] Refreshing data...
+[Moltbook] Refreshed: 35 posts, 100 interactions
+[Health] DB check failed: 
+[Keep-Alive] Self-ping: degraded (DB: error, latency: N/Ams)

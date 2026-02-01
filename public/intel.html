@@ -979,22 +979,35 @@
       document.getElementById('modal').classList.remove('active');
     }
 
-    // Load metrics
+    // Load metrics and sync all KPIs
     async function loadMetrics() {
       try {
         const response = await fetch('/api/enterprise/metrics');
         const data = await response.json();
         
         if (data.success) {
+          // Right side metrics panel
           document.getElementById('metric-sources').textContent = data.metrics.totalSourcesScanned?.toLocaleString() || '0';
           document.getElementById('metric-insights').textContent = data.metrics.totalInsightsFound?.toLocaleString() || '0';
           document.getElementById('metric-calls').textContent = data.metrics.totalAgentCalls?.toLocaleString() || '0';
           document.getElementById('metric-avgtime').textContent = data.metrics.avgResponseTime ? data.metrics.avgResponseTime + 'ms' : '—';
           document.getElementById('metric-updated').textContent = new Date(data.metrics.lastUpdate).toLocaleTimeString();
           
-          // Update search count from metrics
+          // Left side KPIs - sync with global metrics
+          const totalSources = data.metrics.totalSourcesScanned || 0;
+          document.getElementById('kpi-sources').textContent = totalSources.toLocaleString();
+          document.getElementById('kpi-sources-trend').textContent = `↑ ${totalSources} total`;
+          
           if (data.metrics.totalSearches) {
             document.getElementById('kpi-searches').textContent = data.metrics.totalSearches;
+          }
+          
+          if (data.metrics.totalInsightsFound) {
+            document.getElementById('kpi-results').textContent = data.metrics.totalInsightsFound;
+          }
+          
+          if (data.metrics.avgResponseTime) {
+            document.getElementById('kpi-time').textContent = data.metrics.avgResponseTime + 'ms';
           }
         }
       } catch (err) {
