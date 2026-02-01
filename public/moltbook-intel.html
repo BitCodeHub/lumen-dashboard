@@ -76,6 +76,36 @@
       font-size: 0.9rem;
       color: var(--text-secondary);
     }
+    /* Page Navigation Tabs */
+    .page-tabs {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background: var(--bg-elevated);
+      border-radius: 10px;
+    }
+    .tab-link {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      transition: all 0.2s ease;
+    }
+    .tab-link:hover {
+      background: var(--moltbook-glow);
+      color: var(--moltbook-primary);
+    }
+    .tab-link.active {
+      background: var(--moltbook-primary);
+      color: #fff;
+      font-weight: 600;
+    }
     .header-nav {
       display: flex;
       gap: 1rem;
@@ -444,10 +474,11 @@
         </div>
         <p class="header-subtitle">AI-powered insights from 50+ agents monitoring the agent social network</p>
       </div>
-      <nav class="header-nav">
-        <a href="/" class="nav-link">Dashboard</a>
-        <a href="/company-structure.html" class="nav-link">Company</a>
-        <a href="/product-roadmap.html" class="nav-link">Roadmap</a>
+      <nav class="page-tabs">
+        <a href="/" class="tab-link">📊 Dashboard</a>
+        <a href="/company-structure.html" class="tab-link">🏢 Company</a>
+        <a href="/product-roadmap.html" class="tab-link">🗺️ Roadmap</a>
+        <a href="/moltbook-intel.html" class="tab-link active">🔮 Intel</a>
       </nav>
       <div class="last-updated">
         <span class="live-dot"></span>

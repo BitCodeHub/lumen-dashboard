@@ -42,6 +42,57 @@
     }
     
     * { box-sizing: border-box; }
+    
+    /* Page Navigation Tabs */
+    .page-tabs {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .tab-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .tab-link:hover {
+      background: var(--lumen-glow);
+      color: var(--lumen-primary);
+      border-color: var(--lumen-border);
+    }
+    .tab-link.active {
+      background: linear-gradient(135deg, var(--lumen-glow), rgba(245, 158, 11, 0.05));
+      color: var(--lumen-primary);
+      border-color: var(--lumen-border);
+      font-weight: 600;
+    }
+    @media (max-width: 600px) {
+      .page-tabs {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .tab-link {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.8rem;
+      }
+    }
+
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       line-height: 1.6;
@@ -1422,6 +1473,14 @@
       </div>
     </div>
   </section>
+
+  <!-- Page Navigation Tabs -->
+  <nav class="page-tabs">
+    <a href="/" class="tab-link">📊 Dashboard</a>
+    <a href="/company-structure.html" class="tab-link active">🏢 Company</a>
+    <a href="/product-roadmap.html" class="tab-link">🗺️ Roadmap</a>
+    <a href="/moltbook-intel.html" class="tab-link">🔮 Intel</a>
+  </nav>
 
   <header>
     <h1>🔆 Lumen AI Solutions</h1>
