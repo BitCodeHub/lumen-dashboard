@@ -1947,7 +1947,11 @@ app.get('/public/company-status', async (req, res) => {
         }
         
         // Product pipeline from PRODUCT_PROGRESS.json (real-time source of truth)
-        const progressFilePath = path.join(COMPANY_WORKSPACE, 'company', 'PRODUCT_PROGRESS.json');
+        // Try external path first (local dev), then fall back to repo data folder (production)
+        let progressFilePath = path.join(COMPANY_WORKSPACE, 'company', 'PRODUCT_PROGRESS.json');
+        if (!fs.existsSync(progressFilePath)) {
+          progressFilePath = path.join(__dirname, 'data', 'PRODUCT_PROGRESS.json');
+        }
         let staticProducts = [];
         
         try {
@@ -2082,8 +2086,12 @@ app.get('/public/company-status', async (req, res) => {
       const blockers = parseBlockers(standupContent);
       
       // Read product progress from PRODUCT_PROGRESS.json (real-time source of truth)
+      // Try external path first (local dev), then fall back to repo data folder (production)
       let productProgress = [];
-      const progressFilePath = path.join(COMPANY_WORKSPACE, 'company', 'PRODUCT_PROGRESS.json');
+      let progressFilePath = path.join(COMPANY_WORKSPACE, 'company', 'PRODUCT_PROGRESS.json');
+      if (!fs.existsSync(progressFilePath)) {
+        progressFilePath = path.join(__dirname, 'data', 'PRODUCT_PROGRESS.json');
+      }
       try {
         if (fs.existsSync(progressFilePath)) {
           const progressData = JSON.parse(fs.readFileSync(progressFilePath, 'utf-8'));
