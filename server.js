@@ -27,6 +27,7 @@ const voiceClone = require('./voice-clone');
 const { setupExpenseAnalyticsRoutes } = require('./expense-analytics-api');
 const { initMoltbookIntegration } = require('./moltbook-integration');
 const { initAgentArmy } = require('./agent-army');
+const { registerEnterpriseRoutes } = require('./enterprise-intel');
 
 const app = express();
 
@@ -6669,6 +6670,9 @@ app.get('/moltbook-public/activity', (req, res) => {
 initAgentArmy(app).catch(err => {
   console.error('[AgentArmy] Failed to initialize:', err.message);
 });
+
+// Initialize Enterprise Intelligence Platform
+registerEnterpriseRoutes(app);
 
 // Initialize Moltbook Integration (legacy - MUST be before catch-all)
 initMoltbookIntegration(app).catch(err => {
