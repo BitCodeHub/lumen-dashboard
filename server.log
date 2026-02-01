@@ -1,0 +1,131 @@
+[Session] Session store initialized with PostgreSQL
+[DealRadar] Routes registered
+[Expense Analytics] Chart API routes registered
+[Moltbook] Initializing integration...
+[Moltbook] Refreshing data...
+🔆 Lumen Dashboard v3.5.1 running on port 3000
+   💚 Health check: /health (DB connectivity)
+   🏓 Keep-alive: enabled (self-ping every 10 min)
+   📦 Compression: enabled (gzip)
+   📡 Deal Radar: enabled (24/7 opportunity scanner)
+   🔄 Hourly scrape sync: enabled (every hour at :00)
+   📡 GitHub polling: enabled (every 15 min at :05, :20, :35, :50)
+   📊 Rate limit: 4 req/hr (limit: 60/hr unauthenticated)
+   🎯 Watching: davila7/claude-code-templates
+   🎙️ Voice Clone: MOCK mode
+   🦞 Moltbook Agent Army: 51 agents (LumenCTO_007 + 50 specialists)
+[DB] Failed to initialize database: AggregateError [ECONNREFUSED]: 
+    at /Users/jimmysmacstudio/clawd/projects/lumen-dashboard/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async initDatabase (/Users/jimmysmacstudio/clawd/projects/lumen-dashboard/server.js:856:18) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -61,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -61,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+[Health] DB check failed: 
+[Moltbook] Refreshed: 35 posts, 100 interactions
+[Moltbook] Integration initialized with 51 agents
+[Startup] Running initial scrape sync...
+[Sync] Starting full aitmpl.com sync...
+[Scraper] Starting scrape for skills...
+[Scraper] Scraped 16 skills templates from 1 pages
+[Scraper] Starting scrape for agents...
+[Scraper] Scraped 16 agents templates from 1 pages
+[Scraper] Starting scrape for commands...
+[Scraper] Scraped 16 commands templates from 1 pages
+[Scraper] Starting scrape for settings...
+[Scraper] Scraped 16 settings templates from 1 pages
+[Scraper] Starting scrape for hooks...
+[Scraper] Scraped 16 hooks templates from 1 pages
+[Scraper] Starting scrape for mcps...
+[Scraper] Scraped 16 mcps templates from 1 pages
+[Sync] Error during sync: AggregateError [ECONNREFUSED]: 
+    at /Users/jimmysmacstudio/clawd/projects/lumen-dashboard/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async performFullSync (/Users/jimmysmacstudio/clawd/projects/lumen-dashboard/server.js:792:20)
+    at async Timeout._onTimeout (/Users/jimmysmacstudio/clawd/projects/lumen-dashboard/server.js:6706:24) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -61,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -61,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+[Startup] Initial scrape sync result: { success: false, error: '' }
+[Startup] Running initial GitHub check...
+[GitHub Poll] Checking for updates (poll #1)...
+[GitHub Poll] Initial check - latest commit: 62b5d8d
+[Startup] Initial GitHub check result: {
+  changed: false,
+  reason: 'initial_check',
+  sha: '62b5d8de603adc03741b4aa526876f97f4e3cd56'
+}
+[Startup] First run - performing initial GitHub sync...
+[GitHub Sync] Starting GitHub template sync...
+[GitHub Sync] Cloning repository...
+[GitHub Sync] Parsed 100 templates from repository
+[GitHub Sync] Error during sync: AggregateError [ECONNREFUSED]: 
+    at /Users/jimmysmacstudio/clawd/projects/lumen-dashboard/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async performGitHubSync (/Users/jimmysmacstudio/clawd/projects/lumen-dashboard/server.js:535:20)
+    at async Timeout._onTimeout (/Users/jimmysmacstudio/clawd/projects/lumen-dashboard/server.js:6717:24) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -61,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -61,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+[Startup] Initial GitHub sync result: { success: false, error: '' }
+[Health] DB check failed: 
+[Keep-Alive] Self-ping: degraded (DB: error, latency: N/Ams)
+[Moltbook] Refreshing data...
+[Moltbook] Refreshed: 34 posts, 100 interactions
