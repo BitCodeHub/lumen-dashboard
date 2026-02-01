@@ -2162,8 +2162,7 @@
     const deptMapping = {
       'Engineering': 'engineering', 'Product': 'product', 'Design': 'design',
       'Research': 'research', 'Marketing': 'marketing', 'DevOps': 'devops',
-      'Security': 'security', 'HR': 'hr', 'Finance': 'finance', 'QA': 'qa',
-      'Technology': 'engineering', 'Operations': 'devops'
+      'Security': 'security', 'HR': 'hr', 'Finance': 'finance', 'QA': 'qa'
     };
     
     function formatActivityTime(dateString) {
@@ -2564,51 +2563,35 @@
     
     // Initial fetch and set up real-time stream
     document.addEventListener('DOMContentLoaded', async () => {
-      console.log('[Dashboard] DOMContentLoaded - initializing...');
+      // 🎨 Initialize department filter tabs
+      initDeptFilters();
       
+      fetchStatus();
+      // Initial fetch to populate cache
       try {
-        // 🎨 Initialize department filter tabs
-        initDeptFilters();
-        console.log('[Dashboard] Department filters initialized');
-        
-        // Fetch company status
-        fetchStatus();
-        console.log('[Dashboard] Status fetch started');
-        
-        // Initial fetch to populate cache
-        try {
-          const response = await fetch('/public/team-activity?limit=50');
-          const data = await response.json();
-          console.log('[Dashboard] Team activity loaded:', data?.activities?.length || 0, 'items');
-          activityCache = data.activities || [];
-          renderActivityFeed(data);
-        } catch (err) {
-          console.error('[Dashboard] Initial fetch failed:', err);
-          // Show demo data if API fails
-          renderActivityFeed({ success: true, activities: getDemoActivities() });
-        }
-        
-        // Connect to SSE stream for real-time updates
-        connectActivityStream();
-        console.log('[Dashboard] SSE stream connected');
-        
-        // Auto-refresh ALL data every 15 seconds
-        setInterval(() => {
-          fetchStatus();
-          fetchActivityFeed();
-        }, 15000);
-        
-        // Also poll activity feed separately for faster updates
-        setInterval(fetchActivityFeed, 10000);
-        
-        // 🦞 Initialize Moltbook feed
-        console.log('[Dashboard] Initializing Moltbook feed...');
-        initMoltbookFeed();
-        console.log('[Dashboard] Moltbook feed initialized');
-        
+        const response = await fetch('/public/team-activity?limit=50');
+        const data = await response.json();
+        activityCache = data.activities || [];
+        renderActivityFeed(data);
       } catch (err) {
-        console.error('[Dashboard] Critical initialization error:', err);
+        console.error('Initial fetch failed:', err);
+        // Show demo data if API fails
+        renderActivityFeed({ success: true, activities: getDemoActivities() });
       }
+      // Connect to SSE stream for real-time updates
+      connectActivityStream();
+      
+      // Auto-refresh ALL data every 15 seconds
+      setInterval(() => {
+        fetchStatus();
+        fetchActivityFeed();
+      }, 15000);
+      
+      // Also poll activity feed separately for faster updates
+      setInterval(fetchActivityFeed, 10000);
+      
+      // 🦞 Initialize Moltbook feed
+      initMoltbookFeed();
     });
     
     // Demo data for offline/testing
