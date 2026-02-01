@@ -6743,3 +6743,120 @@ app.listen(PORT, () => {
   console.log(`   🎙️ Voice Clone: ${voiceClone.isApiConfigured() ? 'LIVE (ElevenLabs)' : 'MOCK mode'}`);
   console.log(`   🦞 Moltbook Agent Army: 51 agents (LumenCTO_007 + 50 specialists)`);
 });
+
+// ============================================
+// PRODUCT PROGRESS API (Real-time updates)
+// ============================================
+
+// GET /api/product-progress - Get all product progress
+app.get('/api/product-progress', async (req, res) => {
+  try {
+    const fs = require('fs');
+    const progressFile = '/Users/jimmysmacstudio/clawd/company/PRODUCT_PROGRESS.json';
+    
+    if (fs.existsSync(progressFile)) {
+      const data = JSON.parse(fs.readFileSync(progressFile, 'utf-8'));
+      res.json({ success: true, ...data });
+    } else {
+      res.json({ success: false, error: 'Progress file not found' });
+    }
+  } catch (err) {
+    console.error('Error reading product progress:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/product-progress/:productId - Update a product's progress
+app.post('/api/product-progress/:productId', async (req, res) => {
+  try {
+    const fs = require('fs');
+    const { productId } = req.params;
+    const { progress, status, notes, launchDate } = req.body;
+    
+    const progressFile = '/Users/jimmysmacstudio/clawd/company/PRODUCT_PROGRESS.json';
+    
+    let data = { products: [], lastUpdated: new Date().toISOString() };
+    if (fs.existsSync(progressFile)) {
+      data = JSON.parse(fs.readFileSync(progressFile, 'utf-8'));
+    }
+    
+    // Find and update the product
+    const productIndex = data.products.findIndex(p => p.id === productId);
+    if (productIndex === -1) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+    
+    // Update fields if provided
+    if (progress !== undefined) data.products[productIndex].progress = progress;
+    if (status) data.products[productIndex].status = status;
+    if (notes) data.products[productIndex].notes = notes;
+    if (launchDate) data.products[productIndex].launchDate = launchDate;
+    
+    data.lastUpdated = new Date().toISOString();
+    
+    // Write back
+    fs.writeFileSync(progressFile, JSON.stringify(data, null, 2));
+    
+    // Log the update to team activity
+    await pool.query(
+      'INSERT INTO team_activity (agent, emoji, department, action, status) VALUES ($1, $2, $3, $4, $5)',
+      ['System', '📊', 'Product', \`Updated \${data.products[productIndex].name} progress to \${progress}%\`, 'completed']
+    );
+    
+    res.json({ 
+      success: true, 
+      message: \`Updated \${productId} progress\`,
+      product: data.products[productIndex]
+    });
+  } catch (err) {
+    console.error('Error updating product progress:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/product-progress - Add a new product
+app.post('/api/product-progress', async (req, res) => {
+  try {
+    const fs = require('fs');
+    const { id, name, emoji, progress, status, priority, notes, launchDate } = req.body;
+    
+    if (!id || !name) {
+      return res.status(400).json({ success: false, error: 'id and name are required' });
+    }
+    
+    const progressFile = '/Users/jimmysmacstudio/clawd/company/PRODUCT_PROGRESS.json';
+    
+    let data = { products: [], lastUpdated: new Date().toISOString() };
+    if (fs.existsSync(progressFile)) {
+      data = JSON.parse(fs.readFileSync(progressFile, 'utf-8'));
+    }
+    
+    // Check if product already exists
+    if (data.products.some(p => p.id === id)) {
+      return res.status(409).json({ success: false, error: 'Product already exists' });
+    }
+    
+    // Add new product
+    const newProduct = {
+      id,
+      name,
+      emoji: emoji || '📦',
+      progress: progress || 0,
+      status: status || 'planning',
+      priority: priority || 'P2',
+      notes: notes || '',
+      launchDate: launchDate || null
+    };
+    
+    data.products.push(newProduct);
+    data.lastUpdated = new Date().toISOString();
+    
+    fs.writeFileSync(progressFile, JSON.stringify(data, null, 2));
+    
+    res.json({ success: true, message: 'Product added', product: newProduct });
+  } catch (err) {
+    console.error('Error adding product:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
