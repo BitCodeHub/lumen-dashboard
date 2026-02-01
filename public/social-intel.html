@@ -620,10 +620,10 @@
     }
 
     function renderStats() {
-      const stats = intelData.stats || intelData.dailyInsights?.stats || {};
-      document.getElementById('stat-posts').textContent = stats.totalPosts || 35;
-      document.getElementById('stat-upvotes').textContent = formatNumber(stats.totalUpvotes || 919708);
-      document.getElementById('stat-opportunities').textContent = intelData.opportunities?.length || 0;
+      const stats = intelData.stats || {};
+      document.getElementById('stat-posts').textContent = formatNumber(stats.postsAnalyzed || 0);
+      document.getElementById('stat-upvotes').textContent = formatNumber(stats.totalUpvotes || 0);
+      document.getElementById('stat-opportunities').textContent = stats.opportunities || intelData.opportunities?.length || 0;
       document.getElementById('stat-agents').textContent = intelData.agentArmy?.total || 51;
     }
 
@@ -634,34 +634,42 @@
       document.getElementById('opp-count').textContent = `${opportunities.length} found`;
       
       if (opportunities.length === 0) {
-        grid.innerHTML = '<p style="color: var(--text-muted);">No opportunities loaded yet.</p>';
+        grid.innerHTML = '<p style="color: var(--text-muted);">Agents are scanning... opportunities will appear here.</p>';
         return;
       }
       
       grid.innerHTML = opportunities.map(opp => `
         <div class="opportunity-card ${opp.priority === 'hot' ? 'hot' : ''}">
           <div class="opp-header">
-            <div class="opp-name">${opp.name}</div>
-            <span class="opp-status ${opp.status.toLowerCase().includes('evaluat') ? 'evaluating' : 'building'}">
-              ${opp.status.replace(/[📋🚀]/g, '').trim()}
+            <div class="opp-name" style="font-size: 0.95rem;">${truncate(opp.title, 80)}</div>
+            <span class="opp-status ${opp.priority === 'hot' ? 'hot' : opp.priority === 'warm' ? 'evaluating' : 'building'}">
+              ${opp.priority === 'hot' ? '🔥 Hot' : opp.priority === 'warm' ? '🟡 Warm' : '👀 Monitor'}
             </span>
           </div>
           <div class="opp-signal">
             <span>📡</span>
-            <span>${opp.source || 'Social Media'}</span>
+            <span>r/${opp.subreddit} • ⬆️ ${opp.score}</span>
           </div>
-          <div class="opp-pain">${opp.painPoint}</div>
-          <div class="opp-opportunity">💡 ${opp.opportunity}</div>
+          <div class="opp-pain">Found by: ${opp.foundBy}</div>
+          <div class="opp-opportunity">
+            <a href="${opp.url}" target="_blank" style="color: var(--social-light); text-decoration: none;">
+              View on Reddit →
+            </a>
+          </div>
         </div>
       `).join('');
+    }
+    
+    function truncate(str, len) {
+      return str.length > len ? str.substring(0, len) + '...' : str;
     }
 
     function renderTrending() {
       const list = document.getElementById('trending-list');
-      const posts = intelData.dailyInsights?.trendingPosts || [];
+      const posts = intelData.dailyInsights?.trending || [];
       
       if (posts.length === 0) {
-        list.innerHTML = '<p style="color: var(--text-muted);">No trending posts loaded.</p>';
+        list.innerHTML = '<p style="color: var(--text-muted);">Agents are scanning Reddit for trending posts...</p>';
         return;
       }
       
@@ -669,11 +677,13 @@
         <div class="trending-item">
           <div class="trending-rank">#${idx + 1}</div>
           <div class="trending-content">
-            <div class="trending-title">${post.title}</div>
+            <a href="${post.url}" target="_blank" style="text-decoration: none; color: inherit;">
+              <div class="trending-title">${truncate(post.title, 100)}</div>
+            </a>
             <div class="trending-meta">
-              <span class="trending-stat">👍 ${formatNumber(post.upvotes)}</span>
+              <span class="trending-stat">⬆️ ${formatNumber(post.score)}</span>
               <span class="trending-stat">💬 ${formatNumber(post.comments)}</span>
-              <span class="trending-stat">📁 ${post.submolt}</span>
+              <span class="trending-stat">📁 r/${post.subreddit}</span>
             </div>
           </div>
         </div>

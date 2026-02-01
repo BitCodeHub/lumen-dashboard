@@ -26,6 +26,7 @@ const proactiveNotifications = require('./proactive-notifications');
 const voiceClone = require('./voice-clone');
 const { setupExpenseAnalyticsRoutes } = require('./expense-analytics-api');
 const { initMoltbookIntegration } = require('./moltbook-integration');
+const { initAgentArmy } = require('./agent-army');
 
 const app = express();
 
@@ -6664,7 +6665,12 @@ app.get('/moltbook-public/activity', (req, res) => {
   });
 });
 
-// Initialize Moltbook Agent Army Integration (MUST be before catch-all)
+// Initialize Agent Army (REAL Reddit monitoring - MUST be before catch-all)
+initAgentArmy(app).catch(err => {
+  console.error('[AgentArmy] Failed to initialize:', err.message);
+});
+
+// Initialize Moltbook Integration (legacy - MUST be before catch-all)
 initMoltbookIntegration(app).catch(err => {
   console.error('[Moltbook] Failed to initialize:', err.message);
 });
