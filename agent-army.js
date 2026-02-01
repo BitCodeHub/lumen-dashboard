@@ -9,15 +9,27 @@
 
 const fetch = require('node-fetch');
 
-// Claude API Configuration - check multiple env var names
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 
-                          process.env.CLAUDE_API_KEY || 
-                          process.env.ANTHROPIC_KEY ||
-                          '';
-const CLAUDE_MODEL = 'claude-3-haiku-20240307'; // Fast + cheap for filtering
+// AI API Configuration - Support multiple providers
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || '';
+const AZURE_OPENAI_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT || '';
+const AZURE_OPENAI_API_KEY = process.env.AZURE_OPENAI_API_KEY || process.env.AZURE_OPENAI_KEY || '';
+const AZURE_OPENAI_DEPLOYMENT = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini'; // or gpt-35-turbo
 
-// Log API key status on startup
-console.log('[AgentArmy] Anthropic API Key:', ANTHROPIC_API_KEY ? `✅ Found (${ANTHROPIC_API_KEY.substring(0, 10)}...)` : '❌ Not found');
+const CLAUDE_MODEL = 'claude-3-haiku-20240307';
+
+// Determine which AI provider to use
+const AI_PROVIDER = AZURE_OPENAI_ENDPOINT && AZURE_OPENAI_API_KEY ? 'azure' : 
+                    ANTHROPIC_API_KEY ? 'anthropic' : 'none';
+
+// Log API status on startup
+console.log('[AgentArmy] AI Provider:', AI_PROVIDER);
+if (AI_PROVIDER === 'azure') {
+  console.log('[AgentArmy] Azure OpenAI:', `✅ ${AZURE_OPENAI_ENDPOINT.substring(0, 30)}...`);
+} else if (AI_PROVIDER === 'anthropic') {
+  console.log('[AgentArmy] Anthropic:', `✅ Found (${ANTHROPIC_API_KEY.substring(0, 10)}...)`);
+} else {
+  console.log('[AgentArmy] AI: ❌ No API key found - using keyword matching');
+}
 
 // ==========================================
 // AGENT ARMY CONFIGURATION
@@ -766,36 +778,67 @@ function analyzeSentiment(text) {
 // REAL AI AGENT - CLAUDE FILTERING
 // ==========================================
 
-async function callClaudeAPI(prompt, maxTokens = 500) {
-  if (!ANTHROPIC_API_KEY) {
-    console.warn('[AgentArmy] No Anthropic API key - falling back to keyword matching');
+async function callAI(prompt, maxTokens = 500) {
+  if (AI_PROVIDER === 'none') {
+    console.warn('[AgentArmy] No AI API key - falling back to keyword matching');
     return null;
   }
   
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: maxTokens,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    
-    if (!response.ok) {
-      console.error('[AgentArmy] Claude API error:', response.status);
-      return null;
+    if (AI_PROVIDER === 'azure') {
+      // Azure OpenAI API
+      const url = `${AZURE_OPENAI_ENDPOINT}/openai/deployments/${AZURE_OPENAI_DEPLOYMENT}/chat/completions?api-version=2024-02-15-preview`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': AZURE_OPENAI_API_KEY
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: maxTokens,
+          temperature: 0.3
+        })
+      });
+      
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('[AgentArmy] Azure OpenAI error:', response.status, errText);
+        return null;
+      }
+      
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || null;
+      
+    } else if (AI_PROVIDER === 'anthropic') {
+      // Anthropic Claude API
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: CLAUDE_MODEL,
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('[AgentArmy] Claude API error:', response.status);
+        return null;
+      }
+      
+      const data = await response.json();
+      return data.content?.[0]?.text || null;
     }
     
-    const data = await response.json();
-    return data.content?.[0]?.text || null;
+    return null;
   } catch (err) {
-    console.error('[AgentArmy] Claude API call failed:', err.message);
+    console.error('[AgentArmy] AI API call failed:', err.message);
     return null;
   }
 }
@@ -803,8 +846,8 @@ async function callClaudeAPI(prompt, maxTokens = 500) {
 async function aiFilterResults(results, keyword, context, options = {}) {
   const { region = 'US', language = 'English' } = options;
   
-  if (!ANTHROPIC_API_KEY || results.length === 0) {
-    console.log('[AgentArmy] No API key or no results - using basic filtering');
+  if (AI_PROVIDER === 'none' || results.length === 0) {
+    console.log('[AgentArmy] No AI API or no results - using basic filtering');
     return basicFilter(results, keyword, context, region);
   }
   
@@ -842,7 +885,7 @@ ${batch.map((r, idx) => `[${idx}] Title: ${r.title}\nContent: ${(r.selftext || r
 Respond ONLY with the JSON array, no other text.`;
 
     try {
-      const response = await callClaudeAPI(prompt, 1000);
+      const response = await callAI(prompt, 1000);
       
       if (response) {
         // Parse JSON response
