@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moltbook Product Intelligence | Lumen AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-elevated: #1a1a24;
+      --border: #2a2a3a;
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --lumen-primary: #f59e0b;
+      --lumen-light: #fbbf24;
+      --lumen-dark: #d97706;
+      --lumen-glow: rgba(245, 158, 11, 0.1);
+      --lumen-border: rgba(245, 158, 11, 0.3);
+      --moltbook-primary: #8b5cf6;
+      --moltbook-light: #a78bfa;
+      --moltbook-glow: rgba(139, 92, 246, 0.1);
+      --moltbook-border: rgba(139, 92, 246, 0.3);
+      --status-hot: #ef4444;
+      --status-evaluating: #f59e0b;
+      --status-building: #22c55e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(139, 92, 246, 0.1) 100%);
+      border-bottom: 1px solid var(--moltbook-border);
+      padding: 1.5rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-content {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .header-title h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--moltbook-light), var(--lumen-primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header-title .emoji {
+      font-size: 2rem;
+    }
+    .header-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    .header-nav {
+      display: flex;
+      gap: 1rem;
+    }
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .nav-link:hover {
+      background: var(--moltbook-glow);
+      color: var(--moltbook-primary);
+    }
+    .last-updated {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--status-building);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.9); }
+    }
+
+    /* Container */
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .stat-card:hover {
+      border-color: var(--moltbook-border);
+      transform: translateY(-2px);
+    }
+    .stat-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--moltbook-primary);
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+
+    /* Section */
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .section-badge {
+      background: var(--moltbook-glow);
+      color: var(--moltbook-primary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .section-content {
+      padding: 1.5rem;
+    }
+
+    /* Opportunity Cards */
+    .opportunity-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.25rem;
+    }
+    .opportunity-card {
+      background: var(--bg-elevated);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: all 0.3s;
+      position: relative;
+    }
+    .opportunity-card:hover {
+      border-color: var(--moltbook-border);
+      box-shadow: 0 8px 30px rgba(139, 92, 246, 0.15);
+    }
+    .opportunity-card.hot {
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+    .opportunity-card.hot::before {
+      content: '🔥';
+      position: absolute;
+      top: -10px;
+      right: 10px;
+      font-size: 1.5rem;
+    }
+    .opp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+    .opp-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .opp-status {
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .opp-status.evaluating {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--status-evaluating);
+    }
+    .opp-status.building {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--status-building);
+    }
+    .opp-signal {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--moltbook-light);
+      margin-bottom: 0.75rem;
+    }
+    .opp-pain {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+      line-height: 1.5;
+    }
+    .opp-opportunity {
+      font-size: 0.85rem;
+      color: var(--lumen-primary);
+      padding: 0.5rem 0.75rem;
+      background: var(--lumen-glow);
+      border-radius: 6px;
+      border-left: 3px solid var(--lumen-primary);
+    }
+
+    /* Trending Posts */
+    .trending-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .trending-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--bg-elevated);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .trending-item:hover {
+      background: var(--moltbook-glow);
+    }
+    .trending-rank {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--moltbook-primary);
+      min-width: 2rem;
+    }
+    .trending-content {
+      flex: 1;
+    }
+    .trending-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: var(--text-primary);
+    }
+    .trending-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .trending-stat {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    /* Approval Queue */
+    .queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .queue-item {
+      display: flex;
+      gap: 1.5rem;
+      padding: 1.25rem;
+      background: var(--bg-elevated);
+      border-radius: 12px;
+      border-left: 4px solid var(--moltbook-primary);
+      transition: all 0.2s;
+    }
+    .queue-item:hover {
+      border-left-color: var(--lumen-primary);
+      background: rgba(139, 92, 246, 0.05);
+    }
+    .queue-main {
+      flex: 1;
+    }
+    .queue-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    .queue-signal {
+      font-size: 0.85rem;
+      color: var(--moltbook-light);
+      margin-bottom: 0.5rem;
+    }
+    .queue-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .queue-detail {
+      color: var(--text-secondary);
+    }
+    .queue-detail strong {
+      color: var(--text-primary);
+    }
+    .queue-action {
+      display: flex;
+      align-items: center;
+    }
+    .approve-btn {
+      background: linear-gradient(135deg, var(--moltbook-primary), var(--lumen-primary));
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .approve-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+    }
+
+    /* Agent Army */
+    .army-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .squad-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .squad-emoji {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    .squad-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .squad-focus {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    .squad-count {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--moltbook-primary);
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--moltbook-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container { padding: 1rem; }
+      .header { padding: 1rem; }
+      .opportunity-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div>
+        <div class="header-title">
+          <span class="emoji">🔮</span>
+          <h1>Moltbook Product Intelligence</h1>
+        </div>
+        <p class="header-subtitle">AI-powered insights from 50+ agents monitoring the agent social network</p>
+      </div>
+      <nav class="header-nav">
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/company-structure.html" class="nav-link">Company</a>
+        <a href="/product-roadmap.html" class="nav-link">Roadmap</a>
+      </nav>
+      <div class="last-updated">
+        <span class="live-dot"></span>
+        <span>Last updated: <span id="last-updated">Loading...</span></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value" id="stat-posts">-</div>
+        <div class="stat-label">Posts Analyzed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👍</div>
+        <div class="stat-value" id="stat-upvotes">-</div>
+        <div class="stat-label">Total Upvotes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💡</div>
+        <div class="stat-value" id="stat-opportunities">-</div>
+        <div class="stat-label">Opportunities</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🤖</div>
+        <div class="stat-value" id="stat-agents">51</div>
+        <div class="stat-label">Active Agents</div>
+      </div>
+    </div>
+
+    <!-- Hot Opportunities -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <span>🔥</span>
+          <span>Hot Opportunities</span>
+        </div>
+        <span class="section-badge" id="opp-count">0 found</span>
+      </div>
+      <div class="section-content">
+        <div class="opportunity-grid" id="opportunities-grid">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading opportunities...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trending Posts -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <span>📈</span>
+          <span>Trending on Moltbook</span>
+        </div>
+        <span class="section-badge">Live Feed</span>
+      </div>
+      <div class="section-content">
+        <div class="trending-list" id="trending-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading trending posts...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Approval Queue -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <span>📋</span>
+          <span>Approval Queue</span>
+        </div>
+        <span class="section-badge" id="queue-count">Awaiting Review</span>
+      </div>
+      <div class="section-content">
+        <div class="queue-list" id="queue-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading queue...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Agent Army -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <span>🤖</span>
+          <span>Agent Army</span>
+        </div>
+        <span class="section-badge">51 Agents Deployed</span>
+      </div>
+      <div class="section-content">
+        <div class="army-grid" id="army-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let intelData = null;
+
+    async function fetchIntel() {
+      try {
+        const response = await fetch('/public/moltbook-intel');
+        const data = await response.json();
+        
+        if (data.success) {
+          intelData = data;
+          renderAll();
+          document.getElementById('last-updated').textContent = 
+            new Date(data.lastUpdate).toLocaleString();
+        }
+      } catch (err) {
+        console.error('Failed to fetch intel:', err);
+      }
+    }
+
+    function formatNumber(num) {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+      return num.toString();
+    }
+
+    function renderAll() {
+      renderStats();
+      renderOpportunities();
+      renderTrending();
+      renderQueue();
+      renderArmy();
+    }
+
+    function renderStats() {
+      const stats = intelData.stats || intelData.dailyInsights?.stats || {};
+      document.getElementById('stat-posts').textContent = stats.totalPosts || 35;
+      document.getElementById('stat-upvotes').textContent = formatNumber(stats.totalUpvotes || 919708);
+      document.getElementById('stat-opportunities').textContent = intelData.opportunities?.length || 0;
+      document.getElementById('stat-agents').textContent = intelData.agentArmy?.total || 51;
+    }
+
+    function renderOpportunities() {
+      const grid = document.getElementById('opportunities-grid');
+      const opportunities = intelData.opportunities || [];
+      
+      document.getElementById('opp-count').textContent = `${opportunities.length} found`;
+      
+      if (opportunities.length === 0) {
+        grid.innerHTML = '<p style="color: var(--text-muted);">No opportunities loaded yet.</p>';
+        return;
+      }
+      
+      grid.innerHTML = opportunities.map(opp => `
+        <div class="opportunity-card ${opp.priority === 'hot' ? 'hot' : ''}">
+          <div class="opp-header">
+            <div class="opp-name">${opp.name}</div>
+            <span class="opp-status ${opp.status.toLowerCase().includes('evaluat') ? 'evaluating' : 'building'}">
+              ${opp.status.replace(/[📋🚀]/g, '').trim()}
+            </span>
+          </div>
+          <div class="opp-signal">
+            <span>📡</span>
+            <span>${opp.source || 'Moltbook'}</span>
+          </div>
+          <div class="opp-pain">${opp.painPoint}</div>
+          <div class="opp-opportunity">💡 ${opp.opportunity}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderTrending() {
+      const list = document.getElementById('trending-list');
+      const posts = intelData.dailyInsights?.trendingPosts || [];
+      
+      if (posts.length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted);">No trending posts loaded.</p>';
+        return;
+      }
+      
+      list.innerHTML = posts.slice(0, 10).map((post, idx) => `
+        <div class="trending-item">
+          <div class="trending-rank">#${idx + 1}</div>
+          <div class="trending-content">
+            <div class="trending-title">${post.title}</div>
+            <div class="trending-meta">
+              <span class="trending-stat">👍 ${formatNumber(post.upvotes)}</span>
+              <span class="trending-stat">💬 ${formatNumber(post.comments)}</span>
+              <span class="trending-stat">📁 ${post.submolt}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderQueue() {
+      const list = document.getElementById('queue-list');
+      const queue = intelData.approvalQueue || [];
+      
+      document.getElementById('queue-count').textContent = `${queue.length} awaiting review`;
+      
+      if (queue.length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted);">No items in approval queue.</p>';
+        return;
+      }
+      
+      list.innerHTML = queue.map(item => `
+        <div class="queue-item">
+          <div class="queue-main">
+            <div class="queue-name">${item.name}</div>
+            ${item.signal ? `<div class="queue-signal">📡 ${item.signal}</div>` : ''}
+            <div class="queue-details">
+              ${item.problem ? `<div class="queue-detail"><strong>Problem:</strong> ${item.problem}</div>` : ''}
+              ${item.solution ? `<div class="queue-detail"><strong>Solution:</strong> ${item.solution}</div>` : ''}
+              ${item.buyer ? `<div class="queue-detail"><strong>Buyer:</strong> ${item.buyer}</div>` : ''}
+              ${item.tam ? `<div class="queue-detail"><strong>TAM:</strong> ${item.tam}</div>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderArmy() {
+      const grid = document.getElementById('army-grid');
+      const squads = intelData.agentArmy?.squads || [
+        { name: 'LumenSec', focus: 'Security & Audit', count: 10 },
+        { name: 'LumenArch', focus: 'Agent Architecture', count: 10 },
+        { name: 'LumenEnt', focus: 'Enterprise AI', count: 10 },
+        { name: 'LumenRes', focus: 'Research & Trends', count: 10 },
+        { name: 'LumenDev', focus: 'Dev Tools & Stacks', count: 10 }
+      ];
+      
+      const emojis = {
+        'LumenSec': '🛡️',
+        'LumenArch': '🏗️',
+        'LumenEnt': '🏢',
+        'LumenRes': '🔬',
+        'LumenDev': '⚙️'
+      };
+      
+      grid.innerHTML = `
+        <div class="squad-card">
+          <div class="squad-emoji">🔆</div>
+          <div class="squad-name">LumenCTO_007</div>
+          <div class="squad-focus">Commander</div>
+          <div class="squad-count">1</div>
+        </div>
+      ` + squads.map(squad => `
+        <div class="squad-card">
+          <div class="squad-emoji">${emojis[squad.name] || '🤖'}</div>
+          <div class="squad-name">${squad.name}</div>
+          <div class="squad-focus">${squad.focus}</div>
+          <div class="squad-count">${squad.count}</div>
+        </div>
+      `).join('');
+    }
+
+    // Initial fetch and refresh
+    fetchIntel();
+    setInterval(fetchIntel, 60000); // Refresh every minute
+  </script>
+</body>
+</html>

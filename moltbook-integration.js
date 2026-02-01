@@ -310,9 +310,288 @@ async function initMoltbookIntegration(app) {
   console.log('[Moltbook] Integration initialized with 51 agents');
 }
 
+// ==========================================
+// PRODUCT INTELLIGENCE SECTION
+// Reads from /company/moltbook/*.md files
+// ==========================================
+
+const CLAWD_DIR = process.env.CLAWD_DIR || '/Users/jimmysmacstudio/clawd';
+
+// In-memory intel cache
+let intelCache = {
+  opportunities: [],
+  dailyInsights: [],
+  approvalQueue: [],
+  buildTracker: [],
+  lastUpdate: null
+};
+
+/**
+ * Parse markdown file into structured data
+ */
+function parseMarkdownSection(content, sectionHeader) {
+  const regex = new RegExp(`## ${sectionHeader}[\\s\\S]*?(?=## |$)`, 'i');
+  const match = content.match(regex);
+  return match ? match[0] : '';
+}
+
+/**
+ * Extract opportunities from product-opportunities.md
+ */
+function parseOpportunities(content) {
+  const opportunities = [];
+  
+  // Parse HOT OPPORTUNITIES section
+  const hotSection = content.match(/## 🔥 HOT OPPORTUNITIES[\s\S]*?(?=## |---|\n\n\n|$)/i);
+  if (hotSection) {
+    const items = hotSection[0].split(/### \d+\./);
+    for (let i = 1; i < items.length; i++) {
+      const item = items[i];
+      const nameMatch = item.match(/^([^\n]+)/);
+      const sourceMatch = item.match(/\*\*Source:\*\*\s*([^\n]+)/i);
+      const painMatch = item.match(/\*\*Pain Point:\*\*\s*([^\n]+)/i);
+      const signalMatch = item.match(/\*\*Signal Strength:\*\*\s*([^\n]+)/i);
+      const oppMatch = item.match(/\*\*Opportunity:\*\*\s*([^\n]+)/i);
+      const statusMatch = item.match(/\*\*Status:\*\*\s*([^\n]+)/i);
+      
+      if (nameMatch) {
+        opportunities.push({
+          name: nameMatch[1].trim(),
+          source: sourceMatch ? sourceMatch[1].trim() : '',
+          painPoint: painMatch ? painMatch[1].trim() : '',
+          signalStrength: signalMatch ? signalMatch[1].trim() : '',
+          opportunity: oppMatch ? oppMatch[1].trim() : '',
+          status: statusMatch ? statusMatch[1].trim() : 'EVALUATING',
+          priority: 'hot'
+        });
+      }
+    }
+  }
+  
+  return opportunities;
+}
+
+/**
+ * Extract daily insights from daily-insights.md
+ */
+function parseDailyInsights(content) {
+  const insights = {
+    trendingPosts: [],
+    productIdeas: [],
+    stats: {}
+  };
+  
+  // Parse trending posts
+  const trendingMatch = content.match(/## 🔥 Top Trending Posts[\s\S]*?(?=## |---|\n\n\n|$)/i);
+  if (trendingMatch) {
+    const lines = trendingMatch[0].split('\n');
+    for (const line of lines) {
+      const postMatch = line.match(/\d+\.\s*\*\*([^*]+)\*\*/);
+      const upvotesMatch = line.match(/👍\s*([\d,]+)/);
+      const commentsMatch = line.match(/💬\s*([\d,]+)/);
+      const submoltMatch = line.match(/📁\s*([^\n]+)/);
+      
+      if (postMatch) {
+        insights.trendingPosts.push({
+          title: postMatch[1].trim(),
+          upvotes: upvotesMatch ? parseInt(upvotesMatch[1].replace(/,/g, '')) : 0,
+          comments: commentsMatch ? parseInt(commentsMatch[1].replace(/,/g, '')) : 0,
+          submolt: submoltMatch ? submoltMatch[1].trim() : ''
+        });
+      }
+    }
+  }
+  
+  // Parse stats
+  const statsMatch = content.match(/## 📊 Stats[\s\S]*?(?=## |---|\n\n\n|$)/i);
+  if (statsMatch) {
+    const totalPostsMatch = statsMatch[0].match(/Total Posts.*?:\s*(\d+)/i);
+    const totalUpvotesMatch = statsMatch[0].match(/Total Upvotes.*?:\s*([\d,]+)/i);
+    const totalCommentsMatch = statsMatch[0].match(/Total Comments.*?:\s*([\d,]+)/i);
+    const activeAgentsMatch = statsMatch[0].match(/Active Agents.*?:\s*(\d+)/i);
+    
+    insights.stats = {
+      totalPosts: totalPostsMatch ? parseInt(totalPostsMatch[1]) : 0,
+      totalUpvotes: totalUpvotesMatch ? parseInt(totalUpvotesMatch[1].replace(/,/g, '')) : 0,
+      totalComments: totalCommentsMatch ? parseInt(totalCommentsMatch[1].replace(/,/g, '')) : 0,
+      activeAgents: activeAgentsMatch ? parseInt(activeAgentsMatch[1]) : 50
+    };
+  }
+  
+  return insights;
+}
+
+/**
+ * Parse approval queue
+ */
+function parseApprovalQueue(content) {
+  const queue = [];
+  
+  // Find product sections (### 1. ProductName etc)
+  const sections = content.split(/### \d+\.\s*/);
+  for (let i = 1; i < sections.length; i++) {
+    const section = sections[i];
+    const nameMatch = section.match(/^([^\n(]+)/);
+    const signalMatch = section.match(/\*\*Moltbook Signal:\*\*\s*([^\n]+)/i);
+    const problemMatch = section.match(/\*\*Problem:\*\*\s*([^\n]+)/i);
+    const solutionMatch = section.match(/\*\*Solution:\*\*\s*([^\n]+)/i);
+    const buyerMatch = section.match(/\*\*Buyer:\*\*\s*([^\n]+)/i);
+    const tamMatch = section.match(/\*\*TAM:\*\*\s*([^\n]+)/i);
+    
+    if (nameMatch) {
+      queue.push({
+        name: nameMatch[1].trim(),
+        signal: signalMatch ? signalMatch[1].trim() : '',
+        problem: problemMatch ? problemMatch[1].trim() : '',
+        solution: solutionMatch ? solutionMatch[1].trim() : '',
+        buyer: buyerMatch ? buyerMatch[1].trim() : '',
+        tam: tamMatch ? tamMatch[1].trim() : ''
+      });
+    }
+  }
+  
+  return queue;
+}
+
+/**
+ * Refresh intel data from markdown files
+ */
+async function refreshIntelData() {
+  console.log('[Moltbook Intel] Refreshing product intelligence...');
+  
+  try {
+    const fs = require('fs');
+    const moltbookDir = `${CLAWD_DIR}/company/moltbook`;
+    
+    // Read opportunities
+    const oppPath = `${moltbookDir}/product-opportunities.md`;
+    if (fs.existsSync(oppPath)) {
+      const oppContent = fs.readFileSync(oppPath, 'utf-8');
+      intelCache.opportunities = parseOpportunities(oppContent);
+    }
+    
+    // Read daily insights
+    const insightsPath = `${moltbookDir}/daily-insights.md`;
+    if (fs.existsSync(insightsPath)) {
+      const insightsContent = fs.readFileSync(insightsPath, 'utf-8');
+      intelCache.dailyInsights = parseDailyInsights(insightsContent);
+    }
+    
+    // Read approval queue
+    const queuePath = `${moltbookDir}/approval-queue.md`;
+    if (fs.existsSync(queuePath)) {
+      const queueContent = fs.readFileSync(queuePath, 'utf-8');
+      intelCache.approvalQueue = parseApprovalQueue(queueContent);
+    }
+    
+    // Read build tracker
+    const trackerPath = `${moltbookDir}/build-tracker.md`;
+    if (fs.existsSync(trackerPath)) {
+      intelCache.buildTracker = fs.readFileSync(trackerPath, 'utf-8');
+    }
+    
+    intelCache.lastUpdate = new Date().toISOString();
+    console.log(`[Moltbook Intel] Loaded ${intelCache.opportunities.length} opportunities, ${intelCache.dailyInsights.trendingPosts?.length || 0} trending posts`);
+    
+  } catch (err) {
+    console.error('[Moltbook Intel] Error refreshing:', err.message);
+  }
+  
+  return intelCache;
+}
+
+/**
+ * Get intel cache
+ */
+function getIntelCache() {
+  return intelCache;
+}
+
+/**
+ * Add intel API routes
+ */
+function addIntelRoutes(app) {
+  // PUBLIC: Full product intelligence endpoint (for Maven + dashboard)
+  app.get('/public/moltbook-intel', async (req, res) => {
+    // Refresh if stale (>5 min)
+    if (!intelCache.lastUpdate || Date.now() - new Date(intelCache.lastUpdate).getTime() > 300000) {
+      await refreshIntelData();
+    }
+    
+    res.json({
+      success: true,
+      source: 'moltbook',
+      lastUpdate: intelCache.lastUpdate,
+      opportunities: intelCache.opportunities,
+      dailyInsights: intelCache.dailyInsights,
+      approvalQueue: intelCache.approvalQueue,
+      stats: intelCache.dailyInsights.stats || {},
+      agentArmy: {
+        total: 51,
+        squads: AGENT_ARMY.squads.map(s => ({ name: s.prefix, focus: s.focus, count: s.count }))
+      }
+    });
+  });
+  
+  // Opportunities only
+  app.get('/public/moltbook-intel/opportunities', async (req, res) => {
+    if (!intelCache.lastUpdate) await refreshIntelData();
+    res.json({
+      success: true,
+      opportunities: intelCache.opportunities,
+      lastUpdate: intelCache.lastUpdate
+    });
+  });
+  
+  // Daily insights only
+  app.get('/public/moltbook-intel/daily', async (req, res) => {
+    if (!intelCache.lastUpdate) await refreshIntelData();
+    res.json({
+      success: true,
+      insights: intelCache.dailyInsights,
+      lastUpdate: intelCache.lastUpdate
+    });
+  });
+  
+  // Approval queue
+  app.get('/public/moltbook-intel/queue', async (req, res) => {
+    if (!intelCache.lastUpdate) await refreshIntelData();
+    res.json({
+      success: true,
+      queue: intelCache.approvalQueue,
+      lastUpdate: intelCache.lastUpdate
+    });
+  });
+  
+  // Force refresh
+  app.post('/api/moltbook-intel/refresh', async (req, res) => {
+    await refreshIntelData();
+    res.json({
+      success: true,
+      message: 'Intel refreshed',
+      lastUpdate: intelCache.lastUpdate
+    });
+  });
+  
+  console.log('[Moltbook Intel] API routes added');
+}
+
+// Update initMoltbookIntegration to include intel routes
+const originalInit = initMoltbookIntegration;
+async function initMoltbookIntegrationWithIntel(app) {
+  await originalInit(app);
+  await refreshIntelData();
+  addIntelRoutes(app);
+  
+  // Refresh intel every 10 minutes
+  setInterval(refreshIntelData, 10 * 60 * 1000);
+}
+
 module.exports = {
-  initMoltbookIntegration,
+  initMoltbookIntegration: initMoltbookIntegrationWithIntel,
   refreshMoltbookData,
   getActivityCache,
+  refreshIntelData,
+  getIntelCache,
   AGENT_ARMY
 };
