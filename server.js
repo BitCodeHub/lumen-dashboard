@@ -1946,24 +1946,53 @@ app.get('/public/company-status', async (req, res) => {
           productProgress = companyStatusCache.productProgress || [];
         }
         
-        // Full product pipeline - P0 Active Projects First (CEO Directive Jan 31, 2026)
-        const staticProducts = [
-          // P0 - Active Development (Feb 2026 Launch)
-          { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 98, status: 'active', recentUpdates: 8, priority: 'P0', note: 'Launch Feb 7 - Marketing/Testing/Design 100% ready', details: 'AI-powered tech stack analyzer for GitHub repos. Comprehensive dependency analysis, security scanning, and cost optimization recommendations.' },
-          { id: 'agentshield', name: 'AgentShield', emoji: '🛡️', progress: 25, status: 'active', recentUpdates: 6, priority: 'P0', note: 'Sprint 0 - Schema done, landing page building, SEO complete', details: 'AI Agent governance platform with identity management, human-binding, and compliance tracking. Critical for enterprise AI adoption.' },
-          // P1 - March 2026 Launch
-          { id: 'ai-code-observability', name: 'AI Code Observability', emoji: '📈', progress: 70, status: 'active', recentUpdates: 4, priority: 'P1', note: 'MVP ready for staging - 626% ROI projected', details: 'Real-time monitoring and analytics for AI-generated code. Track quality, detect anomalies, ensure compliance.' },
-          { id: 'eu-ai-compliance', name: 'EU AI Compliance SaaS', emoji: '🇪🇺', progress: 15, status: 'planning', recentUpdates: 2, priority: 'P1', note: 'March 1 target - $24K investment pending', details: 'Automated compliance monitoring for EU AI Act. Risk assessments, documentation generation, audit trails.' },
-          // Live Products
-          { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 3, note: 'Security improvements deployed', details: 'Internal operations hub for Lumen AI. Real-time team activity, product tracking, and business intelligence.' },
-          // Pipeline (Validated Opportunities)
-          { id: 'ai-code-validator', name: 'AI Code Quality Validator', emoji: '✅', progress: 5, status: 'pipeline', recentUpdates: 1, priority: 'P2', note: 'New - 66% developer pain point', details: 'Pre-commit validation for AI-generated code. Quality gates, style enforcement, security checks.' },
-          { id: 'construction-safety', name: 'Construction Safety AI', emoji: '🏗️', progress: 5, status: 'pipeline', recentUpdates: 1, priority: 'P2', note: '$13B market - Validation pending', details: 'Computer vision for construction site safety monitoring. Real-time hazard detection, compliance tracking.' },
-          // On Hold (CEO Directive Jan 31)
-          { id: 'mcphub', name: 'MCPHub', emoji: '🔌', progress: 60, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED', details: 'MCP server marketplace and discovery platform. Directory, ratings, one-click installation.' },
-          { id: 'ai-provenance', name: 'AI Code Provenance', emoji: '🔬', progress: 45, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED', details: 'Track and verify AI-generated code origins for compliance and governance.' },
-          { id: 'aikeysvault', name: 'AIKeysVault', emoji: '🔐', progress: 30, status: 'paused', recentUpdates: 0, note: '⏸️ HALTED', details: 'Secure API key management for AI services with rotation, access control, and auditing.' },
-        ];
+        // Product pipeline from PRODUCT_PROGRESS.json (real-time source of truth)
+        const progressFilePath = path.join(COMPANY_WORKSPACE, 'company', 'PRODUCT_PROGRESS.json');
+        let staticProducts = [];
+        
+        try {
+          if (fs.existsSync(progressFilePath)) {
+            const progressData = JSON.parse(fs.readFileSync(progressFilePath, 'utf-8'));
+            staticProducts = progressData.products.map(p => ({
+              id: p.id,
+              name: p.name,
+              emoji: p.emoji,
+              progress: p.progress,
+              status: p.status,
+              priority: p.priority,
+              note: p.notes,
+              details: p.details,
+              launchDate: p.launchDate,
+              lastActivity: p.lastActivity,
+              recentUpdates: 0 // Calculate from activity logs if needed
+            }));
+            
+            // Sort: active first, then by priority (P0 > P1 > P2), then by progress descending
+            const priorityOrder = { 'P0': 0, 'P1': 1, 'P2': 2, null: 3 };
+            const statusOrder = { 'active': 0, 'live': 1, 'planning': 2, 'pipeline': 3, 'stopped': 4, 'halted': 5, 'paused': 5 };
+            staticProducts.sort((a, b) => {
+              // Active status first
+              const statusDiff = (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
+              if (statusDiff !== 0) return statusDiff;
+              // Then by priority
+              const priorityDiff = (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99);
+              if (priorityDiff !== 0) return priorityDiff;
+              // Then by progress (higher first)
+              return (b.progress || 0) - (a.progress || 0);
+            });
+          }
+        } catch (err) {
+          console.warn('[Company Status] Failed to read PRODUCT_PROGRESS.json:', err.message);
+        }
+        
+        // Fallback to hardcoded if JSON read failed
+        if (staticProducts.length === 0) {
+          staticProducts = [
+            { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 98, status: 'stopped', priority: 'P0', note: 'Development complete. Launch prep paused.' },
+            { id: 'agentshield', name: 'AgentShield', emoji: '🛡️', progress: 35, status: 'active', priority: 'P0', note: 'Active development.' },
+            { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', note: 'Operational.' }
+          ];
+        }
         
         // Merge: static products first, then dynamic from ideas
         const allProducts = [...staticProducts, ...productProgress.filter(p => !staticProducts.some(sp => sp.id === p.id))];
@@ -2028,7 +2057,50 @@ app.get('/public/company-status', async (req, res) => {
       const teamStatus = parseTeamStatus(standupContent);
       const recentWins = parseRecentWins(standupContent);
       const blockers = parseBlockers(standupContent);
-      const productProgress = parseProductProgress(standupContent, productContent);
+      
+      // Read product progress from PRODUCT_PROGRESS.json (real-time source of truth)
+      let productProgress = [];
+      const progressFilePath = path.join(COMPANY_WORKSPACE, 'company', 'PRODUCT_PROGRESS.json');
+      try {
+        if (fs.existsSync(progressFilePath)) {
+          const progressData = JSON.parse(fs.readFileSync(progressFilePath, 'utf-8'));
+          productProgress = progressData.products.map(p => ({
+            id: p.id,
+            name: p.name,
+            emoji: p.emoji,
+            progress: p.progress,
+            status: p.status,
+            priority: p.priority,
+            note: p.notes,
+            details: p.details,
+            launchDate: p.launchDate,
+            lastActivity: p.lastActivity,
+            recentUpdates: 0
+          }));
+          
+          // Sort: active first, then by priority (P0 > P1 > P2), then by progress
+          const priorityOrder = { 'P0': 1, 'P1': 2, 'P2': 3 }; // 0 is falsy, use 1-based
+          const statusOrder = { 'active': 1, 'live': 2, 'planning': 3, 'pipeline': 4, 'stopped': 5, 'halted': 6, 'paused': 6 }; // 0 is falsy, use 1-based
+          productProgress.sort((a, b) => {
+            const statusA = statusOrder[a.status] || 99;
+            const statusB = statusOrder[b.status] || 99;
+            const statusDiff = statusA - statusB;
+            if (statusDiff !== 0) return statusDiff;
+            const priorityA = priorityOrder[a.priority] || 99;
+            const priorityB = priorityOrder[b.priority] || 99;
+            const priorityDiff = priorityA - priorityB;
+            if (priorityDiff !== 0) return priorityDiff;
+            return (b.progress || 0) - (a.progress || 0);
+          });
+        }
+      } catch (err) {
+        console.warn('[Company Status] Failed to read PRODUCT_PROGRESS.json:', err.message);
+        productProgress = parseProductProgress(standupContent, productContent);
+      }
+      
+      if (productProgress.length === 0) {
+        productProgress = parseProductProgress(standupContent, productContent);
+      }
       
       // Get last update time from file modification
       const stats = fs.statSync(standupPath);
