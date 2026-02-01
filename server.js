@@ -1763,7 +1763,7 @@ let companyStatusCache = {
   productProgress: [
     // P0 Active Projects (Parallel Development - CEO Directive Jan 31, 2026)
     { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 85, status: 'development', recentUpdates: 5, priority: 'P0' },
-    { id: 'sentinel-api', name: 'Sentinel API', emoji: '🛡️', progress: 15, status: 'development', recentUpdates: 3, priority: 'P0' },
+    { id: 'agentshield', name: 'AgentShield', emoji: '🛡️', progress: 15, status: 'development', recentUpdates: 3, priority: 'P0' },
     // Live Products
     { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 2 },
     // Pipeline
@@ -1939,7 +1939,7 @@ app.get('/public/company-status', async (req, res) => {
         const staticProducts = [
           // P0 Active Development (Parallel - 24/7 Operations)
           { id: 'stackaudit', name: 'StackAudit.ai', emoji: '🔍', progress: 85, status: 'development', recentUpdates: 5, priority: 'P0' },
-          { id: 'sentinel-api', name: 'Sentinel API', emoji: '🛡️', progress: 15, status: 'development', recentUpdates: 3, priority: 'P0' },
+          { id: 'agentshield', name: 'AgentShield', emoji: '🛡️', progress: 15, status: 'development', recentUpdates: 3, priority: 'P0' },
           // Live Products
           { id: 'dashboard', name: 'Lumen Dashboard', emoji: '📊', progress: 100, status: 'live', recentUpdates: 2 },
           // Pipeline
