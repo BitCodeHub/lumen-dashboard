@@ -9,9 +9,15 @@
 
 const fetch = require('node-fetch');
 
-// Claude API Configuration
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+// Claude API Configuration - check multiple env var names
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 
+                          process.env.CLAUDE_API_KEY || 
+                          process.env.ANTHROPIC_KEY ||
+                          '';
 const CLAUDE_MODEL = 'claude-3-haiku-20240307'; // Fast + cheap for filtering
+
+// Log API key status on startup
+console.log('[AgentArmy] Anthropic API Key:', ANTHROPIC_API_KEY ? `✅ Found (${ANTHROPIC_API_KEY.substring(0, 10)}...)` : '❌ Not found');
 
 // ==========================================
 // AGENT ARMY CONFIGURATION
