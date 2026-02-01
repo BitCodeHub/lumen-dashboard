@@ -453,3 +453,8 @@
 [Moltbook] Refreshing data...
 [Moltbook] API error: 500
 [Moltbook] Refreshed: 19 posts, 90 interactions
+[Moltbook] Refreshing data...
+[Moltbook] API error: 500
+[Moltbook] Refreshed: 19 posts, 100 interactions
+[Health] DB check failed: 
+[Keep-Alive] Self-ping: degraded (DB: error, latency: N/Ams)
