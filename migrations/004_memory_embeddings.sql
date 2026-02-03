@@ -38,7 +38,7 @@ CREATE OR REPLACE FUNCTION search_memories(
 )
 RETURNS TABLE (
   id int,
-  timestamp timestamp,
+  ts timestamp,
   content_type varchar,
   content text,
   similarity float,
@@ -51,7 +51,7 @@ BEGIN
   RETURN QUERY
   SELECT
     memory_embeddings.id,
-    memory_embeddings.timestamp,
+    memory_embeddings.timestamp AS ts,
     memory_embeddings.content_type,
     memory_embeddings.content,
     1 - (memory_embeddings.embedding <=> query_embedding) as similarity,
