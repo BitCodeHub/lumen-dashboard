@@ -6828,7 +6828,38 @@ app.post('/api/memory/migrate', memoryApiAuth, async (req, res) => {
   }
 });
 
-// Index memory files
+// Store a single memory with embedding (for remote indexing)
+app.post('/api/memory/store', memoryApiAuth, async (req, res) => {
+  try {
+    const { timestamp, contentType, content, metadata, filePath, embedding } = req.body;
+    
+    if (!timestamp || !contentType || !content) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Generate embedding if not provided
+    let embeddingData = embedding;
+    if (!embeddingData) {
+      embeddingData = await memorySystem.generateEmbedding(content);
+    }
+
+    const id = await memorySystem.storeMemory(
+      new Date(timestamp),
+      contentType,
+      content,
+      metadata || {},
+      filePath || null,
+      embeddingData
+    );
+
+    res.json({ success: true, id });
+  } catch (err) {
+    console.error('[Memory] Store error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Index memory files (legacy - for local server use)
 app.post('/api/memory/index', memoryApiAuth, async (req, res) => {
   try {
     const memoryDir = req.body.memoryDir || '/Users/jimmysmacstudio/clawd-lumi/memory';

@@ -78,11 +78,11 @@ async function generateEmbedding(text) {
 /**
  * Store memory with embedding
  */
-async function storeMemory(timestamp, contentType, content, metadata = {}, filePath = null) {
+async function storeMemory(timestamp, contentType, content, metadata = {}, filePath = null, embedding = null) {
   const client = await pool.connect();
   try {
-    // Generate embedding
-    const embedding = await generateEmbedding(content);
+    // Generate embedding if not provided
+    const embeddingData = embedding || await generateEmbedding(content);
 
     // Store in database
     const result = await client.query(
@@ -90,7 +90,7 @@ async function storeMemory(timestamp, contentType, content, metadata = {}, fileP
        (timestamp, content_type, content, embedding, metadata, file_path)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id`,
-      [timestamp, contentType, content, JSON.stringify(embedding), JSON.stringify(metadata), filePath]
+      [timestamp, contentType, content, JSON.stringify(embeddingData), JSON.stringify(metadata), filePath]
     );
 
     return result.rows[0].id;
