@@ -2411,6 +2411,11 @@ app.use('/api', (req, res, next) => {
     return next();
   }
   
+  // Skip auth for memory endpoints (they have their own API key auth)
+  if (req.path.startsWith('/memory/')) {
+    return next();
+  }
+  
   // Option C: Localhost + API Key bypass for automated/cron calls
   // Only allow bypass if BOTH conditions are met:
   // 1. Request is from localhost (127.0.0.1, ::1, or forwarded from local)
