@@ -6803,12 +6803,21 @@ app.get('/api/automations/runs', async (req, res) => {
 });
 
 /**
- * Memory System API
+ * Memory System API (Public - API Key Required)
  */
 const memorySystem = require('./memory-system');
 
+const memoryApiAuth = (req, res, next) => {
+  const apiKey = req.headers['x-api-key'];
+  const expectedKey = process.env.API_KEY || '5328cc2a49e94c533a47eaad0409e07d48df07ca265eba69';
+  if (apiKey !== expectedKey) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+};
+
 // Run database migration
-app.post('/api/memory/migrate', async (req, res) => {
+app.post('/api/memory/migrate', memoryApiAuth, async (req, res) => {
   try {
     console.log('[Memory] Running migration...');
     const success = await memorySystem.runMigration();
@@ -6820,7 +6829,7 @@ app.post('/api/memory/migrate', async (req, res) => {
 });
 
 // Index memory files
-app.post('/api/memory/index', async (req, res) => {
+app.post('/api/memory/index', memoryApiAuth, async (req, res) => {
   try {
     const memoryDir = req.body.memoryDir || '/Users/jimmysmacstudio/clawd-lumi/memory';
     console.log(`[Memory] Indexing files in ${memoryDir}...`);
@@ -6838,7 +6847,7 @@ app.post('/api/memory/index', async (req, res) => {
 });
 
 // Search memories
-app.post('/api/memory/search', async (req, res) => {
+app.post('/api/memory/search', memoryApiAuth, async (req, res) => {
   try {
     const { query, matchThreshold, matchCount } = req.body;
     if (!query) {
@@ -6853,7 +6862,7 @@ app.post('/api/memory/search', async (req, res) => {
 });
 
 // Get memory stats
-app.get('/api/memory/stats', async (req, res) => {
+app.get('/api/memory/stats', memoryApiAuth, async (req, res) => {
   try {
     const stats = await memorySystem.getMemoryStats();
     res.json({ stats });
