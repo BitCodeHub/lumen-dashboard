@@ -184,8 +184,16 @@ try {
   }));
 }
 
+// Protect main dashboard - require auth for index.html
+app.get('/index.html', auth.requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Serve static files (login/register pages are public)
-app.use(express.static('public'));
+// Note: index.html is protected above, other files accessible
+app.use(express.static('public', {
+  index: false // Disable auto-serving index.html
+}));
 app.use('/excel-files', express.static(EXCEL_UPLOAD_DIR));
 
 // ============================================
@@ -1759,6 +1767,20 @@ app.get('/team', (req, res) => {
 });
 app.get('/status', (req, res) => {
   res.redirect('/company-structure.html');
+});
+
+app.get('/product-roadmap.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'product-roadmap.html'));
+});
+app.get('/roadmap', (req, res) => {
+  res.redirect('/product-roadmap.html');
+});
+
+app.get('/intel.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'intel.html'));
+});
+app.get('/intel', (req, res) => {
+  res.redirect('/intel.html');
 });
 
 // ============================================
