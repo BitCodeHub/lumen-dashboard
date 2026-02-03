@@ -391,11 +391,80 @@ async function clearAllMemories() {
   }
 }
 
+/**
+ * Debug database structure and content
+ */
+async function debugDatabase() {
+  const client = await pool.connect();
+  try {
+    const debug = {};
+    
+    // Check table exists
+    const tableCheck = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'memory_embeddings'
+      );
+    `);
+    debug.tableExists = tableCheck.rows[0].exists;
+    
+    // Row count
+    const countResult = await client.query('SELECT COUNT(*) FROM memory_embeddings');
+    debug.totalRows = parseInt(countResult.rows[0].count);
+    
+    // Check first row
+    const firstRow = await client.query(`
+      SELECT id, ts, content_type, 
+             LEFT(content, 50) as content_preview, 
+             LEFT(embedding::text, 100) as embedding_preview, 
+             file_path 
+      FROM memory_embeddings 
+      LIMIT 1
+    `);
+    debug.firstRow = firstRow.rows[0];
+    
+    // Check embedding column type
+    const colType = await client.query(`
+      SELECT data_type, udt_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'memory_embeddings' AND column_name = 'embedding'
+    `);
+    debug.embeddingColumnType = colType.rows[0];
+    
+    // Try direct vector similarity
+    const testVector = Array(1536).fill(0.1).join(',');
+    const similarityTest = await client.query(`
+      SELECT id, content_type, file_path, 
+             1 - (embedding <=> $1::vector) as similarity
+      FROM memory_embeddings
+      ORDER BY embedding <=> $1::vector
+      LIMIT 3
+    `, [`[${testVector}]`]);
+    debug.directQueryResults = similarityTest.rows.length;
+    debug.topResults = similarityTest.rows;
+    
+    // Test search_memories function
+    const fnTest = await client.query(`
+      SELECT * FROM search_memories($1::vector, 0.0, 5)
+    `, [`[${testVector}]`]);
+    debug.functionResults = fnTest.rows.length;
+    debug.functionSample = fnTest.rows;
+    
+    return debug;
+  } catch (err) {
+    console.error('[debugDatabase] Error:', err);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 // Export functions
 module.exports = {
   generateEmbedding,
   storeMemory,
   clearAllMemories,
+  debugDatabase,
   searchMemories,
   indexMemoryFiles,
   recallContext,

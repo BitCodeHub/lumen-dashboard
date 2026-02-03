@@ -6935,6 +6935,17 @@ app.post('/api/memory/clear', memoryApiAuth, async (req, res) => {
   }
 });
 
+// Debug endpoint - check database structure
+app.get('/api/memory/debug', memoryApiAuth, async (req, res) => {
+  try {
+    const debug = await memorySystem.debugDatabase();
+    res.json(debug);
+  } catch (err) {
+    console.error('[Memory] Debug error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /**
  * GET /api/automations/examples
  * Get example automations for inspiration
