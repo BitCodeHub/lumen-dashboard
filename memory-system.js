@@ -82,9 +82,12 @@ async function storeMemory(timestamp, contentType, content, metadata = {}, fileP
   const client = await pool.connect();
   try {
     // Generate embedding if not provided
+    console.log('[storeMemory] Input:', { timestamp, contentType, contentLength: content?.length, hasEmbedding: !!embedding });
     const embeddingData = embedding || await generateEmbedding(content);
+    console.log('[storeMemory] Embedding data length:', embeddingData?.length);
 
     // Store in database
+    console.log('[storeMemory] Executing query...');
     const result = await client.query(
       `INSERT INTO memory_embeddings 
        (timestamp, content_type, content, embedding, metadata, file_path)
@@ -93,7 +96,11 @@ async function storeMemory(timestamp, contentType, content, metadata = {}, fileP
       [timestamp, contentType, content, JSON.stringify(embeddingData), JSON.stringify(metadata), filePath]
     );
 
+    console.log('[storeMemory] Query result:', result.rows[0]);
     return result.rows[0].id;
+  } catch (err) {
+    console.error('[storeMemory] Error:', err);
+    throw err;
   } finally {
     client.release();
   }

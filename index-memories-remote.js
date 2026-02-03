@@ -37,7 +37,7 @@ async function generateEmbedding(text) {
   return data.data[0].embedding;
 }
 
-async function storeMemory(timestamp, contentType, content, metadata, filePath) {
+async function storeMemory(timestamp, contentType, content, metadata, filePath, embedding) {
   const response = await fetch(`${API_URL}/api/memory/store`, {
     method: 'POST',
     headers: {
@@ -50,14 +50,21 @@ async function storeMemory(timestamp, contentType, content, metadata, filePath) 
       content,
       metadata,
       filePath,
+      embedding,
     }),
   });
 
+  const responseText = await response.text();
+  
   if (!response.ok) {
-    throw new Error(`Store error: ${await response.text()}`);
+    throw new Error(`Store error (${response.status}): ${responseText}`);
   }
 
-  return await response.json();
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    throw new Error(`Invalid JSON response: ${responseText}`);
+  }
 }
 
 async function indexMemoryFiles() {
@@ -94,16 +101,17 @@ async function indexMemoryFiles() {
 
           console.log(`Processing: ${relativePath}...`);
           
-          // Generate embedding
+          // Generate embedding locally
           const embedding = await generateEmbedding(content);
           
-          // Store via API
+          // Store via API (with embedding)
           await storeMemory(
             timestamp.toISOString(),
             contentType,
             content,
             { filename, relativePath },
-            relativePath
+            relativePath,
+            embedding
           );
 
           indexed.push(relativePath);

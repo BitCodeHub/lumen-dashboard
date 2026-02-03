@@ -6833,6 +6833,8 @@ app.post('/api/memory/store', memoryApiAuth, async (req, res) => {
   try {
     const { timestamp, contentType, content, metadata, filePath, embedding } = req.body;
     
+    console.log('[Memory] Store request:', { timestamp, contentType, contentLength: content?.length, hasEmbedding: !!embedding });
+    
     if (!timestamp || !contentType || !content) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -6840,9 +6842,11 @@ app.post('/api/memory/store', memoryApiAuth, async (req, res) => {
     // Generate embedding if not provided
     let embeddingData = embedding;
     if (!embeddingData) {
+      console.log('[Memory] Generating embedding...');
       embeddingData = await memorySystem.generateEmbedding(content);
     }
 
+    console.log('[Memory] Storing memory...');
     const id = await memorySystem.storeMemory(
       new Date(timestamp),
       contentType,
@@ -6852,10 +6856,12 @@ app.post('/api/memory/store', memoryApiAuth, async (req, res) => {
       embeddingData
     );
 
+    console.log('[Memory] Stored successfully, id:', id);
     res.json({ success: true, id });
   } catch (err) {
     console.error('[Memory] Store error:', err);
-    res.status(500).json({ error: err.message });
+    console.error('[Memory] Error stack:', err.stack);
+    res.status(500).json({ error: err.message || String(err) });
   }
 });
 
