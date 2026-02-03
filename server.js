@@ -6803,6 +6803,67 @@ app.get('/api/automations/runs', async (req, res) => {
 });
 
 /**
+ * Memory System API
+ */
+const memorySystem = require('./memory-system');
+
+// Run database migration
+app.post('/api/memory/migrate', async (req, res) => {
+  try {
+    console.log('[Memory] Running migration...');
+    const success = await memorySystem.runMigration();
+    res.json({ success, message: success ? 'Migration complete' : 'pgvector not available' });
+  } catch (err) {
+    console.error('[Memory] Migration error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Index memory files
+app.post('/api/memory/index', async (req, res) => {
+  try {
+    const memoryDir = req.body.memoryDir || '/Users/jimmysmacstudio/clawd-lumi/memory';
+    console.log(`[Memory] Indexing files in ${memoryDir}...`);
+    const result = await memorySystem.indexMemoryFiles(memoryDir);
+    res.json({
+      success: true,
+      indexed: result.indexed.length,
+      errors: result.errors.length,
+      files: result.indexed,
+    });
+  } catch (err) {
+    console.error('[Memory] Indexing error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Search memories
+app.post('/api/memory/search', async (req, res) => {
+  try {
+    const { query, matchThreshold, matchCount } = req.body;
+    if (!query) {
+      return res.status(400).json({ error: 'Query required' });
+    }
+    const memories = await memorySystem.searchMemories(query, matchThreshold, matchCount);
+    res.json({ memories });
+  } catch (err) {
+    console.error('[Memory] Search error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get memory stats
+app.get('/api/memory/stats', async (req, res) => {
+  try {
+    const stats = await memorySystem.getMemoryStats();
+    res.json({ stats });
+  } catch (err) {
+    console.error('[Memory] Stats error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * GET /api/automations/examples
  * Get example automations for inspiration
  */
