@@ -90,7 +90,7 @@ async function storeMemory(timestamp, contentType, content, metadata = {}, fileP
     console.log('[storeMemory] Executing query...');
     const result = await client.query(
       `INSERT INTO memory_embeddings 
-       (timestamp, content_type, content, embedding, metadata, file_path)
+       (ts, content_type, content, embedding, metadata, file_path)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id`,
       [timestamp, contentType, content, JSON.stringify(embeddingData), JSON.stringify(metadata), filePath]
@@ -225,7 +225,7 @@ async function recallContext(query, options = {}) {
 
     // Format for easy reading
     return memories.map(m => ({
-      timestamp: m.timestamp,
+      timestamp: m.ts,
       type: m.content_type,
       content: m.content.substring(0, 500), // First 500 chars
       similarity: m.similarity,
@@ -264,7 +264,7 @@ async function runMigration() {
       -- Memory embeddings table
       CREATE TABLE IF NOT EXISTS memory_embeddings (
         id SERIAL PRIMARY KEY,
-        timestamp TIMESTAMP NOT NULL,
+        ts TIMESTAMP NOT NULL,
         content_type VARCHAR(50) NOT NULL,
         content TEXT NOT NULL,
         embedding vector(1536),
@@ -274,7 +274,7 @@ async function runMigration() {
       );
 
       -- Indexes for fast retrieval
-      CREATE INDEX IF NOT EXISTS idx_memory_timestamp ON memory_embeddings(timestamp DESC);
+      CREATE INDEX IF NOT EXISTS idx_memory_timestamp ON memory_embeddings(ts DESC);
       CREATE INDEX IF NOT EXISTS idx_memory_content_type ON memory_embeddings(content_type);
       CREATE INDEX IF NOT EXISTS idx_memory_metadata ON memory_embeddings USING gin(metadata);
 
@@ -292,7 +292,7 @@ async function runMigration() {
       )
       RETURNS TABLE (
         id int,
-        timestamp timestamp,
+        ts timestamp,
         content_type varchar,
         content text,
         similarity float,
@@ -305,7 +305,7 @@ async function runMigration() {
         RETURN QUERY
         SELECT
           memory_embeddings.id,
-          memory_embeddings.timestamp,
+          memory_embeddings.ts,
           memory_embeddings.content_type,
           memory_embeddings.content,
           1 - (memory_embeddings.embedding <=> query_embedding) as similarity,
@@ -323,8 +323,8 @@ async function runMigration() {
       SELECT
         content_type,
         COUNT(*) as count,
-        MIN(timestamp) as earliest,
-        MAX(timestamp) as latest
+        MIN(ts) as earliest,
+        MAX(ts) as latest
       FROM memory_embeddings
       GROUP BY content_type;
     `;
