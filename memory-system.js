@@ -20,33 +20,55 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
 });
 
-// OpenAI client for embeddings
-let openaiApiKey = process.env.OPENAI_API_KEY;
+// OpenAI/Azure OpenAI configuration
+const useAzure = !!process.env.AZURE_OPENAI_API_KEY;
+const apiKey = process.env.AZURE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT || 'https://lumen-llm-services.openai.azure.com';
+const azureDeployment = process.env.AZURE_OPENAI_DEPLOYMENT || 'text-embedding-3-small';
 
 /**
- * Generate embedding for text using OpenAI
+ * Generate embedding for text using OpenAI or Azure OpenAI
  */
 async function generateEmbedding(text) {
-  if (!openaiApiKey) {
-    throw new Error('OPENAI_API_KEY not set - cannot generate embeddings');
+  if (!apiKey) {
+    throw new Error('AZURE_OPENAI_API_KEY or OPENAI_API_KEY not set - cannot generate embeddings');
   }
 
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
+  let url, headers, body;
+
+  if (useAzure) {
+    // Azure OpenAI format
+    url = `${azureEndpoint}/openai/deployments/${azureDeployment}/embeddings?api-version=2024-02-01`;
+    headers = {
+      'api-key': apiKey,
       'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+    };
+    body = JSON.stringify({
+      input: text,
+    });
+  } else {
+    // Standard OpenAI format
+    url = 'https://api.openai.com/v1/embeddings';
+    headers = {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    };
+    body = JSON.stringify({
       model: 'text-embedding-3-small',
       input: text,
       dimensions: 1536,
-    }),
+    });
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body,
   });
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`OpenAI API error: ${error}`);
+    throw new Error(`${useAzure ? 'Azure OpenAI' : 'OpenAI'} API error: ${error}`);
   }
 
   const data = await response.json();

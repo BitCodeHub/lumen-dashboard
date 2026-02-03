@@ -10,3 +10,4 @@ data/claude-code-templates/
 # Track seed files (these should be committed)
 !data/seed.json
 !data/expenses-seed.json
+.env
