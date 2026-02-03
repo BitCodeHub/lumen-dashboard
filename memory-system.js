@@ -373,10 +373,29 @@ async function runMigration() {
   }
 }
 
+/**
+ * Clear all memories (for re-indexing)
+ */
+async function clearAllMemories() {
+  const client = await pool.connect();
+  try {
+    console.log('[clearAllMemories] Deleting all rows from memory_embeddings...');
+    const result = await client.query('DELETE FROM memory_embeddings');
+    console.log('[clearAllMemories] Deleted', result.rowCount, 'rows');
+    return result.rowCount;
+  } catch (err) {
+    console.error('[clearAllMemories] Error:', err);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 // Export functions
 module.exports = {
   generateEmbedding,
   storeMemory,
+  clearAllMemories,
   searchMemories,
   indexMemoryFiles,
   recallContext,

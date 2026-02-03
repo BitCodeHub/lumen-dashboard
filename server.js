@@ -6923,6 +6923,18 @@ app.get('/api/memory/stats', memoryApiAuth, async (req, res) => {
   }
 });
 
+// Clear all memories (for re-indexing)
+app.post('/api/memory/clear', memoryApiAuth, async (req, res) => {
+  try {
+    console.log('[Memory] Clearing all memories...');
+    const result = await memorySystem.clearAllMemories();
+    res.json({ success: true, deleted: result });
+  } catch (err) {
+    console.error('[Memory] Clear error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /**
  * GET /api/automations/examples
  * Get example automations for inspiration
