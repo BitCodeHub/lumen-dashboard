@@ -97,12 +97,15 @@ async function storeMemory(timestamp, contentType, content, metadata = {}, fileP
 
     // Store in database
     console.log('[storeMemory] Executing query...');
+    // Convert embedding array to PostgreSQL vector format: '[0.1, 0.2, ...]'
+    const vectorString = `[${embeddingData.join(',')}]`;
+    
     const result = await client.query(
       `INSERT INTO memory_embeddings 
        (ts, content_type, content, embedding, metadata, file_path)
-       VALUES ($1, $2, $3, $4, $5, $6)
+       VALUES ($1, $2, $3, $4::vector, $5, $6)
        RETURNING id`,
-      [timestamp, contentType, content, JSON.stringify(embeddingData), JSON.stringify(metadata), filePath]
+      [timestamp, contentType, content, vectorString, JSON.stringify(metadata), filePath]
     );
 
     console.log('[storeMemory] Query result:', result.rows[0]);
@@ -131,9 +134,12 @@ async function searchMemories(query, matchThreshold = 0.7, matchCount = 10) {
     // Search using vector similarity
     console.log('[searchMemories] Executing database query...');
     const startQuery = Date.now();
+    // Convert embedding array to PostgreSQL vector format: '[0.1, 0.2, ...]'
+    const vectorString = `[${queryEmbedding.join(',')}]`;
+    
     const result = await client.query(
       `SELECT * FROM search_memories($1::vector, $2, $3)`,
-      [JSON.stringify(queryEmbedding), matchThreshold, matchCount]
+      [vectorString, matchThreshold, matchCount]
     );
     console.log('[searchMemories] Query completed in', Date.now() - startQuery, 'ms, rows:', result.rows.length);
 
