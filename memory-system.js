@@ -412,6 +412,20 @@ async function debugDatabase() {
     const countResult = await client.query('SELECT COUNT(*) FROM memory_embeddings');
     debug.totalRows = parseInt(countResult.rows[0].count);
     
+    // Check pgvector extension
+    const extCheck = await client.query(`
+      SELECT * FROM pg_extension WHERE extname = 'vector'
+    `);
+    debug.pgvectorInstalled = extCheck.rows.length > 0;
+    
+    // Check indexes
+    const indexCheck = await client.query(`
+      SELECT indexname, indexdef 
+      FROM pg_indexes 
+      WHERE tablename = 'memory_embeddings'
+    `);
+    debug.indexes = indexCheck.rows;
+    
     // Check first row
     const firstRow = await client.query(`
       SELECT id, ts, content_type, 
@@ -431,24 +445,40 @@ async function debugDatabase() {
     `);
     debug.embeddingColumnType = colType.rows[0];
     
-    // Try direct vector similarity
-    const testVector = Array(1536).fill(0.1).join(',');
-    const similarityTest = await client.query(`
-      SELECT id, content_type, file_path, 
-             1 - (embedding <=> $1::vector) as similarity
+    // Try simple query without vector operations first
+    const simpleQuery = await client.query(`
+      SELECT id, content_type, file_path
       FROM memory_embeddings
-      ORDER BY embedding <=> $1::vector
       LIMIT 3
-    `, [`[${testVector}]`]);
-    debug.directQueryResults = similarityTest.rows.length;
-    debug.topResults = similarityTest.rows;
+    `);
+    debug.simpleQueryWorks = simpleQuery.rows.length > 0;
+    
+    // Try direct vector similarity WITHOUT index (using brute force)
+    const testVector = Array(1536).fill(0.1).join(',');
+    try {
+      const similarityTest = await client.query(`
+        SELECT id, content_type, file_path, 
+               embedding <=> $1::vector as distance
+        FROM memory_embeddings
+        ORDER BY embedding <=> $1::vector
+        LIMIT 3
+      `, [`[${testVector}]`]);
+      debug.directQueryResults = similarityTest.rows.length;
+      debug.topResults = similarityTest.rows;
+    } catch (err) {
+      debug.directQueryError = err.message;
+    }
     
     // Test search_memories function
-    const fnTest = await client.query(`
-      SELECT * FROM search_memories($1::vector, 0.0, 5)
-    `, [`[${testVector}]`]);
-    debug.functionResults = fnTest.rows.length;
-    debug.functionSample = fnTest.rows;
+    try {
+      const fnTest = await client.query(`
+        SELECT * FROM search_memories($1::vector, 0.0, 5)
+      `, [`[${testVector}]`]);
+      debug.functionResults = fnTest.rows.length;
+      debug.functionSample = fnTest.rows;
+    } catch (err) {
+      debug.functionError = err.message;
+    }
     
     return debug;
   } catch (err) {
