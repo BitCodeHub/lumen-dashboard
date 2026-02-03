@@ -303,11 +303,11 @@ async function runMigration() {
       CREATE INDEX IF NOT EXISTS idx_memory_content_type ON memory_embeddings(content_type);
       CREATE INDEX IF NOT EXISTS idx_memory_metadata ON memory_embeddings USING gin(metadata);
 
-      -- Vector similarity index (cosine distance)
-      CREATE INDEX IF NOT EXISTS idx_memory_embedding 
-        ON memory_embeddings 
-        USING ivfflat (embedding vector_cosine_ops)
-        WITH (lists = 100);
+      -- Drop IVFFlat index (doesn't work well with small datasets < 100 rows)
+      DROP INDEX IF EXISTS idx_memory_embedding;
+      
+      -- For small datasets, brute-force vector search is fast enough
+      -- IVFFlat index only helps with 1000+ rows
 
       -- Function to search similar memories
       CREATE OR REPLACE FUNCTION search_memories(
