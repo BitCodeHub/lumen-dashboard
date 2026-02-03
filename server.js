@@ -6892,14 +6892,23 @@ app.post('/api/memory/index', memoryApiAuth, async (req, res) => {
 app.post('/api/memory/search', memoryApiAuth, async (req, res) => {
   try {
     const { query, matchThreshold, matchCount } = req.body;
+    console.log('[Memory] Search request:', { query, matchThreshold, matchCount });
+    
     if (!query) {
       return res.status(400).json({ error: 'Query required' });
     }
+    
+    console.log('[Memory] Calling searchMemories...');
+    const startTime = Date.now();
     const memories = await memorySystem.searchMemories(query, matchThreshold, matchCount);
-    res.json({ memories });
+    const duration = Date.now() - startTime;
+    
+    console.log('[Memory] Search completed in', duration, 'ms, found', memories.length, 'memories');
+    res.json({ memories, duration });
   } catch (err) {
     console.error('[Memory] Search error:', err);
-    res.status(500).json({ error: err.message });
+    console.error('[Memory] Error stack:', err.stack);
+    res.status(500).json({ error: err.message || String(err) });
   }
 });
 

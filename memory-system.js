@@ -30,6 +30,8 @@ const azureDeployment = process.env.AZURE_OPENAI_DEPLOYMENT || 'text-embedding-3
  * Generate embedding for text using OpenAI or Azure OpenAI
  */
 async function generateEmbedding(text) {
+  console.log('[generateEmbedding] Start, text length:', text?.length, 'useAzure:', useAzure);
+  
   if (!apiKey) {
     throw new Error('AZURE_OPENAI_API_KEY or OPENAI_API_KEY not set - cannot generate embeddings');
   }
@@ -60,18 +62,25 @@ async function generateEmbedding(text) {
     });
   }
 
+  console.log('[generateEmbedding] Fetching from:', url);
+  const startFetch = Date.now();
+  
   const response = await fetch(url, {
     method: 'POST',
     headers,
     body,
   });
+  
+  console.log('[generateEmbedding] Response received in', Date.now() - startFetch, 'ms, status:', response.status);
 
   if (!response.ok) {
     const error = await response.text();
+    console.error('[generateEmbedding] API error:', error);
     throw new Error(`${useAzure ? 'Azure OpenAI' : 'OpenAI'} API error: ${error}`);
   }
 
   const data = await response.json();
+  console.log('[generateEmbedding] Embedding received, length:', data.data[0].embedding.length);
   return data.data[0].embedding;
 }
 
@@ -110,18 +119,28 @@ async function storeMemory(timestamp, contentType, content, metadata = {}, fileP
  * Search memories by semantic similarity
  */
 async function searchMemories(query, matchThreshold = 0.7, matchCount = 10) {
+  console.log('[searchMemories] Start:', { query, matchThreshold, matchCount });
   const client = await pool.connect();
   try {
     // Generate query embedding
+    console.log('[searchMemories] Generating embedding for query...');
+    const startEmbed = Date.now();
     const queryEmbedding = await generateEmbedding(query);
+    console.log('[searchMemories] Embedding generated in', Date.now() - startEmbed, 'ms');
 
     // Search using vector similarity
+    console.log('[searchMemories] Executing database query...');
+    const startQuery = Date.now();
     const result = await client.query(
       `SELECT * FROM search_memories($1::vector, $2, $3)`,
       [JSON.stringify(queryEmbedding), matchThreshold, matchCount]
     );
+    console.log('[searchMemories] Query completed in', Date.now() - startQuery, 'ms, rows:', result.rows.length);
 
     return result.rows;
+  } catch (err) {
+    console.error('[searchMemories] Error:', err);
+    throw err;
   } finally {
     client.release();
   }
