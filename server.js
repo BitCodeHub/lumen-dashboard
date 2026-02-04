@@ -28,6 +28,7 @@ const { setupExpenseAnalyticsRoutes } = require('./expense-analytics-api');
 const { initMoltbookIntegration } = require('./moltbook-integration');
 const { initAgentArmy } = require('./agent-army');
 const { registerEnterpriseRoutes } = require('./enterprise-intel');
+const { registerDocumentRoutes } = require('./documents-api');
 
 const app = express();
 
@@ -7016,6 +7017,9 @@ initAgentArmy(app).catch(err => {
 
 // Initialize Enterprise Intelligence Platform
 registerEnterpriseRoutes(app);
+
+// Initialize Documents API
+registerDocumentRoutes(app, pool);
 
 // Initialize Moltbook Integration (legacy - MUST be before catch-all)
 initMoltbookIntegration(app).catch(err => {

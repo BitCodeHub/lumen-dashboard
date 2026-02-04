@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applause - Research Documents | Lumen Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔆</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .doc-card {
+            transition: all 0.2s ease;
+        }
+        .doc-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                        👏 Applause
+                    </h1>
+                    <p class="text-gray-600">Customer research & testimonials</p>
+                </div>
+                <a href="/dashboard.html" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    ← Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="mb-6 flex space-x-2">
+            <button class="filter-btn px-4 py-2 rounded-lg bg-blue-600 text-white" data-filter="all">
+                All Documents
+            </button>
+            <button class="filter-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300" data-filter="starred">
+                ⭐ Starred
+            </button>
+        </div>
+
+        <!-- Loading state -->
+        <div id="loading" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p class="mt-4 text-gray-600">Loading documents...</p>
+        </div>
+
+        <!-- Documents grid -->
+        <div id="documents-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+            <!-- Documents will be inserted here -->
+        </div>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="text-center py-12 hidden">
+            <div class="text-6xl mb-4">📄</div>
+            <p class="text-gray-600 text-lg">No documents found</p>
+        </div>
+    </div>
+
+    <script>
+        let allDocuments = [];
+        let currentFilter = 'all';
+
+        // Load documents
+        async function loadDocuments() {
+            try {
+                const response = await fetch('/api/documents?section=Applause&archived=false');
+                const data = await response.json();
+                
+                allDocuments = data.documents || [];
+                renderDocuments();
+                
+                document.getElementById('loading').classList.add('hidden');
+                
+            } catch (error) {
+                console.error('Error loading documents:', error);
+                document.getElementById('loading').innerHTML = `
+                    <p class="text-red-600">Failed to load documents</p>
+                `;
+            }
+        }
+
+        // Render documents
+        function renderDocuments() {
+            const grid = document.getElementById('documents-grid');
+            const emptyState = document.getElementById('empty-state');
+            
+            let filteredDocs = allDocuments;
+            if (currentFilter === 'starred') {
+                filteredDocs = allDocuments.filter(doc => doc.starred);
+            }
+            
+            if (filteredDocs.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            
+            grid.innerHTML = filteredDocs.map(doc => {
+                const uploadedDate = new Date(doc.uploaded_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                
+                const fileIcon = getFileIcon(doc.mime_type);
+                const fileSizeKB = Math.round(doc.file_size / 1024);
+                
+                return `
+                    <div class="doc-card bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="text-4xl">${fileIcon}</div>
+                                <button class="star-btn text-2xl" data-id="${doc.id}" data-starred="${doc.starred}">
+                                    ${doc.starred ? '⭐' : '☆'}
+                                </button>
+                            </div>
+                            
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                                ${escapeHtml(doc.title)}
+                            </h3>
+                            
+                            ${doc.description ? `
+                                <p class="text-sm text-gray-600 mb-4 line-clamp-2">
+                                    ${escapeHtml(doc.description)}
+                                </p>
+                            ` : ''}
+                            
+                            ${doc.tags && doc.tags.length > 0 ? `
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    ${doc.tags.slice(0, 3).map(tag => `
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                            ${escapeHtml(tag)}
+                                        </span>
+                                    `).join('')}
+                                    ${doc.tags.length > 3 ? `<span class="text-xs text-gray-500">+${doc.tags.length - 3}</span>` : ''}
+                                </div>
+                            ` : ''}
+                            
+                            <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+                                <span>${fileSizeKB} KB</span>
+                                <span>${uploadedDate}</span>
+                            </div>
+                            
+                            <div class="flex space-x-2">
+                                <a href="/api/documents/${doc.id}/download" 
+                                   class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center text-sm">
+                                    📥 Download
+                                </a>
+                                <button class="archive-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm"
+                                        data-id="${doc.id}">
+                                    🗄️ Archive
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Attach event listeners
+            attachEventListeners();
+        }
+
+        // Get file icon based on MIME type
+        function getFileIcon(mimeType) {
+            if (mimeType.includes('pdf')) return '📄';
+            if (mimeType.includes('image')) return '🖼️';
+            if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
+            if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📊';
+            if (mimeType.includes('text')) return '📃';
+            return '📎';
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Attach event listeners to buttons
+        function attachEventListeners() {
+            // Star buttons
+            document.querySelectorAll('.star-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.target.dataset.id;
+                    try {
+                        const response = await fetch(`/api/documents/${id}/star`, {
+                            method: 'PATCH'
+                        });
+                        const data = await response.json();
+                        
+                        // Update local state
+                        const doc = allDocuments.find(d => d.id == id);
+                        if (doc) {
+                            doc.starred = data.document.starred;
+                        }
+                        
+                        renderDocuments();
+                    } catch (error) {
+                        console.error('Error starring document:', error);
+                    }
+                });
+            });
+            
+            // Archive buttons
+            document.querySelectorAll('.archive-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    if (!confirm('Archive this document?')) return;
+                    
+                    const id = e.target.dataset.id;
+                    try {
+                        await fetch(`/api/documents/${id}/archive`, {
+                            method: 'PATCH'
+                        });
+                        
+                        // Remove from local state
+                        allDocuments = allDocuments.filter(d => d.id != id);
+                        renderDocuments();
+                    } catch (error) {
+                        console.error('Error archiving document:', error);
+                    }
+                });
+            });
+        }
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('bg-blue-600', 'text-white');
+                    b.classList.add('bg-gray-200', 'text-gray-700');
+                });
+                
+                e.target.classList.remove('bg-gray-200', 'text-gray-700');
+                e.target.classList.add('bg-blue-600', 'text-white');
+                
+                currentFilter = e.target.dataset.filter;
+                renderDocuments();
+            });
+        });
+
+        // Load on page load
+        loadDocuments();
+    </script>
+</body>
+</html>

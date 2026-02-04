@@ -8,7 +8,7 @@ require('dotenv').config();
 const fs = require('fs').promises;
 const path = require('path');
 
-const MEMORY_DIR = '/Users/jimmysmacstudio/clawd-lumi/memory';
+const MEMORY_DIR = process.argv[2] || '/Users/jimmysmacstudio/clawd-lumi/memory';
 const API_URL = 'https://lumen-dashboard.onrender.com';
 const API_KEY = '5328cc2a49e94c533a47eaad0409e07d48df07ca265eba69';
 
