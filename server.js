@@ -7021,6 +7021,34 @@ registerEnterpriseRoutes(app);
 // Initialize Documents API
 registerDocumentRoutes(app, pool);
 
+// Admin endpoint to run migrations (API key protected)
+app.post('/api/admin/run-migration', async (req, res) => {
+  try {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey || apiKey !== process.env.DASHBOARD_API_KEY) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const { migrationFile } = req.body;
+    if (!migrationFile) {
+      return res.status(400).json({ error: 'migrationFile required' });
+    }
+    
+    const migrationPath = path.join(__dirname, 'migrations', migrationFile);
+    if (!fs.existsSync(migrationPath)) {
+      return res.status(404).json({ error: 'Migration file not found' });
+    }
+    
+    const sql = fs.readFileSync(migrationPath, 'utf-8');
+    await pool.query(sql);
+    
+    res.json({ success: true, message: `Migration ${migrationFile} executed successfully` });
+  } catch (err) {
+    console.error('[Admin] Migration error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Initialize Moltbook Integration (legacy - MUST be before catch-all)
 initMoltbookIntegration(app).catch(err => {
   console.error('[Moltbook] Failed to initialize:', err.message);
