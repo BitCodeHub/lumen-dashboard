@@ -7061,6 +7061,46 @@ app.post('/api/admin/run-migration', async (req, res) => {
   }
 });
 
+// Admin endpoint to create user (API key protected)
+app.post('/api/admin/create-user', async (req, res) => {
+  try {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey || apiKey !== process.env.DASHBOARD_API_KEY) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const { username, password, email } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'username and password required' });
+    }
+    
+    // Try to register
+    try {
+      const user = await auth.registerUser(pool, username, email, password);
+      res.json({ success: true, message: 'User created', user });
+    } catch (err) {
+      if (err.message.includes('already exists')) {
+        // Update password instead
+        const hash = await auth.hashPassword(password);
+        const result = await pool.query(
+          'UPDATE lumen_users SET password_hash = $1 WHERE username = $2 RETURNING id, username, email',
+          [hash, username]
+        );
+        if (result.rows.length > 0) {
+          res.json({ success: true, message: 'Password updated', user: result.rows[0] });
+        } else {
+          res.status(404).json({ error: 'User not found' });
+        }
+      } else {
+        throw err;
+      }
+    }
+  } catch (err) {
+    console.error('[Admin] Create user error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Initialize Moltbook Integration (legacy - MUST be before catch-all)
 initMoltbookIntegration(app).catch(err => {
   console.error('[Moltbook] Failed to initialize:', err.message);

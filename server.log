@@ -12113,3 +12113,66 @@
 [Moltbook] Refreshing data...
 [Moltbook] Refreshed: 1622938 agents, 34 posts fetched
 [AgentArmy] Scan complete: 390 posts, 42 new opportunities, 28928ms
+[Health] DB check failed: 
+[Keep-Alive] Self-ping: degraded (DB: error, latency: N/Ams)
+[Cron] Starting scheduled hourly scrape sync...
+[Sync] Starting full aitmpl.com sync...
+[Scraper] Starting scrape for skills...
+[Scraper] Scraped 16 skills templates from 1 pages
+[AgentArmy] Starting scan cycle 945
+[Scraper] Starting scrape for agents...
+[Scraper] Scraped 16 agents templates from 1 pages
+[Scraper] Starting scrape for commands...
+[Scraper] Scraped 16 commands templates from 1 pages
+[Scraper] Starting scrape for settings...
+[Scraper] Scraped 16 settings templates from 1 pages
+[Scraper] Starting scrape for hooks...
+[Scraper] Scraped 16 hooks templates from 1 pages
+[Scraper] Starting scrape for mcps...
+[Scraper] Scraped 16 mcps templates from 1 pages
+[Sync] Error during sync: AggregateError [ECONNREFUSED]: 
+    at /Users/jimmysmacstudio/clawd/projects/lumen-dashboard/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async performFullSync (/Users/jimmysmacstudio/clawd/projects/lumen-dashboard/server.js:794:20)
+    at async /Users/jimmysmacstudio/clawd/projects/lumen-dashboard/server.js:6862:18
+    at async Timeout._onTimeout (/Users/jimmysmacstudio/clawd/projects/lumen-dashboard/node_modules/node-cron/dist/cjs/scheduler/runner.js:70:44) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -61,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -61,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+[Cron] Scheduled scrape sync result: { success: false, error: '' }
+[Moltbook Intel] Refreshing product intelligence...
+[Moltbook Intel] Loaded 0 opportunities, 10 trending posts
+[Moltbook] Refreshing data...
+[Moltbook] Refreshed: 1622938 agents, 36 posts fetched
+[AgentArmy] Scan complete: 390 posts, 42 new opportunities, 28800ms
+[Cron] Starting scheduled GitHub poll...
+[GitHub Poll] Checking for updates (poll #317)...
+[GitHub Poll] No changes (still at ee2a915)
+[Cron] GitHub poll result: {
+  changed: false,
+  reason: 'no_change',
+  sha: 'ee2a91549fdcb77e4bf42b4e503f372a95176917'
+}
+[AgentArmy] Starting scan cycle 946
+[Moltbook] Refreshing data...
+[Moltbook] Refreshed: 1623799 agents, 38 posts fetched
+[AgentArmy] Scan complete: 390 posts, 44 new opportunities, 28580ms
