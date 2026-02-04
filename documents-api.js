@@ -305,11 +305,30 @@ function registerDocumentRoutes(app, pool) {
       // Allow public access for Applause section documents
       // (auth middleware already bypassed for Applause in server.js)
       
-      if (!fs.existsSync(doc.file_path)) {
-        return res.status(404).json({ error: 'File not found on disk' });
+      // Proxy download from Mac Studio file server via Tailscale
+      const MAC_STUDIO_URL = process.env.MAC_STUDIO_FILE_SERVER || 'http://100.102.204.66:18801';
+      const API_KEY = process.env.DASHBOARD_API_KEY || '5328cc2a49e94c533a47eaad0409e07d48df07ca265eba69';
+      
+      const fileServerUrl = `${MAC_STUDIO_URL}/download?path=${encodeURIComponent(doc.file_path)}`;
+      
+      const fetch = (await import('node-fetch')).default;
+      const response = await fetch(fileServerUrl, {
+        headers: {
+          'X-API-Key': API_KEY
+        }
+      });
+      
+      if (!response.ok) {
+        console.error('[Documents API] Mac Studio server error:', response.status);
+        return res.status(response.status).json({ error: 'File not found on Mac Studio' });
       }
       
-      res.download(doc.file_path, doc.original_filename);
+      // Set headers
+      res.setHeader('Content-Disposition', `attachment; filename="${doc.original_filename}"`);
+      res.setHeader('Content-Type', doc.mime_type || 'application/octet-stream');
+      
+      // Stream file from Mac Studio to client
+      response.body.pipe(res);
       
     } catch (err) {
       console.error('[Documents API] Download error:', err);

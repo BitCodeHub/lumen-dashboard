@@ -12176,3 +12176,11 @@
 [Moltbook] Refreshing data...
 [Moltbook] Refreshed: 1623799 agents, 38 posts fetched
 [AgentArmy] Scan complete: 390 posts, 44 new opportunities, 28580ms
+[Health] DB check failed: 
+[Keep-Alive] Self-ping: degraded (DB: error, latency: N/Ams)
+[AgentArmy] Starting scan cycle 947
+[Moltbook Intel] Refreshing product intelligence...
+[Moltbook Intel] Loaded 0 opportunities, 10 trending posts
+[Moltbook] Refreshing data...
+[Moltbook] Refreshed: 1623799 agents, 38 posts fetched
+[AgentArmy] Scan complete: 390 posts, 43 new opportunities, 29140ms
