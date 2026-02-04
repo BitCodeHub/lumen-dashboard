@@ -2417,6 +2417,18 @@ app.use('/api', (req, res, next) => {
     return next();
   }
   
+  // Skip auth for Applause documents (public access)
+  if (req.path.startsWith('/documents')) {
+    // Check if it's querying or downloading Applause section
+    const isApplauseQuery = req.query.section === 'Applause';
+    const isApplauseDownload = req.path.match(/\/documents\/\d+\/download/);
+    
+    if (isApplauseQuery || isApplauseDownload) {
+      // Allow public access for Applause documents, but verify in the API
+      return next();
+    }
+  }
+  
   // Option C: Localhost + API Key bypass for automated/cron calls
   // Only allow bypass if BOTH conditions are met:
   // 1. Request is from localhost (127.0.0.1, ::1, or forwarded from local)
@@ -7052,6 +7064,11 @@ app.post('/api/admin/run-migration', async (req, res) => {
 // Initialize Moltbook Integration (legacy - MUST be before catch-all)
 initMoltbookIntegration(app).catch(err => {
   console.error('[Moltbook] Failed to initialize:', err.message);
+});
+
+// Public routes (no auth required)
+app.get('/applause.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'applause.html'));
 });
 
 // Catch-all route for SPA (MUST be last)

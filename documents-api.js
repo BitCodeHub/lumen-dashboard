@@ -292,7 +292,7 @@ function registerDocumentRoutes(app, pool) {
       const { id } = req.params;
       
       const result = await pool.query(
-        'SELECT filename, original_filename, file_path, mime_type FROM documents WHERE id = $1',
+        'SELECT filename, original_filename, file_path, mime_type, section FROM documents WHERE id = $1',
         [id]
       );
       
@@ -301,6 +301,9 @@ function registerDocumentRoutes(app, pool) {
       }
       
       const doc = result.rows[0];
+      
+      // Allow public access for Applause section documents
+      // (auth middleware already bypassed for Applause in server.js)
       
       if (!fs.existsSync(doc.file_path)) {
         return res.status(404).json({ error: 'File not found on disk' });
