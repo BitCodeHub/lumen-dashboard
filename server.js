@@ -7120,6 +7120,20 @@ app.get('/api/admin/list-users', async (req, res) => {
   }
 });
 
+// One-time debug endpoint (remove after use)
+app.get('/api/debug-users-2026-02-04', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, username, email, created_at, last_login FROM lumen_users ORDER BY created_at DESC'
+    );
+    
+    res.json({ success: true, users: result.rows, note: 'This endpoint will be removed soon' });
+  } catch (err) {
+    console.error('[Debug] List users error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Initialize Moltbook Integration (legacy - MUST be before catch-all)
 initMoltbookIntegration(app).catch(err => {
   console.error('[Moltbook] Failed to initialize:', err.message);
