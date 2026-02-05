@@ -2625,6 +2625,11 @@ app.use('/api', (req, res, next) => {
     return next();
   }
   
+  // Skip auth for command-center (public real-time dashboard)
+  if (req.path.startsWith('/command-center/')) {
+    return next();
+  }
+  
   // Skip auth for admin and user management endpoints (have their own API key auth)
   if (req.path === '/users/list' || req.path === '/users/reset-password' || req.path.startsWith('/admin/')) {
     return next();
