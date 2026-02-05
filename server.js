@@ -2630,6 +2630,11 @@ app.use('/api', (req, res, next) => {
     return next();
   }
   
+  // Skip auth for sync endpoints (real-time updates)
+  if (req.path.startsWith('/sync/')) {
+    return next();
+  }
+  
   // Skip auth for admin and user management endpoints (have their own API key auth)
   if (req.path === '/users/list' || req.path === '/users/reset-password' || req.path.startsWith('/admin/')) {
     return next();
