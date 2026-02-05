@@ -7376,6 +7376,10 @@ app.get('/applause.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'applause.html'));
 });
 
+app.get('/command-center.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'command-center.html'));
+});
+
 // Debug endpoint (no auth, no /api/ prefix)
 app.get('/debug-list-users-temp', async (req, res) => {
   try {
