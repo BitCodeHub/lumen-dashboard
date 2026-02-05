@@ -204,6 +204,62 @@ app.get('/cc/command-center/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'index.html'));
 });
 
+// Command Center sub-pages
+app.get('/cc/command-center/chat', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'chat.html'));
+});
+app.get('/cc/command-center/chat/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'chat.html'));
+});
+app.get('/cc/command-center/council', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'council.html'));
+});
+app.get('/cc/command-center/council/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'council.html'));
+});
+app.get('/cc/command-center/people', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'people.html'));
+});
+app.get('/cc/command-center/people/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'people.html'));
+});
+app.get('/cc/command-center/projects', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'projects.html'));
+});
+app.get('/cc/command-center/projects/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'projects.html'));
+});
+app.get('/cc/command-center/calendar', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'calendar.html'));
+});
+app.get('/cc/command-center/calendar/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'calendar.html'));
+});
+app.get('/cc/command-center/memory', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'memory.html'));
+});
+app.get('/cc/command-center/memory/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'memory.html'));
+});
+app.get('/cc/command-center/captures', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'captures.html'));
+});
+app.get('/cc/command-center/captures/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'captures.html'));
+});
+app.get('/cc/command-center/docs', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'docs.html'));
+});
+app.get('/cc/command-center/docs/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'docs.html'));
+});
+app.get('/cc/command-center/search', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'search.html'));
+});
+app.get('/cc/command-center/search/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'search.html'));
+});
+
 app.use('/excel-files', express.static(EXCEL_UPLOAD_DIR));
 
 // ============================================
