@@ -222,7 +222,7 @@
     </div>
 
     <!-- Kanban Board + Activity Feed -->
-    <div class="grid grid-cols-4 gap-6">
+    <div class="grid grid-cols-5 gap-6">
       <!-- Recurring Column -->
       <div class="column" id="col-recurring" 
            ondrop="drop(event, 'recurring')" 
@@ -261,6 +261,20 @@
           <span class="badge badge-progress" id="count-progress">0</span>
         </div>
         <div id="tasks-progress" class="space-y-3">
+          <div class="text-gray-500 text-center py-8">No tasks</div>
+        </div>
+      </div>
+
+      <!-- Done Column -->
+      <div class="column" id="col-done"
+           ondrop="drop(event, 'done')" 
+           ondragover="allowDrop(event)"
+           ondragleave="dragLeave(event)">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-blue-400">✓ Done</h3>
+          <span class="badge badge-done" id="count-done">0</span>
+        </div>
+        <div id="tasks-done" class="space-y-3">
           <div class="text-gray-500 text-center py-8">No tasks</div>
         </div>
       </div>
@@ -389,14 +403,15 @@
       const columns = {
         recurring: document.getElementById('tasks-recurring'),
         backlog: document.getElementById('tasks-backlog'),
-        progress: document.getElementById('tasks-progress')
+        progress: document.getElementById('tasks-progress'),
+        done: document.getElementById('tasks-done')
       };
       
       // Clear columns
       Object.values(columns).forEach(col => col.innerHTML = '');
       
       // Group tasks by status
-      const grouped = { recurring: [], backlog: [], progress: [] };
+      const grouped = { recurring: [], backlog: [], progress: [], done: [] };
       tasks.forEach(task => {
         if (grouped[task.status]) grouped[task.status].push(task);
       });
