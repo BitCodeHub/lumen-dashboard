@@ -1788,6 +1788,30 @@ app.get('/intel', (req, res) => {
 // PUBLIC API ROUTES (No auth required)
 // ============================================
 
+// API endpoint: List all users (API key auth)
+app.get('/api/users/list', async (req, res) => {
+  const apiKey = req.headers['x-api-key'];
+  
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized - invalid API key' });
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT id, username, email, created_at, last_login FROM lumen_users ORDER BY created_at DESC'
+    );
+    
+    res.json({
+      success: true,
+      count: result.rows.length,
+      users: result.rows
+    });
+  } catch (err) {
+    console.error('Error listing users:', err);
+    res.status(500).json({ error: 'Failed to list users' });
+  }
+});
+
 // In-memory cache for company status (for Render deployment)
 let companyStatusCache = {
   lastUpdated: new Date().toISOString(),
