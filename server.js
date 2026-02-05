@@ -7376,6 +7376,15 @@ app.get('/applause.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'applause.html'));
 });
 
+// Protected route - Command Center (requires login)
+app.get('/command-center.html', (req, res) => {
+  // Check if user is authenticated
+  if (!req.session || !req.session.userId) {
+    return res.redirect('/login.html');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'command-center.html'));
+});
+
 // Debug endpoint (no auth, no /api/ prefix)
 app.get('/debug-list-users-temp', async (req, res) => {
   try {
