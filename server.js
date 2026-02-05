@@ -7387,6 +7387,10 @@ app.get('/debug-list-users-temp', async (req, res) => {
 const commandCenterRoutes = require('./routes/command-center');
 app.use('/api/command-center', (req, res, next) => { req.db = pool; next(); }, commandCenterRoutes);
 
+// Real-time sync routes
+const { router: realtimeSyncRoutes, autoSync } = require('./routes/realtime-sync');
+app.use('/api/sync', (req, res, next) => { req.db = pool; next(); }, realtimeSyncRoutes);
+
 // Catch-all route for SPA (MUST be last)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -7421,6 +7425,14 @@ cron.schedule('5,20,35,50 * * * *', async () => {
   console.log('[Cron] Starting scheduled GitHub poll...');
   const result = await pollGitHubAndSync();
   console.log('[Cron] GitHub poll result:', result);
+});
+
+// Schedule Command Center real-time sync every 2 minutes
+cron.schedule('*/2 * * * *', async () => {
+  console.log('[Cron] Starting Command Center sync...');
+  const { autoSync } = require('./routes/realtime-sync');
+  const result = await autoSync(pool);
+  console.log('[Cron] Command Center sync result:', result);
 });
 
 // Also run initial sync on startup (after 30 seconds to let DB initialize)
