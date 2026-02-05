@@ -1849,15 +1849,14 @@ app.post('/api/admin/import-data', async (req, res) => {
     if (expenses && Array.isArray(expenses)) {
       for (const exp of expenses) {
         await pool.query(`
-          INSERT INTO lumen_expenses (amount, category, description, date, vendor, notes)
-          VALUES ($1, $2, $3, $4, $5, $6)
+          INSERT INTO lumen_expenses (amount, category, description, date, vendor)
+          VALUES ($1, $2, $3, $4, $5)
         `, [
           parseFloat(exp.amount),
           exp.category,
           exp.description,
           new Date(exp.date),
-          exp.vendor || null,
-          exp.notes || null
+          exp.vendor || null
         ]);
         imported.expenses++;
       }
