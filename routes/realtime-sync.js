@@ -54,25 +54,28 @@ async function syncCronJobs(db) {
   }
 }
 
-// Sync agent sessions
+// Sync agent sessions and auto-assign tasks
 async function syncAgentSessions(db) {
   try {
     const clawdbotUrl = process.env.CLAWDBOT_GATEWAY_URL || 'https://clawd-gateway.ngrok.io';
     const response = await fetch(`${clawdbotUrl}/api/sessions/list`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ activeMinutes: 60 })
+      body: JSON.stringify({ activeMinutes: 60, messageLimit: 5 })
     });
     
     const data = await response.json();
     const sessions = data.sessions || [];
     
     let updated = 0;
+    let tasksAutoMoved = 0;
+    
     for (const session of sessions) {
       const agentId = session.agentId;
       const isActive = session.lastMessageAt && 
         (Date.now() - new Date(session.lastMessageAt).getTime()) < 15 * 60 * 1000;
       
+      // Update agent status
       const result = await db.query(
         `UPDATE agent_status 
          SET status = $1, 
@@ -89,12 +92,86 @@ async function syncAgentSessions(db) {
       );
       
       if (result.rowCount > 0) updated++;
+      
+      // Auto-detect what the agent is working on
+      if (isActive && session.messages && session.messages.length > 0) {
+        const recentMessages = session.messages.slice(-5).map(m => m.content?.toLowerCase() || '').join(' ');
+        
+        // Check if agent is working on a known task
+        const tasks = await db.query(
+          `SELECT id, title, status FROM tasks 
+           WHERE (assigned_to = $1 OR assigned_to IS NULL) 
+           AND status IN ('backlog', 'progress')`,
+          [agentId]
+        );
+        
+        for (const task of tasks.rows) {
+          const taskKeywords = task.title.toLowerCase().split(' ');
+          const isWorkingOnThis = taskKeywords.some(keyword => 
+            keyword.length > 4 && recentMessages.includes(keyword)
+          );
+          
+          if (isWorkingOnThis && task.status === 'backlog') {
+            // Auto-move to In Progress
+            await db.query(
+              `UPDATE tasks 
+               SET status = 'progress', 
+                   assigned_to = $1,
+                   updated_at = NOW()
+               WHERE id = $2`,
+              [agentId, task.id]
+            );
+            
+            // Log activity
+            await db.query(
+              `INSERT INTO activity_log (type, agent_id, task_id, title, metadata)
+               VALUES ($1, $2, $3, $4, $5)`,
+              ['task', agentId, task.id, `Started working on: ${task.title}`, 
+               JSON.stringify({ auto: true, from: 'backlog', to: 'progress' })]
+            );
+            
+            tasksAutoMoved++;
+          }
+        }
+      }
+      
+      // If agent went idle, check for tasks to move to done
+      if (!isActive) {
+        const activeTasks = await db.query(
+          `SELECT id, title FROM tasks 
+           WHERE assigned_to = $1 AND status = 'progress'
+           AND updated_at < NOW() - INTERVAL '30 minutes'`,
+          [agentId]
+        );
+        
+        // Auto-complete tasks that haven't been touched in 30+ min
+        for (const task of activeTasks.rows) {
+          await db.query(
+            `UPDATE tasks 
+             SET status = 'done',
+                 completed_at = NOW(),
+                 progress = 100,
+                 updated_at = NOW()
+             WHERE id = $1`,
+            [task.id]
+          );
+          
+          await db.query(
+            `INSERT INTO activity_log (type, agent_id, task_id, title, metadata)
+             VALUES ($1, $2, $3, $4, $5)`,
+            ['task', agentId, task.id, `Completed: ${task.title}`, 
+             JSON.stringify({ auto: true, from: 'progress', to: 'done' })]
+          );
+          
+          tasksAutoMoved++;
+        }
+      }
     }
     
-    return { updated, total: sessions.length };
+    return { updated, total: sessions.length, tasksAutoMoved };
   } catch (error) {
     console.error('[Sync] Sessions failed:', error.message);
-    return { updated: 0, total: 0, error: error.message };
+    return { updated: 0, total: 0, tasksAutoMoved: 0, error: error.message };
   }
 }
 

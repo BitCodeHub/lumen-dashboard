@@ -421,16 +421,17 @@
       const project = projects.find(p => p.id === task.project_id);
       
       const timeAgo = task.updated_at ? getTimeAgo(new Date(task.updated_at)) : 'just now';
+      const isRecent = task.updated_at && (Date.now() - new Date(task.updated_at).getTime()) < 10000; // 10 seconds
       
       card.innerHTML = `
         <div class="flex items-start justify-between mb-2">
-          <h4 class="font-semibold text-white">${task.title}</h4>
+          <h4 class="font-semibold text-white">${task.title} ${isRecent ? '<span class="text-xs text-green-400">● LIVE</span>' : ''}</h4>
           <button onclick="deleteTask(${task.id})" class="text-gray-500 hover:text-red-500">×</button>
         </div>
         ${task.description ? `<p class="text-sm text-gray-400 mb-3">${task.description}</p>` : ''}
         <div class="flex items-center justify-between text-xs text-gray-500">
           <div class="flex items-center space-x-2">
-            ${agent ? `<span>${agent.emoji || ''} ${agent.name}</span>` : '<span>Unassigned</span>'}
+            ${agent ? `<span>${agent.emoji || ''} ${agent.name}${agent.status === 'active' ? ' <span class="text-green-400">●</span>' : ''}</span>` : '<span>Unassigned</span>'}
             ${project ? `<span>• ${project.name}</span>` : ''}
           </div>
           <span>${timeAgo}</span>
@@ -558,8 +559,8 @@
       return `${Math.floor(seconds / 86400)} days ago`;
     }
 
-    // Auto-refresh every 30 seconds
-    setInterval(loadData, 30000);
+    // Auto-refresh every 5 seconds for real-time updates
+    setInterval(loadData, 5000);
 
     // Initial load
     loadData();
