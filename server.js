@@ -7150,6 +7150,18 @@ app.get('/applause.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'applause.html'));
 });
 
+// Debug endpoint (no auth, no /api/ prefix)
+app.get('/debug-list-users-temp', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, username, email, created_at, last_login FROM lumen_users ORDER BY created_at DESC'
+    );
+    res.json({ success: true, users: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Catch-all route for SPA (MUST be last)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
