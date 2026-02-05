@@ -195,6 +195,15 @@ app.get('/index.html', auth.requireAuth, (req, res) => {
 app.use(express.static('public', {
   index: false // Disable auto-serving index.html
 }));
+
+// Command Center routes - serve index.html for directory requests
+app.get('/cc/command-center', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'index.html'));
+});
+app.get('/cc/command-center/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'index.html'));
+});
+
 app.use('/excel-files', express.static(EXCEL_UPLOAD_DIR));
 
 // ============================================
