@@ -7101,6 +7101,25 @@ app.post('/api/admin/create-user', async (req, res) => {
   }
 });
 
+// Admin endpoint to list users (API key protected)
+app.get('/api/admin/list-users', async (req, res) => {
+  try {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey || apiKey !== process.env.DASHBOARD_API_KEY) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const result = await pool.query(
+      'SELECT id, username, email, created_at, last_login FROM lumen_users ORDER BY created_at DESC'
+    );
+    
+    res.json({ success: true, users: result.rows });
+  } catch (err) {
+    console.error('[Admin] List users error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Initialize Moltbook Integration (legacy - MUST be before catch-all)
 initMoltbookIntegration(app).catch(err => {
   console.error('[Moltbook] Failed to initialize:', err.message);
