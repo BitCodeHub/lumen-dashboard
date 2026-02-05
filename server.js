@@ -1812,6 +1812,43 @@ app.get('/api/users/list', async (req, res) => {
   }
 });
 
+// API endpoint: Reset user password (API key auth)
+app.post('/api/users/reset-password', async (req, res) => {
+  const apiKey = req.headers['x-api-key'];
+  
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized - invalid API key' });
+  }
+
+  const { username, newPassword } = req.body;
+  
+  if (!username || !newPassword) {
+    return res.status(400).json({ error: 'Missing username or newPassword' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    const result = await pool.query(
+      'UPDATE lumen_users SET password_hash = $1 WHERE username = $2 OR email = $2 RETURNING id, username, email',
+      [hashedPassword, username]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+      user: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Error resetting password:', err);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
 // In-memory cache for company status (for Render deployment)
 let companyStatusCache = {
   lastUpdated: new Date().toISOString(),
@@ -2441,8 +2478,8 @@ app.use('/api', (req, res, next) => {
     return next();
   }
   
-  // Skip auth for users/list (has its own API key auth)
-  if (req.path === '/users/list') {
+  // Skip auth for users/list and reset-password (have their own API key auth)
+  if (req.path === '/users/list' || req.path === '/users/reset-password') {
     return next();
   }
   if (req.path.startsWith('/memory/')) {
