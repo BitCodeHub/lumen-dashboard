@@ -1827,7 +1827,7 @@ app.post('/api/users/reset-password', async (req, res) => {
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await auth.hashPassword(newPassword);
     
     const result = await pool.query(
       'UPDATE lumen_users SET password_hash = $1 WHERE username = $2 OR email = $2 RETURNING id, username, email',
@@ -1845,7 +1845,7 @@ app.post('/api/users/reset-password', async (req, res) => {
     });
   } catch (err) {
     console.error('Error resetting password:', err);
-    res.status(500).json({ error: 'Failed to reset password' });
+    res.status(500).json({ error: 'Failed to reset password', details: err.message });
   }
 });
 
