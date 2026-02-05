@@ -1812,6 +1812,88 @@ app.get('/api/users/list', async (req, res) => {
   }
 });
 
+// API endpoint: Import data from agents (API key auth)
+app.post('/api/admin/import-data', async (req, res) => {
+  const apiKey = req.headers['x-api-key'];
+  
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized - invalid API key' });
+  }
+
+  const { ideas, expenses, pitches } = req.body;
+  
+  try {
+    let imported = { ideas: 0, expenses: 0, pitches: 0 };
+    
+    // Import AI Ideas
+    if (ideas && Array.isArray(ideas)) {
+      for (const idea of ideas) {
+        await pool.query(`
+          INSERT INTO lumen_ideas (name, description, category, type, revenue_potential, build_time, status, notes)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
+          idea.name,
+          idea.description,
+          idea.category,
+          idea.type || 'Personal',
+          parseFloat(idea.revenue_potential) || 0,
+          idea.build_time,
+          idea.status || 'idea',
+          idea.notes || null
+        ]);
+        imported.ideas++;
+      }
+    }
+    
+    // Import Expenses
+    if (expenses && Array.isArray(expenses)) {
+      for (const exp of expenses) {
+        await pool.query(`
+          INSERT INTO lumen_expenses (amount, category, description, date, vendor, notes)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `, [
+          parseFloat(exp.amount),
+          exp.category,
+          exp.description,
+          new Date(exp.date),
+          exp.vendor || null,
+          exp.notes || null
+        ]);
+        imported.expenses++;
+      }
+    }
+    
+    // Import Pitches
+    if (pitches && Array.isArray(pitches)) {
+      for (const pitch of pitches) {
+        await pool.query(`
+          INSERT INTO lumen_pitches (idea_name, pitch_content, verdict, trend_signal, research_sources, conversation, verdict_reason, tags)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
+          pitch.idea_name,
+          pitch.pitch_content,
+          pitch.verdict || 'pending',
+          pitch.trend_signal || null,
+          pitch.research_sources || [],
+          pitch.conversation || [],
+          pitch.verdict_reason || null,
+          pitch.tags || []
+        ]);
+        imported.pitches++;
+      }
+    }
+    
+    res.json({
+      success: true,
+      imported,
+      message: `Imported ${imported.ideas} ideas, ${imported.expenses} expenses, ${imported.pitches} pitches`
+    });
+  } catch (err) {
+    console.error('[API] Data import failed:', err);
+    res.status(500).json({ error: 'Data import failed', details: err.message });
+  }
+});
+
 // API endpoint: Initialize database schema (API key auth)
 app.post('/api/admin/init-database', async (req, res) => {
   const apiKey = req.headers['x-api-key'];
