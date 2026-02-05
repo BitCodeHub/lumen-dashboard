@@ -1812,6 +1812,30 @@ app.get('/api/users/list', async (req, res) => {
   }
 });
 
+// API endpoint: Initialize database schema (API key auth)
+app.post('/api/admin/init-database', async (req, res) => {
+  const apiKey = req.headers['x-api-key'];
+  
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized - invalid API key' });
+  }
+
+  try {
+    console.log('[API] Initializing database schema...');
+    await initDatabase();
+    console.log('[API] Database initialized successfully');
+    
+    res.json({
+      success: true,
+      message: 'Database schema initialized successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('[API] Database initialization failed:', err);
+    res.status(500).json({ error: 'Database initialization failed', details: err.message });
+  }
+});
+
 // API endpoint: Database diagnostics (API key auth)
 app.get('/api/admin/db-diagnostics', async (req, res) => {
   const apiKey = req.headers['x-api-key'];
@@ -1821,7 +1845,7 @@ app.get('/api/admin/db-diagnostics', async (req, res) => {
   }
 
   try {
-    const tables = ['briefings', 'expenses', 'ideas', 'pitches', 'jobs', 'resources', 'excel_files', 'lumen_users'];
+    const tables = ['lumen_briefings', 'lumen_expenses', 'lumen_ideas', 'lumen_pitches', 'lumen_jobs', 'lumen_resources', 'lumen_excel_files', 'lumen_users'];
     const counts = {};
     
     for (const table of tables) {
@@ -1836,7 +1860,7 @@ app.get('/api/admin/db-diagnostics', async (req, res) => {
     // Get sample briefings if any exist
     let sampleBriefings = [];
     try {
-      const result = await pool.query('SELECT id, title, type, created_at FROM briefings LIMIT 5');
+      const result = await pool.query('SELECT id, title, type, created_at FROM lumen_briefings LIMIT 5');
       sampleBriefings = result.rows;
     } catch (err) {
       sampleBriefings = [`Error: ${err.message}`];
