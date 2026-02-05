@@ -2441,6 +2441,14 @@ app.use('/api', (req, res, next) => {
     return next();
   }
   
+  // Skip auth for users/list (has its own API key auth)
+  if (req.path === '/users/list') {
+    return next();
+  }
+  if (req.path.startsWith('/memory/')) {
+    return next();
+  }
+  
   // Skip auth for Applause documents (public access)
   if (req.path.startsWith('/documents')) {
     // Check if it's querying or downloading Applause section
