@@ -4724,7 +4724,10 @@
     // ============================================
     // INITIALIZATION
     // ============================================
-    fetchBriefings();
+    // Start with AI Ideas view (since briefings are empty)
+    switchView('ideas');
+    
+    // Also load briefings in background for when user switches to it
     fetchStats();
     fetchTags();
     setInterval(refreshBriefings, 5 * 60 * 1000);
