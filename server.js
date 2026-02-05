@@ -1812,6 +1812,48 @@ app.get('/api/users/list', async (req, res) => {
   }
 });
 
+// API endpoint: Database diagnostics (API key auth)
+app.get('/api/admin/db-diagnostics', async (req, res) => {
+  const apiKey = req.headers['x-api-key'];
+  
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized - invalid API key' });
+  }
+
+  try {
+    const tables = ['briefings', 'expenses', 'ideas', 'pitches', 'jobs', 'resources', 'excel_files', 'lumen_users'];
+    const counts = {};
+    
+    for (const table of tables) {
+      try {
+        const result = await pool.query(`SELECT COUNT(*) FROM ${table}`);
+        counts[table] = parseInt(result.rows[0].count);
+      } catch (err) {
+        counts[table] = `Error: ${err.message}`;
+      }
+    }
+    
+    // Get sample briefings if any exist
+    let sampleBriefings = [];
+    try {
+      const result = await pool.query('SELECT id, title, type, created_at FROM briefings LIMIT 5');
+      sampleBriefings = result.rows;
+    } catch (err) {
+      sampleBriefings = [`Error: ${err.message}`];
+    }
+    
+    res.json({
+      success: true,
+      tableCounts: counts,
+      sampleBriefings,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Error in diagnostics:', err);
+    res.status(500).json({ error: 'Diagnostics failed', details: err.message });
+  }
+});
+
 // API endpoint: Reset user password (API key auth)
 app.post('/api/users/reset-password', async (req, res) => {
   const apiKey = req.headers['x-api-key'];
@@ -2478,8 +2520,8 @@ app.use('/api', (req, res, next) => {
     return next();
   }
   
-  // Skip auth for users/list and reset-password (have their own API key auth)
-  if (req.path === '/users/list' || req.path === '/users/reset-password') {
+  // Skip auth for admin and user management endpoints (have their own API key auth)
+  if (req.path === '/users/list' || req.path === '/users/reset-password' || req.path.startsWith('/admin/')) {
     return next();
   }
   if (req.path.startsWith('/memory/')) {
