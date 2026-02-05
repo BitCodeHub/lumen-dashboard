@@ -1867,14 +1867,14 @@ app.post('/api/admin/import-data', async (req, res) => {
       for (const pitch of pitches) {
         await pool.query(`
           INSERT INTO lumen_pitches (idea_name, pitch_content, verdict, trend_signal, research_sources, conversation, verdict_reason, tags)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8)
         `, [
           pitch.idea_name,
           pitch.pitch_content,
           pitch.verdict || 'pending',
           pitch.trend_signal || null,
-          pitch.research_sources || [],
-          pitch.conversation || [],
+          JSON.stringify(pitch.research_sources || []),
+          JSON.stringify(pitch.conversation || []),
           pitch.verdict_reason || null,
           pitch.tags || []
         ]);
