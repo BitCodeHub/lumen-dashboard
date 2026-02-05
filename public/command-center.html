@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Center - Lumen AI Solutions</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: #0D0D0D;
+      color: #E0E0E0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .glass {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .task-card {
+      background: #1A1A1A;
+      border: 1px solid #2A2A2A;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: grab;
+      transition: all 0.2s;
+    }
+    
+    .task-card:hover {
+      background: #222;
+      border-color: #8B5CF6;
+      transform: translateY(-2px);
+    }
+    
+    .task-card.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+    
+    .column {
+      background: #0D0D0D;
+      border: 1px solid #2A2A2A;
+      border-radius: 12px;
+      min-height: 400px;
+      padding: 16px;
+    }
+    
+    .column.drag-over {
+      background: #1A1A1A;
+      border-color: #8B5CF6;
+    }
+    
+    .activity-item {
+      padding: 12px;
+      border-bottom: 1px solid #2A2A2A;
+      font-size: 14px;
+    }
+    
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%);
+      border: 1px solid #3A3A3A;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    
+    .stat-number {
+      font-size: 48px;
+      font-weight: 700;
+      color: #8B5CF6;
+    }
+    
+    .stat-label {
+      font-size: 14px;
+      color: #888;
+      margin-top: 8px;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .badge-recurring { background: #6366F1; color: white; }
+    .badge-backlog { background: #EF4444; color: white; }
+    .badge-progress { background: #10B981; color: white; }
+    .badge-done { background: #6B7280; color: white; }
+    
+    .priority-high { border-left: 4px solid #EF4444; }
+    .priority-medium { border-left: 4px solid #F59E0B; }
+    .priority-low { border-left: 4px solid #6B7280; }
+    
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    
+    .btn-primary {
+      background: #8B5CF6;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #7C3AED;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.show {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: #1A1A1A;
+      border: 1px solid #3A3A3A;
+      border-radius: 12px;
+      padding: 32px;
+      max-width: 500px;
+      width: 90%;
+    }
+    
+    input, textarea, select {
+      background: #0D0D0D;
+      border: 1px solid #3A3A3A;
+      border-radius: 8px;
+      padding: 12px;
+      color: #E0E0E0;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #8B5CF6;
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Navigation -->
+  <nav class="glass sticky top-0 z-50 p-4">
+    <div class="container mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-8">
+        <h1 class="text-2xl font-bold text-white">Command Center</h1>
+        <div class="flex space-x-4">
+          <a href="#" class="text-purple-400 font-medium">Tasks</a>
+          <a href="#" class="text-gray-400 hover:text-white">Chat</a>
+          <a href="#" class="text-gray-400 hover:text-white">Projects</a>
+          <a href="#" class="text-gray-400 hover:text-white">Memory</a>
+          <a href="#" class="text-gray-400 hover:text-white">People</a>
+          <a href="#" class="text-gray-400 hover:text-white">Search</a>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span class="text-sm text-gray-400" id="live-time"></span>
+        <a href="/dashboard.html" class="text-gray-400 hover:text-white">← Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <div class="container mx-auto px-4 py-8">
+    <!-- Stats Bar -->
+    <div class="grid grid-cols-4 gap-6 mb-8">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-week">0</div>
+        <div class="stat-label">This week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-progress">0</div>
+        <div class="stat-label">In progress</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-total">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-completion">0%</div>
+        <div class="stat-label">Completion</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex items-center justify-between mb-6">
+      <button class="btn btn-primary" onclick="openNewTaskModal()">
+        + New task
+      </button>
+      <div class="flex space-x-4">
+        <select id="filter-agent" class="bg-gray-800 border-gray-700 text-white px-4 py-2 rounded-lg" onchange="filterTasks()">
+          <option value="">All agents</option>
+        </select>
+        <select id="filter-project" class="bg-gray-800 border-gray-700 text-white px-4 py-2 rounded-lg" onchange="filterTasks()">
+          <option value="">All projects</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Kanban Board + Activity Feed -->
+    <div class="grid grid-cols-4 gap-6">
+      <!-- Recurring Column -->
+      <div class="column" id="col-recurring" 
+           ondrop="drop(event, 'recurring')" 
+           ondragover="allowDrop(event)"
+           ondragleave="dragLeave(event)">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-purple-400">● Recurring</h3>
+          <span class="badge badge-recurring" id="count-recurring">0</span>
+        </div>
+        <div id="tasks-recurring" class="space-y-3">
+          <div class="text-gray-500 text-center py-8">No tasks</div>
+        </div>
+      </div>
+
+      <!-- Backlog Column -->
+      <div class="column" id="col-backlog"
+           ondrop="drop(event, 'backlog')" 
+           ondragover="allowDrop(event)"
+           ondragleave="dragLeave(event)">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-red-400">● Backlog</h3>
+          <span class="badge badge-backlog" id="count-backlog">0</span>
+        </div>
+        <div id="tasks-backlog" class="space-y-3">
+          <div class="text-gray-500 text-center py-8">No tasks</div>
+        </div>
+      </div>
+
+      <!-- In Progress Column -->
+      <div class="column" id="col-progress"
+           ondrop="drop(event, 'progress')" 
+           ondragover="allowDrop(event)"
+           ondragleave="dragLeave(event)">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-green-400">● In Progress</h3>
+          <span class="badge badge-progress" id="count-progress">0</span>
+        </div>
+        <div id="tasks-progress" class="space-y-3">
+          <div class="text-gray-500 text-center py-8">No tasks</div>
+        </div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="column">
+        <h3 class="text-lg font-semibold mb-4 text-gray-400">ACTIVITY</h3>
+        <div id="activity-feed" class="space-y-0" style="max-height: 600px; overflow-y: auto;">
+          <div class="text-gray-500 text-center py-8">Loading activity...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Task Modal -->
+  <div id="new-task-modal" class="modal">
+    <div class="modal-content">
+      <h2 class="text-2xl font-bold mb-6">New Task</h2>
+      <form id="new-task-form" onsubmit="createTask(event)">
+        <input type="text" id="task-title" placeholder="Task title" required>
+        <textarea id="task-description" placeholder="Description" rows="3"></textarea>
+        <select id="task-priority">
+          <option value="low">Low Priority</option>
+          <option value="medium" selected>Medium Priority</option>
+          <option value="high">High Priority</option>
+          <option value="urgent">Urgent</option>
+        </select>
+        <select id="task-agent">
+          <option value="">Unassigned</option>
+        </select>
+        <select id="task-project">
+          <option value="">No project</option>
+        </select>
+        <div class="flex space-x-4">
+          <button type="submit" class="btn btn-primary flex-1">Create Task</button>
+          <button type="button" class="btn bg-gray-700 text-white flex-1" onclick="closeNewTaskModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let tasks = [];
+    let activity = [];
+    let agents = [];
+    let projects = [];
+
+    // Live clock
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('live-time').textContent = now.toLocaleTimeString();
+    }, 1000);
+
+    // Load initial data
+    async function loadData() {
+      await Promise.all([
+        loadStats(),
+        loadTasks(),
+        loadActivity(),
+        loadAgents(),
+        loadProjects()
+      ]);
+    }
+
+    async function loadStats() {
+      const res = await fetch('/api/command-center/stats');
+      const data = await res.json();
+      document.getElementById('stat-week').textContent = data.tasksThisWeek;
+      document.getElementById('stat-progress').textContent = data.inProgress;
+      document.getElementById('stat-total').textContent = data.total;
+      document.getElementById('stat-completion').textContent = data.completion + '%';
+    }
+
+    async function loadTasks() {
+      const res = await fetch('/api/command-center/tasks');
+      tasks = await res.json();
+      renderTasks();
+    }
+
+    async function loadActivity() {
+      const res = await fetch('/api/command-center/activity?limit=50');
+      activity = await res.json();
+      renderActivity();
+    }
+
+    async function loadAgents() {
+      const res = await fetch('/api/command-center/agents');
+      agents = await res.json();
+      
+      // Populate agent filters
+      const agentSelect = document.getElementById('filter-agent');
+      const taskAgentSelect = document.getElementById('task-agent');
+      agents.forEach(agent => {
+        const option1 = document.createElement('option');
+        option1.value = agent.agent_id;
+        option1.textContent = `${agent.emoji || ''} ${agent.name}`.trim();
+        agentSelect.appendChild(option1);
+        
+        const option2 = option1.cloneNode(true);
+        taskAgentSelect.appendChild(option2);
+      });
+    }
+
+    async function loadProjects() {
+      const res = await fetch('/api/command-center/projects?status=active');
+      projects = await res.json();
+      
+      // Populate project filters
+      const projectSelect = document.getElementById('filter-project');
+      const taskProjectSelect = document.getElementById('task-project');
+      projects.forEach(project => {
+        const option1 = document.createElement('option');
+        option1.value = project.id;
+        option1.textContent = project.name;
+        projectSelect.appendChild(option1);
+        
+        const option2 = option1.cloneNode(true);
+        taskProjectSelect.appendChild(option2);
+      });
+    }
+
+    function renderTasks() {
+      const columns = {
+        recurring: document.getElementById('tasks-recurring'),
+        backlog: document.getElementById('tasks-backlog'),
+        progress: document.getElementById('tasks-progress')
+      };
+      
+      // Clear columns
+      Object.values(columns).forEach(col => col.innerHTML = '');
+      
+      // Group tasks by status
+      const grouped = { recurring: [], backlog: [], progress: [] };
+      tasks.forEach(task => {
+        if (grouped[task.status]) grouped[task.status].push(task);
+      });
+      
+      // Render tasks
+      Object.keys(grouped).forEach(status => {
+        if (grouped[status].length === 0) {
+          columns[status].innerHTML = '<div class="text-gray-500 text-center py-8">No tasks</div>';
+        } else {
+          grouped[status].forEach(task => {
+            columns[status].appendChild(createTaskCard(task));
+          });
+        }
+        
+        // Update count
+        document.getElementById(`count-${status}`).textContent = grouped[status].length;
+      });
+    }
+
+    function createTaskCard(task) {
+      const card = document.createElement('div');
+      card.className = `task-card priority-${task.priority}`;
+      card.draggable = true;
+      card.dataset.taskId = task.id;
+      card.ondragstart = (e) => drag(e);
+      card.ondragend = (e) => e.target.classList.remove('dragging');
+      
+      const agent = agents.find(a => a.agent_id === task.assigned_to);
+      const project = projects.find(p => p.id === task.project_id);
+      
+      const timeAgo = task.updated_at ? getTimeAgo(new Date(task.updated_at)) : 'just now';
+      
+      card.innerHTML = `
+        <div class="flex items-start justify-between mb-2">
+          <h4 class="font-semibold text-white">${task.title}</h4>
+          <button onclick="deleteTask(${task.id})" class="text-gray-500 hover:text-red-500">×</button>
+        </div>
+        ${task.description ? `<p class="text-sm text-gray-400 mb-3">${task.description}</p>` : ''}
+        <div class="flex items-center justify-between text-xs text-gray-500">
+          <div class="flex items-center space-x-2">
+            ${agent ? `<span>${agent.emoji || ''} ${agent.name}</span>` : '<span>Unassigned</span>'}
+            ${project ? `<span>• ${project.name}</span>` : ''}
+          </div>
+          <span>${timeAgo}</span>
+        </div>
+      `;
+      
+      return card;
+    }
+
+    function renderActivity() {
+      const feed = document.getElementById('activity-feed');
+      
+      if (activity.length === 0) {
+        feed.innerHTML = '<div class="text-gray-500 text-center py-8">No activity yet</div>';
+        return;
+      }
+      
+      feed.innerHTML = activity.map(item => {
+        const agent = agents.find(a => a.agent_id === item.agent_id);
+        const timeAgo = getTimeAgo(new Date(item.created_at));
+        
+        return `
+          <div class="activity-item">
+            <span class="text-green-400">●</span> 
+            ${agent ? `<strong>${agent.name}</strong>` : 'System'} 
+            ${item.title}
+            <div class="text-xs text-gray-500 mt-1">${timeAgo}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Drag and drop
+    function drag(e) {
+      e.dataTransfer.setData('taskId', e.target.dataset.taskId);
+      e.target.classList.add('dragging');
+    }
+
+    function allowDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drag-over');
+    }
+
+    function dragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+
+    async function drop(e, newStatus) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      
+      const taskId = e.dataTransfer.getData('taskId');
+      
+      // Update task status
+      await fetch(`/api/command-center/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      await loadData();
+    }
+
+    // Modal controls
+    function openNewTaskModal() {
+      document.getElementById('new-task-modal').classList.add('show');
+    }
+
+    function closeNewTaskModal() {
+      document.getElementById('new-task-modal').classList.remove('show');
+      document.getElementById('new-task-form').reset();
+    }
+
+    async function createTask(e) {
+      e.preventDefault();
+      
+      const title = document.getElementById('task-title').value;
+      const description = document.getElementById('task-description').value;
+      const priority = document.getElementById('task-priority').value;
+      const assigned_to = document.getElementById('task-agent').value || null;
+      const project_id = document.getElementById('task-project').value || null;
+      
+      await fetch('/api/command-center/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description,
+          priority,
+          assigned_to,
+          project_id,
+          status: 'backlog',
+          created_by: 'main'
+        })
+      });
+      
+      closeNewTaskModal();
+      await loadData();
+    }
+
+    async function deleteTask(id) {
+      if (!confirm('Delete this task?')) return;
+      
+      await fetch(`/api/command-center/tasks/${id}`, {
+        method: 'DELETE'
+      });
+      
+      await loadData();
+    }
+
+    function filterTasks() {
+      const agentFilter = document.getElementById('filter-agent').value;
+      const projectFilter = document.getElementById('filter-project').value;
+      
+      // TODO: Implement filtering
+      console.log('Filtering by:', { agentFilter, projectFilter });
+    }
+
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+      return `${Math.floor(seconds / 86400)} days ago`;
+    }
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadData, 30000);
+
+    // Initial load
+    loadData();
+  </script>
+</body>
+</html>

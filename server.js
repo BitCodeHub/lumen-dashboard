@@ -7378,6 +7378,10 @@ app.get('/debug-list-users-temp', async (req, res) => {
   }
 });
 
+// Command Center routes
+const commandCenterRoutes = require('./routes/command-center');
+app.use('/api/command-center', (req, res, next) => { req.db = pool; next(); }, commandCenterRoutes);
+
 // Catch-all route for SPA (MUST be last)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
