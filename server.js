@@ -29,6 +29,7 @@ const { initMoltbookIntegration } = require('./moltbook-integration');
 const { initAgentArmy } = require('./agent-army');
 const { registerEnterpriseRoutes } = require('./enterprise-intel');
 const { registerDocumentRoutes } = require('./documents-api');
+const seoRoutes = require('./seo-api');
 
 const app = express();
 
@@ -7329,6 +7330,9 @@ registerEnterpriseRoutes(app);
 
 // Initialize Documents API
 registerDocumentRoutes(app, pool);
+
+// Initialize SEO Reports API
+app.use('/api', seoRoutes);
 
 // Admin endpoint to run migrations (API key protected)
 app.post('/api/admin/run-migration', async (req, res) => {
