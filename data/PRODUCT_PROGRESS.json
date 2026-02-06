@@ -54,9 +54,9 @@
       "name": "AI Code Quality Validator",
       "emoji": "✅",
       "progress": 10,
-      "status": "pipeline",
-      "priority": "P2",
-      "notes": "New opportunity. 66% developer pain point. Conditional on StackAudit validation. Financial validation complete.",
+      "status": "paused",
+      "priority": null,
+      "notes": "⏸️ PAUSED — CEO directive 2026-02-05. AgentShield-only focus.",
       "details": "Pre-commit validation for AI-generated code. Quality gates, style enforcement, security checks."
     },
     {
@@ -64,9 +64,9 @@
       "name": "Construction Safety AI",
       "emoji": "🏗️",
       "progress": 5,
-      "status": "pipeline",
-      "priority": "P2",
-      "notes": "$13B market. Validation sprint pending.",
+      "status": "paused",
+      "priority": null,
+      "notes": "⏸️ PAUSED — CEO directive 2026-02-05. AgentShield-only focus.",
       "details": "Computer vision for construction site safety monitoring. Real-time hazard detection, compliance tracking."
     },
     {
