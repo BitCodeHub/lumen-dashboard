@@ -1,7 +1,7 @@
 {
-  "lastUpdated": "2026-02-06T06:17:00Z",
+  "lastUpdated": "2026-02-06T22:18:00-08:00",
   "updatedBy": "Unc Lumen 💎",
-  "directive": "ALL PROJECTS PAUSED except AgentShield (CEO directive 2026-02-05). Command Center in progress (upgrades only).",
+  "directive": "Added 10 AI projects from @heyrimsha tweet as potential opportunities (status: potential)",
   "products": [
     {
       "id": "agentshield",
@@ -14,6 +14,136 @@
       "notes": "Active development. Sprint 0 - Schema done, landing page building, SEO complete.",
       "details": "AI Agent governance platform with identity management, human-binding, and compliance tracking. Critical for enterprise AI adoption.",
       "lastActivity": "2026-02-02T02:50:00Z"
+    },
+    {
+      "id": "rag-with-evals",
+      "name": "RAG App with Evaluations",
+      "emoji": "🔍",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P1",
+      "launchDate": null,
+      "notes": "Production-grade RAG with evals, monitoring, feedback loops. 1-2 weeks MVP. High priority.",
+      "details": "Build production RAG system with evaluations, monitoring, and feedback loops. Stack: Claude + Pinecone + evals. Use for AgentShield knowledge base.",
+      "source": "https://www.pinecone.io/learn/retrieval-augmented-generation/",
+      "timelineWeeks": "1-2"
+    },
+    {
+      "id": "research-agent",
+      "name": "Autonomous Research Agent",
+      "emoji": "📚",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P2",
+      "launchDate": null,
+      "notes": "Plans, searches, cites sources, produces reports. 2-3 weeks MVP.",
+      "details": "Agent that plans research, searches sources, cites properly, and produces comprehensive reports. Stack: LangGraph + tools + citations.",
+      "source": "https://github.com/langchain-ai/langgraph",
+      "timelineWeeks": "2-3"
+    },
+    {
+      "id": "support-copilot",
+      "name": "AI Support Copilot",
+      "emoji": "🤝",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P1",
+      "launchDate": null,
+      "notes": "Human-in-loop support assistant with guardrails. 2-3 weeks MVP. Perfect for Hyundai.",
+      "details": "Customer support copilot with human-in-the-loop, guardrails, and analytics. Stack: Claude + Zendesk/Intercom + moderation.",
+      "source": "https://platform.openai.com/docs/assistants/migration",
+      "timelineWeeks": "2-3"
+    },
+    {
+      "id": "voice-ai-agent",
+      "name": "Voice AI Agent",
+      "emoji": "📞",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P2",
+      "launchDate": null,
+      "notes": "Real phone calls + booking + follow-ups. 3-4 weeks MVP. 24/7 automation.",
+      "details": "Handles real phone calls, appointment booking, and automated follow-ups. Stack: Twilio + Whisper + Claude + TTS.",
+      "source": "https://www.twilio.com/docs/voice",
+      "timelineWeeks": "3-4"
+    },
+    {
+      "id": "agentops-dashboard",
+      "name": "AgentOps Dashboard",
+      "emoji": "📊",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P1",
+      "launchDate": null,
+      "notes": "Track reliability, cost, failures, regressions. 2-3 weeks MVP. Need for AgentShield.",
+      "details": "Monitor agent reliability, costs, failures, and regressions. Stack: OpenTelemetry + evals. Critical for production agents.",
+      "source": "https://github.com/open-telemetry/opentelemetry-python",
+      "timelineWeeks": "2-3"
+    },
+    {
+      "id": "data-extraction",
+      "name": "AI Data Extraction Pipeline",
+      "emoji": "📄",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P2",
+      "launchDate": null,
+      "notes": "Extract structured data from PDFs/images at scale. 2-3 weeks MVP.",
+      "details": "Extract structured data from PDFs, emails, and images at scale. Stack: GPT-4 Vision + Unstructured.io + validation.",
+      "source": "https://github.com/Unstructured-IO/unstructured",
+      "timelineWeeks": "2-3"
+    },
+    {
+      "id": "code-review-ai",
+      "name": "Code Review AI",
+      "emoji": "👨‍💻",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P2",
+      "launchDate": null,
+      "notes": "Automated PR summaries, risk flags, suggestions. 2-3 weeks MVP.",
+      "details": "Automated code review for GitHub with PR summaries, risk flags, and improvement suggestions. Stack: GitHub Actions + Claude.",
+      "source": "https://docs.github.com/en/actions",
+      "timelineWeeks": "2-3"
+    },
+    {
+      "id": "multi-agent-planner",
+      "name": "Multi-Agent Planner",
+      "emoji": "🤖",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P2",
+      "launchDate": null,
+      "notes": "Planner + executor agents with fallbacks. 3-4 weeks MVP.",
+      "details": "Multi-agent workflow orchestration with planner and executor agents, deterministic fallbacks. Stack: LangGraph or CrewAI.",
+      "source": "https://github.com/crewAIInc/crewAI",
+      "timelineWeeks": "3-4"
+    },
+    {
+      "id": "ai-search-engine",
+      "name": "AI Search Engine",
+      "emoji": "🔎",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P3",
+      "launchDate": null,
+      "notes": "Search web/forums/social with citations. 2-3 weeks MVP.",
+      "details": "AI search engine across web, forums, and social media with fresh data and citations. Stack: Search APIs + rerankers + Claude.",
+      "source": "https://www.meilisearch.com/docs/home",
+      "timelineWeeks": "2-3"
+    },
+    {
+      "id": "prompt-security",
+      "name": "Enterprise Prompt Security",
+      "emoji": "🔒",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P1",
+      "launchDate": null,
+      "notes": "Detect injection, leaks, unsafe outputs. 3-4 weeks MVP. Pairs with Shannon.",
+      "details": "Enterprise prompt security tool to detect prompt injection, data leaks, and unsafe outputs. Stack: Policy checks + red teaming.",
+      "source": "https://github.com/openai/openai-cookbook/tree/main",
+      "timelineWeeks": "3-4"
     },
     {
       "id": "ai-code-observability",
@@ -109,6 +239,22 @@
       "priority": null,
       "notes": "⏸️ HALTED — Focus on StackAudit + AgentShield first.",
       "details": "Secure API key management for AI services with rotation, access control, and auditing."
+    },
+    {
+      "id": "localrank-ai",
+      "name": "LocalRank AI",
+      "emoji": "📍",
+      "progress": 0,
+      "status": "potential",
+      "priority": "P1",
+      "launchDate": null,
+      "notes": "Local SEO automation with AI. 4-6 weeks MVP. $49-999/month pricing. 10M+ market.",
+      "details": "Automate local SEO for small businesses: keyword research, service pages, GBP optimization, content generation, review management. Stack: Claude + Google APIs + integrations.",
+      "source": "https://x.com/bloggersarvesh/status/2019826070372192396",
+      "timelineWeeks": "4-6",
+      "targetMarket": "Local service businesses (plumbers, dentists, lawyers, etc.)",
+      "pricing": "$49-999/month (Solo/Pro/Agency/Enterprise tiers)",
+      "marketSize": "10M+ local businesses in US, $10B+ market"
     }
   ]
 }
