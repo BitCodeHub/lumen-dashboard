@@ -257,8 +257,6 @@ app.get('/cc/command-center/docs/', (req, res) => {
 app.get('/cc/command-center/docs/luna', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'luna-docs.html'));
 });
-// Serve Luna knowledge base files
-app.use('/clawd-luna/knowledge-base', express.static('/Users/jimmysmacstudio/clawd-luna/knowledge-base'));
 app.get('/cc/command-center/search', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cc', 'command-center', 'search.html'));
 });
