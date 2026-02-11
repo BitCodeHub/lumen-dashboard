@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ray-Ban Meta Glasses AI Research | Lumen Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #e0e6f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #4da6ff, #66d9ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            color: #99a8c2;
+            font-size: 1.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(77, 166, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(77, 166, 255, 0.2);
+        }
+
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #4da6ff;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .label {
+            color: #99a8c2;
+            font-size: 0.9em;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .category-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid #4da6ff;
+        }
+
+        .category-card h3 {
+            margin-bottom: 10px;
+            color: #4da6ff;
+        }
+
+        .category-card .count {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .category-card .description {
+            color: #99a8c2;
+            font-size: 0.9em;
+        }
+
+        .reports-section {
+            margin-top: 40px;
+        }
+
+        .reports-section h2 {
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-align: center;
+        }
+
+        .report-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .report-card:hover {
+            border-color: rgba(77, 166, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(77, 166, 255, 0.2);
+        }
+
+        .report-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .report-emoji {
+            font-size: 3em;
+        }
+
+        .report-title-group {
+            flex: 1;
+        }
+
+        .report-title {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .report-date {
+            color: #99a8c2;
+            font-size: 0.9em;
+        }
+
+        .report-summary {
+            color: #d0d8e8;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .findings-section, .recommendations-section, .sources-section {
+            margin-top: 25px;
+        }
+
+        .findings-section h3, .recommendations-section h3, .sources-section h3 {
+            color: #4da6ff;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .findings-list, .recommendations-list, .sources-list {
+            list-style: none;
+        }
+
+        .findings-list li, .recommendations-list li {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: rgba(77, 166, 255, 0.1);
+            border-left: 3px solid #4da6ff;
+            border-radius: 8px;
+        }
+
+        .sources-list li {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            color: #99a8c2;
+            font-size: 0.9em;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .tag {
+            padding: 6px 14px;
+            background: rgba(77, 166, 255, 0.2);
+            border-radius: 20px;
+            font-size: 0.85em;
+            color: #4da6ff;
+        }
+
+        .view-file-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #4da6ff, #66d9ff);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            margin-top: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .view-file-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(77, 166, 255, 0.4);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-complete {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .priority-high {
+            background: rgba(248, 113, 113, 0.2);
+            color: #f87171;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4da6ff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .stat-card .value {
+                font-size: 2em;
+            }
+
+            .report-header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to Dashboard</a>
+
+    <div class="header">
+        <h1>🎯 Ray-Ban Meta Glasses AI Research</h1>
+        <div class="subtitle">Market insights, user needs, and competitive intelligence for Lumen Vision</div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="categories-grid" id="categoriesGrid"></div>
+
+    <div class="reports-section">
+        <h2>📚 Research Reports</h2>
+        <div id="reportsContainer"></div>
+    </div>
+
+    <script>
+        async function loadResearch() {
+            try {
+                const response = await fetch('/api/rayban-research');
+                if (!response.ok) {
+                    throw new Error('Failed to load research data');
+                }
+                const data = await response.json();
+
+                // Render stats
+                renderStats(data.stats);
+
+                // Render categories
+                renderCategories(data.categories);
+
+                // Render reports
+                renderReports(data.reports);
+
+            } catch (error) {
+                console.error('Error loading research:', error);
+                document.getElementById('reportsContainer').innerHTML = `
+                    <div style="text-align: center; color: #f87171; padding: 40px;">
+                        ⚠️ Failed to load research data. Please try again later.
+                    </div>
+                `;
+            }
+        }
+
+        function renderStats(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="value">${stats.totalReports}</div>
+                    <div class="label">Total Reports</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">${stats.researchHoursInvested}</div>
+                    <div class="label">Hours Invested</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">${stats.sourcesConsulted}</div>
+                    <div class="label">Sources Consulted</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">${stats.keyInsights}</div>
+                    <div class="label">Key Insights</div>
+                </div>
+            `;
+        }
+
+        function renderCategories(categories) {
+            const categoriesGrid = document.getElementById('categoriesGrid');
+            categoriesGrid.innerHTML = Object.entries(categories).map(([key, category]) => `
+                <div class="category-card">
+                    <h3>${category.name}</h3>
+                    <div class="count">${category.count} report${category.count !== 1 ? 's' : ''}</div>
+                    <div class="description">${category.description}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderReports(reports) {
+            const reportsContainer = document.getElementById('reportsContainer');
+            reportsContainer.innerHTML = reports.map(report => `
+                <div class="report-card">
+                    <div class="report-header">
+                        <div class="report-emoji">${report.emoji}</div>
+                        <div class="report-title-group">
+                            <div class="report-title">${report.title}</div>
+                            <div class="report-date">📅 ${formatDate(report.date)}</div>
+                        </div>
+                        <div>
+                            <span class="status-badge status-${report.status}">${report.status.toUpperCase()}</span>
+                            <span class="status-badge priority-${report.priority}">${report.priority.toUpperCase()} PRIORITY</span>
+                        </div>
+                    </div>
+
+                    <div class="report-summary">
+                        ${report.summary}
+                    </div>
+
+                    <div class="findings-section">
+                        <h3>🔍 Key Findings</h3>
+                        <ul class="findings-list">
+                            ${report.keyFindings.map(finding => `<li>${finding}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="recommendations-section">
+                        <h3>💡 Recommendations</h3>
+                        <ul class="recommendations-list">
+                            ${report.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="sources-section">
+                        <h3>📚 Sources</h3>
+                        <ul class="sources-list">
+                            ${report.sources.map(source => `<li>• ${source}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="tags">
+                        ${report.tags.map(tag => `<span class="tag">#${tag}</span>`).join('')}
+                    </div>
+
+                    <a href="#" class="view-file-btn" onclick="alert('File location:\\n${report.filePath}\\n\\nSize: ${report.fileSize}'); return false;">
+                        📄 View Full Report
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        // Load data on page load
+        loadResearch();
+
+        // Auto-refresh every 5 minutes
+        setInterval(loadResearch, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

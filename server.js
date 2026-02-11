@@ -7677,3 +7677,27 @@ app.post('/api/product-progress', async (req, res) => {
   }
 });
 
+
+// GET /api/rayban-research - Get Ray-Ban Meta Glasses AI research data
+app.get('/api/rayban-research', async (req, res) => {
+  try {
+    const fs = require('fs');
+    const researchFile = '/Users/jimmysmacstudio/clawd/projects/lumen-dashboard/data/RAYBAN_META_RESEARCH.json';
+    
+    if (!fs.existsSync(researchFile)) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Research data not found',
+        reports: [],
+        stats: { totalReports: 0, lastResearchDate: null, researchHoursInvested: 0, sourcesConsulted: 0, keyInsights: 0 },
+        categories: {}
+      });
+    }
+    
+    const data = JSON.parse(fs.readFileSync(researchFile, 'utf-8'));
+    res.json(data);
+  } catch (err) {
+    console.error('Error loading Ray-Ban research:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
