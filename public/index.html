@@ -544,6 +544,11 @@
             <span>AI Agent Tools</span>
             <span class="ml-auto text-xs text-zinc-600 tabular-nums">🤖</span>
           </button>
+          <button onclick="switchView('app-scanner'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="app-scanner">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+            <span>App Scanner</span>
+            <span class="ml-auto text-xs text-zinc-600 tabular-nums">🛡️</span>
+          </button>
         </div>
         
         <!-- Ideas Section -->
@@ -970,6 +975,18 @@
               <div class="h-48 rounded-2xl skeleton"></div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- App Scanner View -->
+      <div id="app-scanner-view" class="flex-1 overflow-y-auto hidden">
+        <div id="app-scanner-content" class="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+          <iframe 
+            src="http://localhost:3456" 
+            class="w-full border-0 rounded-xl" 
+            style="height: calc(100vh - 120px); min-height: 600px;"
+            title="iOS Compliance Scanner"
+          ></iframe>
         </div>
       </div>
     </main>
@@ -1558,6 +1575,7 @@
       document.getElementById('jobs-view').classList.add('hidden');
       document.getElementById('resources-view').classList.add('hidden');
       document.getElementById('lumen-tools-view').classList.add('hidden');
+      document.getElementById('app-scanner-view').classList.add('hidden');
       
       // Update header
       document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1613,6 +1631,11 @@
         document.getElementById('briefing-count').textContent = '';
         document.querySelector('[data-filter="resources"]').classList.add('active');
         loadResources();
+      } else if (view === 'app-scanner') {
+        document.getElementById('app-scanner-view').classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'iOS App Scanner';
+        document.getElementById('briefing-count').textContent = '';
+        document.querySelector('[data-filter="app-scanner"]').classList.add('active');
       }
     }
 
