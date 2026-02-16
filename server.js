@@ -7448,6 +7448,15 @@ app.get('/applause.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'applause.html'));
 });
 
+app.get('/deployment-config.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'deployment-config.html'));
+});
+
+// Luna Labs chat UI (public - for SaaS customers)
+app.get('/luna-labs-chat.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'luna-labs-chat.html'));
+});
+
 // Protected route - Command Center (requires login)
 app.get('/command-center.html', (req, res) => {
   // Check if user is authenticated
