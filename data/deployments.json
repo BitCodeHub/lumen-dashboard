@@ -1,3 +1,22 @@
 {
-  "deployments": []
+  "deployments": [
+    {
+      "id": "luna-labs-maven",
+      "name": "Luna Labs",
+      "description": "AI Assistant powered by Maven - White-label chat interface",
+      "chatUrl": "/luna-labs-chat.html",
+      "apiUrl": "http://srv1352214.hstgr.cloud:44434",
+      "status": "active",
+      "agent": "Maven",
+      "model": "kimi-coding/k2p5",
+      "createdAt": "2026-02-16T21:48:00Z",
+      "type": "chat-ui",
+      "tags": ["ai", "chat", "white-label", "luna-labs"],
+      "business": {
+        "name": "Luna Labs",
+        "contact": "",
+        "notes": "First white-label deployment"
+      }
+    }
+  ]
 }
