@@ -1342,22 +1342,41 @@
             if (vpsConfig) {
                 // Direct sync to VPS
                 console.log('Syncing directly to VPS:', vpsConfig.apiUrl);
-                const res = await fetch(vpsConfig.apiUrl, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'X-API-Key': vpsConfig.apiKey
-                    },
-                    body: JSON.stringify({ workspace })
-                });
+                console.log('Workspace size:', JSON.stringify(workspace).length, 'bytes');
                 
-                const data = await res.json();
-                
-                if (!res.ok) {
-                    throw new Error(data.error || 'VPS sync failed');
+                try {
+                    const res = await fetch(vpsConfig.apiUrl, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-API-Key': vpsConfig.apiKey
+                        },
+                        body: JSON.stringify({ workspace })
+                    });
+                    
+                    console.log('Response status:', res.status);
+                    const data = await res.json();
+                    console.log('Response data:', data);
+                    
+                    if (!res.ok) {
+                        throw new Error(data.error || 'VPS sync failed');
+                    }
+                    
+                    return data;
+                } catch (fetchError) {
+                    console.error('Fetch error details:', fetchError);
+                    // Try alternative: POST to local dashboard API which will relay
+                    console.log('Trying fallback to dashboard relay...');
+                    const res = await fetch(`/api/deployments/${deploymentId}/sync`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ workspace, targetVps: vpsConfig })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Relay sync failed');
+                    return data;
                 }
-                
-                return data;
             } else {
                 // Fallback to dashboard API
                 const res = await fetch(`/api/deployments/${deploymentId}/sync`, {

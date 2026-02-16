@@ -138,7 +138,39 @@ router.post('/:id/sync', async (req, res) => {
     
     // Accept workspace from request body (generated MD content)
     const workspace = req.body.workspace || {};
+    const targetVps = req.body.targetVps; // For relay from frontend
     const results = [];
+    
+    // If targetVps provided, relay to VPS API
+    if (targetVps && targetVps.apiUrl) {
+      try {
+        const fetch = (await import('node-fetch')).default;
+        const vpsRes = await fetch(targetVps.apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': targetVps.apiKey
+          },
+          body: JSON.stringify({ workspace })
+        });
+        const vpsData = await vpsRes.json();
+        if (vpsRes.ok) {
+          // Also save locally
+          const index = data.deployments.findIndex(d => d.id === req.params.id);
+          if (index !== -1) {
+            data.deployments[index].workspace = workspace;
+            data.deployments[index].lastSyncedAt = new Date().toISOString();
+            await saveDeployments(data);
+          }
+          return res.json({ success: true, results: vpsData.results, relayed: true });
+        } else {
+          throw new Error(vpsData.error || 'VPS sync failed');
+        }
+      } catch (relayErr) {
+        console.error('Relay error:', relayErr.message);
+        results.push({ info: 'VPS relay failed: ' + relayErr.message });
+      }
+    }
 
     // Check if we have VPS config for direct SSH sync
     const vpsConfig = VPS_CONFIGS[req.params.id];
