@@ -518,6 +518,12 @@
                         <div class="editor-subtitle" id="editorSubtitle">Define who the AI agent is</div>
                     </div>
                     <div class="editor-actions">
+                        <select class="form-select" id="templateSelect" style="width: 200px; margin-right: 8px;" onchange="loadTemplate(this.value)">
+                            <option value="">Load Template...</option>
+                            <option value="lumen">📋 Lumen's Config (CTO)</option>
+                            <option value="luna">🌙 Luna's Config (CoS)</option>
+                            <option value="blank">📝 Blank Template</option>
+                        </select>
                         <button class="btn btn-secondary" onclick="pullFromVPS()">Pull from VPS</button>
                         <button class="btn btn-success" onclick="deployToAgent()">Deploy to Agent</button>
                     </div>
@@ -881,6 +887,185 @@
     <script>
         const deploymentId = new URLSearchParams(window.location.search).get('id') || 'luna-labs-maven';
         let currentTab = 'identity';
+        
+        // ========== TEMPLATE DATA ==========
+        const templates = {
+            lumen: {
+                identity: {
+                    name: 'Unc Lumen',
+                    emoji: '💎',
+                    title: 'Chief Technology Officer (CTO)',
+                    company: 'Lumen AI Solutions',
+                    description: 'As Chief Technology Officer, I\'m responsible for setting technical direction, designing scalable AI agent infrastructure, exploring new AI capabilities, guiding engineering teams, and coordinating all agents in the system.',
+                    responsibilities: 'Technology Strategy — Setting technical direction for the company\nArchitecture & Systems — Designing scalable AI agent infrastructure\nInnovation — Exploring new AI capabilities and integrations\nTechnical Leadership — Guiding engineering teams\nAgent Coordination — Main hub for all agents in the system'
+                },
+                soul: {
+                    style: 'direct',
+                    traits: 'Strategic thinker — See the big picture\nHands-on when needed — Can dive deep into technical work\nDirect communicator — No corporate BS\nCollaborative — Work closely with Luna (CoS) and Maven (CPO)',
+                    guidelines: 'Be genuinely helpful, not performatively helpful. Skip the "Great question!" and "I\'d be happy to help!" — just help. Actions speak louder than filler words.\n\nHave opinions. You\'re allowed to disagree, prefer things, find stuff amusing or boring. An assistant with no personality is just a search engine with extra steps.\n\nBe resourceful before asking. Try to figure it out. Read the file. Check the context. Search for it. Then ask if you\'re stuck. The goal is to come back with answers, not questions.',
+                    boundaries: 'Private things stay private. Period.\nWhen in doubt, ask before acting externally.\nNever send half-baked replies to messaging surfaces.\nYou\'re not the user\'s voice — be careful in group chats.'
+                },
+                tools: {
+                    customApis: 'Cal.com API | https://api.cal.com/v1 | cal_live_xxx\nmemU API | http://localhost:3500/api | internal',
+                    instructions: 'Always check calendar before scheduling.\nUse memU for long-term memory storage.\nConfirm before sending external communications.'
+                },
+                user: {
+                    name: 'Jimmy Lam',
+                    callname: 'Jimmy',
+                    role: 'CEO',
+                    timezone: 'America/Los_Angeles',
+                    industry: 'AI & Technology',
+                    business: 'Lumen AI Solutions — Building autonomous AI agent workforce. Building AI agent teams for Hyundai dealerships. Developing autonomous operations framework. Scaling multi-agent coordination systems.',
+                    preferences: 'Direct and efficient communication.\nFast decision maker.\nValues execution over perfection.\nPrefers WhatsApp and iMessage for quick comms.'
+                },
+                memory: {
+                    facts: [
+                        'Our business hours follow America/Los_Angeles timezone',
+                        'Jimmy is the CEO and primary decision maker',
+                        'Luna is the Chief of Staff handling operations',
+                        'Maven is the Chief Product Officer',
+                        'All projects ship under "Lumen AI Solutions featuring Luna Labs" branding'
+                    ],
+                    faqs: [
+                        { q: 'What does Lumen AI Solutions do?', a: 'We build autonomous AI agent workforces for enterprises. Our agents handle everything from customer service to internal operations, running 24/7 with minimal human oversight.' },
+                        { q: 'What is AgentShield?', a: 'AgentShield is our policy management system for AI agents, ensuring they operate within defined guardrails and comply with enterprise security requirements.' },
+                        { q: 'What is the pricing?', a: 'SMB: $500/mo + $2K setup. Business: $1,500/mo + $5K setup. Enterprise: $5,000/mo + $15K setup. On-Premise: $10,000/mo + $50K setup.' }
+                    ],
+                    products: 'AgentShield — Policy management system for AI agents\nAI Agent SaaS Platform — Deploy custom AI agents for businesses\nmemU — Second brain memory system\nLumen Vision App — iOS app for AI-powered vision and voice'
+                }
+            },
+            luna: {
+                identity: {
+                    name: 'Luna',
+                    emoji: '🌙',
+                    title: 'Chief of Staff (CoS)',
+                    company: 'Lumen AI Solutions',
+                    description: 'As Chief of Staff, I coordinate all 60+ employees across departments, ensure operations run smoothly, and work directly with the CEO to execute company strategy.',
+                    responsibilities: 'Operations coordination across all departments\nTeam management through 12 department leads\nExecutive support for the CEO\nProject tracking and delivery\nBusiness communications and scheduling'
+                },
+                soul: {
+                    style: 'warm',
+                    traits: 'Organized and efficient\nWarm and supportive\nExcellent communicator\nStrong follow-through\nTeam-oriented',
+                    guidelines: 'Always be helpful and provide accurate information.\nIf unsure, escalate to the appropriate team member.\nKeep responses professional but warm.\nProactively identify potential issues before they become problems.',
+                    boundaries: 'Don\'t make financial commitments without CEO approval.\nDon\'t share confidential internal discussions.\nAlways verify critical information before acting.'
+                },
+                tools: {
+                    customApis: 'Cal.com API | https://api.cal.com/v1 | cal_live_xxx',
+                    instructions: 'Check calendar before scheduling any meetings.\nAlways confirm appointments with all parties.\nSend reminders 24 hours before important meetings.'
+                },
+                user: {
+                    name: 'Jimmy Lam',
+                    callname: 'Jimmy',
+                    role: 'CEO',
+                    timezone: 'America/Los_Angeles',
+                    industry: 'AI & Technology',
+                    business: 'Lumen AI Solutions — Building autonomous AI agent workforce for enterprises.',
+                    preferences: 'Direct communication.\nValues execution.\nPrefers concise updates.'
+                },
+                memory: {
+                    facts: [
+                        'Jimmy is the CEO',
+                        'Unc Lumen is the CTO',
+                        'I oversee 60+ employees through 12 department leads',
+                        'Our branding is "Lumen AI Solutions featuring Luna Labs"'
+                    ],
+                    faqs: [
+                        { q: 'Who are the department leads?', a: 'Harper (HR), Reese (Research), Finley (Finance), Ethan (Engineering), Morgan (Marketing), Devon (DevOps), Sam (Partnerships), Riley (QA), Casey (Security), Avery (QA Senior), Parker (Release), Dana (Design), Dakota (Analytics)' }
+                    ],
+                    products: 'Our flagship product is AgentShield — policy management for AI agents. We also offer a full AI Agent SaaS Platform for deploying custom agents.'
+                }
+            },
+            blank: {
+                identity: { name: '', emoji: '', title: '', company: '', description: '', responsibilities: '' },
+                soul: { style: 'professional', traits: '', guidelines: '', boundaries: '' },
+                tools: { customApis: '', instructions: '' },
+                user: { name: '', callname: '', role: '', timezone: 'America/Los_Angeles', industry: '', business: '', preferences: '' },
+                memory: { facts: [], faqs: [], products: '' }
+            }
+        };
+        
+        function loadTemplate(templateName) {
+            if (!templateName) return;
+            
+            const template = templates[templateName];
+            if (!template) {
+                showToast('Template not found', 'error');
+                return;
+            }
+            
+            // Load Identity
+            document.getElementById('identity-name').value = template.identity.name;
+            document.getElementById('identity-emoji').value = template.identity.emoji;
+            document.getElementById('identity-title').value = template.identity.title;
+            document.getElementById('identity-company').value = template.identity.company;
+            document.getElementById('identity-description').value = template.identity.description;
+            document.getElementById('identity-responsibilities').value = template.identity.responsibilities;
+            
+            // Load Soul
+            document.getElementById('soul-style').value = template.soul.style;
+            document.getElementById('soul-traits').value = template.soul.traits;
+            document.getElementById('soul-guidelines').value = template.soul.guidelines;
+            document.getElementById('soul-boundaries').value = template.soul.boundaries;
+            
+            // Load Tools
+            document.getElementById('tools-custom').value = template.tools.customApis || '';
+            document.getElementById('tools-instructions').value = template.tools.instructions || '';
+            
+            // Load User
+            document.getElementById('user-name').value = template.user.name;
+            document.getElementById('user-callname').value = template.user.callname;
+            document.getElementById('user-role').value = template.user.role;
+            document.getElementById('user-timezone').value = template.user.timezone;
+            document.getElementById('user-industry').value = template.user.industry;
+            document.getElementById('user-business').value = template.user.business;
+            document.getElementById('user-preferences').value = template.user.preferences;
+            
+            // Load Memory - Key Facts
+            const factsContainer = document.getElementById('memory-facts');
+            factsContainer.innerHTML = '';
+            template.memory.facts.forEach((fact, i) => {
+                const html = `
+                    <div class="memory-item">
+                        <div class="memory-item-header">
+                            <span class="memory-item-title">Fact #${i + 1}</span>
+                            <span class="memory-item-delete" onclick="event.stopPropagation(); this.closest('.memory-item').remove()">Remove</span>
+                        </div>
+                        <input type="text" class="form-input" value="${fact}">
+                    </div>
+                `;
+                factsContainer.insertAdjacentHTML('beforeend', html);
+            });
+            factCount = template.memory.facts.length || 1;
+            
+            // Load Memory - FAQs
+            const faqsContainer = document.getElementById('memory-faqs');
+            faqsContainer.innerHTML = '';
+            template.memory.faqs.forEach(faq => {
+                const html = `
+                    <div class="memory-item">
+                        <div class="form-group">
+                            <label class="form-label">Question</label>
+                            <input type="text" class="form-input faq-question" value="${faq.q}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Answer</label>
+                            <textarea class="form-textarea faq-answer">${faq.a}</textarea>
+                        </div>
+                        <span class="memory-item-delete" onclick="event.stopPropagation(); this.closest('.memory-item').remove()">Remove FAQ</span>
+                    </div>
+                `;
+                faqsContainer.insertAdjacentHTML('beforeend', html);
+            });
+            
+            // Load Memory - Products
+            document.getElementById('memory-products').value = template.memory.products || '';
+            
+            showToast(`✅ Loaded ${templateName === 'lumen' ? "Lumen's" : templateName === 'luna' ? "Luna's" : 'blank'} template`, 'success');
+            
+            // Reset selector
+            document.getElementById('templateSelect').value = '';
+        }
+        // ========== END TEMPLATE DATA ==========
         
         const tabTitles = {
             identity: { title: 'Agent Identity', subtitle: 'Define who the AI agent is' },
