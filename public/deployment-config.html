@@ -841,7 +841,7 @@
         
         // Deploy to agent
         async function deployToAgent() {
-            showToast('Deploying to agent...', '');
+            showToast('Deploying configuration...', '');
             
             const workspace = {
                 identity: generateIdentityMD(),
@@ -851,34 +851,45 @@
                 memory: generateMemoryMD()
             };
             
+            // Check if any content exists
+            const hasContent = Object.values(workspace).some(v => v && v.trim().length > 50);
+            if (!hasContent) {
+                showToast('Please fill in at least one section before deploying.', 'error');
+                return;
+            }
+            
             try {
-                // Sync each file to VPS
-                const results = await syncToVPS(workspace);
-                showToast(`Deployed! Agent updated with new configuration.`, 'success');
-                document.getElementById('lastSynced').textContent = new Date().toLocaleString();
+                const result = await syncToVPS(workspace);
+                if (result.success) {
+                    showToast('✅ Configuration saved successfully!', 'success');
+                    document.getElementById('lastSynced').textContent = new Date().toLocaleString();
+                    
+                    // Log results to console for debugging
+                    console.log('Deployment results:', result);
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
             } catch (error) {
+                console.error('Deploy error:', error);
                 showToast('Deploy failed: ' + error.message, 'error');
             }
         }
         
         async function syncToVPS(workspace) {
-            const VPS_HOST = 'srv1352214.hstgr.cloud';
-            
-            // Use API endpoint to sync (this will be handled server-side)
+            // Use API endpoint to sync
             const res = await fetch(`/api/deployments/${deploymentId}/sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ workspace })
             });
             
+            const data = await res.json();
+            
             if (!res.ok) {
-                // Fallback: show the generated content for manual copy
-                console.log('API sync failed, showing generated content');
-                console.log(workspace);
-                throw new Error('API not available - check console for generated content');
+                throw new Error(data.error || 'API request failed');
             }
             
-            return await res.json();
+            return data;
         }
         
         function pullFromVPS() {
