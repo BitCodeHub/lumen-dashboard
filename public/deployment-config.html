@@ -10,9 +10,9 @@
         
         body {
             font-family: 'Inter', -apple-system, sans-serif;
-            background: #f3f4f6;
+            background: #0f0f0f;
             min-height: 100vh;
-            color: #111827;
+            color: #e5e5e5;
         }
         
         .container {
@@ -27,7 +27,7 @@
             justify-content: space-between;
             margin-bottom: 24px;
             padding-bottom: 24px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #2a2a2a;
         }
         
         .header-left {
@@ -41,26 +41,27 @@
             align-items: center;
             gap: 8px;
             padding: 8px 16px;
-            background: #fff;
-            border: 1px solid #e5e7eb;
+            background: #1a1a1a;
+            border: 1px solid #333;
             border-radius: 8px;
             font-size: 14px;
-            color: #374151;
+            color: #a0a0a0;
             cursor: pointer;
             text-decoration: none;
         }
         
-        .back-btn:hover { background: #f9fafb; }
+        .back-btn:hover { background: #222; color: #fff; }
         
         .business-info h1 {
             font-size: 24px;
             font-weight: 700;
             margin-bottom: 4px;
+            color: #fff;
         }
         
         .business-info p {
             font-size: 14px;
-            color: #6b7280;
+            color: #888;
         }
         
         .status-badge {
@@ -68,8 +69,8 @@
             border-radius: 20px;
             font-size: 13px;
             font-weight: 500;
-            background: #d1fae5;
-            color: #065f46;
+            background: #064e3b;
+            color: #34d399;
         }
         
         .main-grid {
@@ -79,9 +80,9 @@
         }
         
         .sidebar {
-            background: #fff;
+            background: #1a1a1a;
             border-radius: 12px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #2a2a2a;
             padding: 20px;
             height: fit-content;
         }
@@ -89,7 +90,7 @@
         .sidebar h3 {
             font-size: 12px;
             font-weight: 600;
-            color: #6b7280;
+            color: #888;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 16px;
@@ -99,40 +100,40 @@
             display: flex;
             justify-content: space-between;
             padding: 12px 0;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid #2a2a2a;
             font-size: 14px;
         }
         
         .info-row:last-child { border-bottom: none; }
-        .info-label { color: #6b7280; }
-        .info-value { font-weight: 500; color: #111827; }
+        .info-label { color: #888; }
+        .info-value { font-weight: 500; color: #e5e5e5; }
         
         .chat-url {
             display: block;
             margin-top: 16px;
             padding: 12px 16px;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
+            background: #222;
+            border: 1px solid #333;
             border-radius: 8px;
             font-size: 13px;
-            color: #3b82f6;
+            color: #60a5fa;
             word-break: break-all;
             text-decoration: none;
         }
         
-        .chat-url:hover { background: #f3f4f6; }
+        .chat-url:hover { background: #2a2a2a; }
         
         .editor-section {
-            background: #fff;
+            background: #1a1a1a;
             border-radius: 12px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #2a2a2a;
             overflow: hidden;
         }
         
         .tabs {
             display: flex;
-            border-bottom: 1px solid #e5e7eb;
-            background: #f9fafb;
+            border-bottom: 1px solid #2a2a2a;
+            background: #141414;
             overflow-x: auto;
         }
         
@@ -140,19 +141,19 @@
             padding: 16px 24px;
             font-size: 14px;
             font-weight: 500;
-            color: #6b7280;
+            color: #888;
             cursor: pointer;
             border-bottom: 2px solid transparent;
             transition: all 0.15s;
             white-space: nowrap;
         }
         
-        .tab:hover { color: #374151; background: #fff; }
+        .tab:hover { color: #e5e5e5; background: #1a1a1a; }
         
         .tab.active {
-            color: #111827;
-            background: #fff;
-            border-bottom-color: #111827;
+            color: #fff;
+            background: #1a1a1a;
+            border-bottom-color: #8b5cf6;
         }
         
         .editor-header {
@@ -160,17 +161,18 @@
             justify-content: space-between;
             align-items: center;
             padding: 16px 20px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #2a2a2a;
         }
         
         .editor-title {
             font-size: 16px;
             font-weight: 600;
+            color: #fff;
         }
         
         .editor-subtitle {
             font-size: 13px;
-            color: #6b7280;
+            color: #888;
             margin-top: 2px;
         }
         
@@ -189,10 +191,10 @@
             transition: all 0.15s;
         }
         
-        .btn-primary { background: #111827; color: #fff; }
-        .btn-primary:hover { background: #374151; }
-        .btn-secondary { background: #fff; color: #374151; border: 1px solid #e5e7eb; }
-        .btn-secondary:hover { background: #f9fafb; }
+        .btn-primary { background: #8b5cf6; color: #fff; }
+        .btn-primary:hover { background: #7c3aed; }
+        .btn-secondary { background: #222; color: #e5e5e5; border: 1px solid #333; }
+        .btn-secondary:hover { background: #2a2a2a; }
         .btn-success { background: #059669; color: #fff; }
         .btn-success:hover { background: #047857; }
         
@@ -211,7 +213,7 @@
         .form-section-title {
             font-size: 14px;
             font-weight: 600;
-            color: #111827;
+            color: #fff;
             margin-bottom: 12px;
             display: flex;
             align-items: center;
@@ -232,13 +234,13 @@
             display: block;
             font-size: 13px;
             font-weight: 500;
-            color: #374151;
+            color: #a0a0a0;
             margin-bottom: 6px;
         }
         
         .form-hint {
             font-size: 12px;
-            color: #9ca3af;
+            color: #666;
             font-weight: 400;
             margin-left: 4px;
         }
@@ -246,18 +248,23 @@
         .form-input, .form-select, .form-textarea {
             width: 100%;
             padding: 10px 14px;
-            border: 1px solid #d1d5db;
+            border: 1px solid #333;
             border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
             transition: border-color 0.15s, box-shadow 0.15s;
-            background: #fff;
+            background: #222;
+            color: #e5e5e5;
+        }
+        
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: #555;
         }
         
         .form-input:focus, .form-select:focus, .form-textarea:focus {
             outline: none;
-            border-color: #111827;
-            box-shadow: 0 0 0 1px #111827;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 1px #8b5cf6;
         }
         
         .form-textarea {
@@ -272,8 +279,8 @@
         }
         
         .memory-item {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
+            background: #222;
+            border: 1px solid #333;
             border-radius: 8px;
             padding: 16px;
             margin-bottom: 12px;
@@ -289,6 +296,7 @@
         .memory-item-title {
             font-weight: 500;
             font-size: 14px;
+            color: #e5e5e5;
         }
         
         .memory-item-delete {
@@ -297,22 +305,24 @@
             font-size: 13px;
         }
         
+        .memory-item-delete:hover { color: #f87171; }
+        
         .add-btn {
             display: flex;
             align-items: center;
             gap: 8px;
             padding: 10px 16px;
-            background: #f3f4f6;
-            border: 1px dashed #d1d5db;
+            background: #222;
+            border: 1px dashed #444;
             border-radius: 8px;
             font-size: 14px;
-            color: #6b7280;
+            color: #888;
             cursor: pointer;
             width: 100%;
             justify-content: center;
         }
         
-        .add-btn:hover { background: #e5e7eb; color: #374151; }
+        .add-btn:hover { background: #2a2a2a; color: #e5e5e5; border-color: #555; }
         
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -322,7 +332,7 @@
             bottom: 24px;
             right: 24px;
             padding: 16px 24px;
-            background: #111827;
+            background: #333;
             color: #fff;
             border-radius: 8px;
             font-size: 14px;
@@ -335,6 +345,120 @@
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast.error { background: #dc2626; }
         .toast.success { background: #059669; }
+        
+        /* Integration card styles */
+        .integration-card {
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .integration-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .integration-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .integration-icon {
+            width: 40px;
+            height: 40px;
+            background: #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .integration-name {
+            font-weight: 600;
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .integration-desc {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .integration-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .integration-status.configured {
+            background: #064e3b;
+            color: #34d399;
+        }
+        
+        .integration-status.not-configured {
+            background: #333;
+            color: #888;
+        }
+        
+        .integration-fields {
+            display: none;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #333;
+        }
+        
+        .integration-card.expanded .integration-fields {
+            display: block;
+        }
+        
+        .capability-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            border: 1px solid #4c1d95;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #c4b5fd;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .capability-badge .check {
+            color: #34d399;
+        }
+        
+        .core-capabilities-box {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid #312e81;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .core-capabilities-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #a5b4fc;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .core-capabilities-desc {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 16px;
+        }
         
         @media (max-width: 768px) {
             .main-grid { grid-template-columns: 1fr; }
@@ -481,46 +605,169 @@
                     </div>
                 </div>
                 
-                <!-- TOOLS TAB -->
+                <!-- TOOLS TAB - REDESIGNED -->
                 <div class="tab-content" id="content-tools">
                     <div class="form-content">
+                        <!-- Core Capabilities Section -->
+                        <div class="core-capabilities-box">
+                            <div class="core-capabilities-title">
+                                <span>⚡</span> Core Agent Capabilities (Always Available)
+                            </div>
+                            <div class="core-capabilities-desc">
+                                Maven is a full autonomous AI agent. These capabilities are built-in and always available. Technical users can work directly with Maven to configure additional tools as needed.
+                            </div>
+                            <div>
+                                <span class="capability-badge"><span class="check">✓</span> Execute Code</span>
+                                <span class="capability-badge"><span class="check">✓</span> Read/Write Files</span>
+                                <span class="capability-badge"><span class="check">✓</span> Web Search</span>
+                                <span class="capability-badge"><span class="check">✓</span> Web Browsing</span>
+                                <span class="capability-badge"><span class="check">✓</span> Shell Commands</span>
+                                <span class="capability-badge"><span class="check">✓</span> Memory System</span>
+                                <span class="capability-badge"><span class="check">✓</span> Image Analysis</span>
+                                <span class="capability-badge"><span class="check">✓</span> API Calls</span>
+                            </div>
+                        </div>
+                        
                         <div class="form-section">
-                            <div class="form-section-title"><span class="icon">⚙️</span> Available Capabilities</div>
-                            <div class="form-group">
-                                <label class="form-label">What can this agent do? <span class="form-hint">(Check all that apply)</span></label>
-                                <div style="display: grid; gap: 8px; margin-top: 8px;">
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
-                                        <input type="checkbox" id="tool-search"> 🔍 Search the web for information
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
-                                        <input type="checkbox" id="tool-calendar"> 📅 Access calendar/scheduling
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
-                                        <input type="checkbox" id="tool-email"> 📧 Send emails
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
-                                        <input type="checkbox" id="tool-files"> 📁 Read/write files
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
-                                        <input type="checkbox" id="tool-code"> 💻 Execute code
-                                    </label>
+                            <div class="form-section-title"><span class="icon">🔌</span> Configured Integrations <span class="form-hint">(Set up during onboarding)</span></div>
+                            <p style="font-size: 13px; color: #888; margin-bottom: 16px;">
+                                Configure connections to the business's existing tools. These are set up by you during customer onboarding based on their tech stack.
+                            </p>
+                            
+                            <!-- Calendar Integration -->
+                            <div class="integration-card" onclick="toggleIntegration(this)">
+                                <div class="integration-header">
+                                    <div class="integration-info">
+                                        <div class="integration-icon">📅</div>
+                                        <div>
+                                            <div class="integration-name">Calendar Access</div>
+                                            <div class="integration-desc">Google Calendar, Outlook, Cal.com</div>
+                                        </div>
+                                    </div>
+                                    <span class="integration-status not-configured">Not Configured</span>
+                                </div>
+                                <div class="integration-fields">
+                                    <div class="form-group">
+                                        <label class="form-label">Calendar Provider</label>
+                                        <select class="form-select" id="tool-calendar-provider">
+                                            <option value="">Select provider...</option>
+                                            <option value="google">Google Calendar</option>
+                                            <option value="outlook">Microsoft Outlook</option>
+                                            <option value="calcom">Cal.com</option>
+                                            <option value="ical">Apple iCal</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">API Key or OAuth Token</label>
+                                        <input type="password" class="form-input" id="tool-calendar-key" placeholder="Enter API key or token...">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Email Integration -->
+                            <div class="integration-card" onclick="toggleIntegration(this)">
+                                <div class="integration-header">
+                                    <div class="integration-info">
+                                        <div class="integration-icon">📧</div>
+                                        <div>
+                                            <div class="integration-name">Email Sending</div>
+                                            <div class="integration-desc">Gmail, Outlook, SendGrid, SMTP</div>
+                                        </div>
+                                    </div>
+                                    <span class="integration-status not-configured">Not Configured</span>
+                                </div>
+                                <div class="integration-fields">
+                                    <div class="form-group">
+                                        <label class="form-label">Email Provider</label>
+                                        <select class="form-select" id="tool-email-provider">
+                                            <option value="">Select provider...</option>
+                                            <option value="gmail">Gmail API</option>
+                                            <option value="outlook">Microsoft Graph</option>
+                                            <option value="sendgrid">SendGrid</option>
+                                            <option value="smtp">Custom SMTP</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">API Key or Credentials</label>
+                                        <input type="password" class="form-input" id="tool-email-key" placeholder="Enter API key or credentials...">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- CRM Integration -->
+                            <div class="integration-card" onclick="toggleIntegration(this)">
+                                <div class="integration-header">
+                                    <div class="integration-info">
+                                        <div class="integration-icon">👥</div>
+                                        <div>
+                                            <div class="integration-name">CRM / Customer Data</div>
+                                            <div class="integration-desc">Salesforce, HubSpot, Pipedrive</div>
+                                        </div>
+                                    </div>
+                                    <span class="integration-status not-configured">Not Configured</span>
+                                </div>
+                                <div class="integration-fields">
+                                    <div class="form-group">
+                                        <label class="form-label">CRM Platform</label>
+                                        <select class="form-select" id="tool-crm-provider">
+                                            <option value="">Select CRM...</option>
+                                            <option value="salesforce">Salesforce</option>
+                                            <option value="hubspot">HubSpot</option>
+                                            <option value="pipedrive">Pipedrive</option>
+                                            <option value="airtable">Airtable</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">API Key</label>
+                                        <input type="password" class="form-input" id="tool-crm-key" placeholder="Enter API key...">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- File Storage Integration -->
+                            <div class="integration-card" onclick="toggleIntegration(this)">
+                                <div class="integration-header">
+                                    <div class="integration-info">
+                                        <div class="integration-icon">📁</div>
+                                        <div>
+                                            <div class="integration-name">Company Files / Documents</div>
+                                            <div class="integration-desc">Google Drive, Dropbox, SharePoint</div>
+                                        </div>
+                                    </div>
+                                    <span class="integration-status not-configured">Not Configured</span>
+                                </div>
+                                <div class="integration-fields">
+                                    <div class="form-group">
+                                        <label class="form-label">Storage Provider</label>
+                                        <select class="form-select" id="tool-storage-provider">
+                                            <option value="">Select provider...</option>
+                                            <option value="gdrive">Google Drive</option>
+                                            <option value="dropbox">Dropbox</option>
+                                            <option value="sharepoint">SharePoint</option>
+                                            <option value="notion">Notion</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">API Key or OAuth Token</label>
+                                        <input type="password" class="form-input" id="tool-storage-key" placeholder="Enter API key or token...">
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="form-section">
-                            <div class="form-section-title"><span class="icon">🔗</span> Custom Integrations</div>
+                            <div class="form-section-title"><span class="icon">🔗</span> Custom API Endpoints</div>
                             <div class="form-group">
-                                <label class="form-label">API Endpoints or Services <span class="form-hint">(Optional)</span></label>
-                                <textarea class="form-textarea" id="tools-custom" placeholder="List any custom APIs or services this agent should use..."></textarea>
+                                <label class="form-label">Additional APIs <span class="form-hint">(One per line: name | url | api_key)</span></label>
+                                <textarea class="form-textarea" id="tools-custom" placeholder="Internal Inventory API | https://api.company.com/inventory | sk-xxx&#10;Payment Gateway | https://pay.company.com/api | pk-xxx"></textarea>
                             </div>
                         </div>
                         
                         <div class="form-section">
-                            <div class="form-section-title"><span class="icon">📌</span> Special Instructions</div>
+                            <div class="form-section-title"><span class="icon">📌</span> Integration Instructions</div>
                             <div class="form-group">
-                                <label class="form-label">Tool-specific instructions</label>
-                                <textarea class="form-textarea" id="tools-instructions" placeholder="Any special instructions for how the agent should use its tools..."></textarea>
+                                <label class="form-label">Special rules for how Maven should use these tools</label>
+                                <textarea class="form-textarea" id="tools-instructions" placeholder="e.g., Always check calendar before scheduling. Never send emails without user confirmation. Only access files in the /shared folder..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -590,7 +837,7 @@
                                 <div class="memory-item">
                                     <div class="memory-item-header">
                                         <span class="memory-item-title">Fact #1</span>
-                                        <span class="memory-item-delete" onclick="this.closest('.memory-item').remove()">Remove</span>
+                                        <span class="memory-item-delete" onclick="event.stopPropagation(); this.closest('.memory-item').remove()">Remove</span>
                                     </div>
                                     <input type="text" class="form-input" placeholder="e.g., Our business hours are 9 AM - 5 PM PST">
                                 </div>
@@ -610,7 +857,7 @@
                                         <label class="form-label">Answer</label>
                                         <textarea class="form-textarea faq-answer" placeholder="The answer the agent should give..."></textarea>
                                     </div>
-                                    <span class="memory-item-delete" onclick="this.closest('.memory-item').remove()">Remove FAQ</span>
+                                    <span class="memory-item-delete" onclick="event.stopPropagation(); this.closest('.memory-item').remove()">Remove FAQ</span>
                                 </div>
                             </div>
                             <button class="add-btn" onclick="addFAQ()">+ Add FAQ</button>
@@ -638,7 +885,7 @@
         const tabTitles = {
             identity: { title: 'Agent Identity', subtitle: 'Define who the AI agent is' },
             soul: { title: 'Agent Soul', subtitle: 'Define personality and behavior' },
-            tools: { title: 'Tools & Capabilities', subtitle: 'Configure what the agent can do' },
+            tools: { title: 'Tools & Integrations', subtitle: 'Configure business tool connections' },
             user: { title: 'User Information', subtitle: 'Details about the business owner' },
             memory: { title: 'Agent Memory', subtitle: 'Knowledge base and key facts' }
         };
@@ -658,6 +905,16 @@
             });
         });
         
+        // Toggle integration card
+        function toggleIntegration(card) {
+            if (event.target.classList.contains('form-input') || 
+                event.target.classList.contains('form-select') ||
+                event.target.tagName === 'LABEL') {
+                return;
+            }
+            card.classList.toggle('expanded');
+        }
+        
         // Add memory fact
         let factCount = 1;
         function addMemoryFact() {
@@ -666,7 +923,7 @@
                 <div class="memory-item">
                     <div class="memory-item-header">
                         <span class="memory-item-title">Fact #${factCount}</span>
-                        <span class="memory-item-delete" onclick="this.closest('.memory-item').remove()">Remove</span>
+                        <span class="memory-item-delete" onclick="event.stopPropagation(); this.closest('.memory-item').remove()">Remove</span>
                     </div>
                     <input type="text" class="form-input" placeholder="Enter a key fact...">
                 </div>
@@ -686,7 +943,7 @@
                         <label class="form-label">Answer</label>
                         <textarea class="form-textarea faq-answer" placeholder="The answer the agent should give..."></textarea>
                     </div>
-                    <span class="memory-item-delete" onclick="this.closest('.memory-item').remove()">Remove FAQ</span>
+                    <span class="memory-item-delete" onclick="event.stopPropagation(); this.closest('.memory-item').remove()">Remove FAQ</span>
                 </div>
             `;
             document.getElementById('memory-faqs').insertAdjacentHTML('beforeend', html);
@@ -746,30 +1003,41 @@
         }
         
         function generateToolsMD() {
-            const capabilities = [];
-            if (document.getElementById('tool-search').checked) capabilities.push('Web search');
-            if (document.getElementById('tool-calendar').checked) capabilities.push('Calendar access');
-            if (document.getElementById('tool-email').checked) capabilities.push('Email sending');
-            if (document.getElementById('tool-files').checked) capabilities.push('File operations');
-            if (document.getElementById('tool-code').checked) capabilities.push('Code execution');
+            let md = `# TOOLS.md - Available Tools & Integrations\n\n`;
+            
+            md += `## Core Capabilities\n\n`;
+            md += `This agent has full autonomous capabilities including:\n`;
+            md += `- Execute code and shell commands\n`;
+            md += `- Read and write files\n`;
+            md += `- Search and browse the web\n`;
+            md += `- Memory and knowledge management\n`;
+            md += `- Image analysis\n`;
+            md += `- API integrations\n\n`;
+            
+            // Configured integrations
+            const calProvider = document.getElementById('tool-calendar-provider').value;
+            const emailProvider = document.getElementById('tool-email-provider').value;
+            const crmProvider = document.getElementById('tool-crm-provider').value;
+            const storageProvider = document.getElementById('tool-storage-provider').value;
+            
+            if (calProvider || emailProvider || crmProvider || storageProvider) {
+                md += `## Configured Integrations\n\n`;
+                if (calProvider) md += `- **Calendar:** ${calProvider}\n`;
+                if (emailProvider) md += `- **Email:** ${emailProvider}\n`;
+                if (crmProvider) md += `- **CRM:** ${crmProvider}\n`;
+                if (storageProvider) md += `- **File Storage:** ${storageProvider}\n`;
+                md += '\n';
+            }
             
             const custom = document.getElementById('tools-custom').value || '';
             const instructions = document.getElementById('tools-instructions').value || '';
             
-            let md = `# TOOLS.md - Available Tools\n\n`;
-            
-            if (capabilities.length) {
-                md += `## Capabilities\n\n`;
-                capabilities.forEach(c => md += `- ${c}\n`);
-                md += '\n';
-            }
-            
             if (custom) {
-                md += `## Custom Integrations\n\n${custom}\n\n`;
+                md += `## Custom API Endpoints\n\n${custom}\n\n`;
             }
             
             if (instructions) {
-                md += `## Special Instructions\n\n${instructions}\n\n`;
+                md += `## Integration Instructions\n\n${instructions}\n\n`;
             }
             
             return md;
