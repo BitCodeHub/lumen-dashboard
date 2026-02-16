@@ -133,18 +133,13 @@ router.delete('/:id', async (req, res) => {
 // POST sync workspace to VPS
 router.post('/:id/sync', async (req, res) => {
   try {
-    const data = await loadDeployments();
-    const deployment = data.deployments.find(d => d.id === req.params.id);
-    if (!deployment) {
-      return res.status(404).json({ error: 'Deployment not found' });
-    }
-
-    const vpsConfig = VPS_CONFIGS[deployment.id];
+    const vpsConfig = VPS_CONFIGS[req.params.id];
     if (!vpsConfig) {
       return res.status(400).json({ error: 'No VPS configuration for this deployment' });
     }
 
-    const workspace = deployment.workspace || {};
+    // Accept workspace from request body (generated MD content)
+    const workspace = req.body.workspace || {};
     const results = [];
 
     // Sync each workspace file

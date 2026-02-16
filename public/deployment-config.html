@@ -21,7 +21,6 @@
             padding: 24px;
         }
         
-        /* Header */
         .header {
             display: flex;
             align-items: center;
@@ -69,21 +68,16 @@
             border-radius: 20px;
             font-size: 13px;
             font-weight: 500;
-        }
-        
-        .status-active {
             background: #d1fae5;
             color: #065f46;
         }
         
-        /* Main Grid */
         .main-grid {
             display: grid;
-            grid-template-columns: 300px 1fr;
+            grid-template-columns: 280px 1fr;
             gap: 24px;
         }
         
-        /* Sidebar */
         .sidebar {
             background: #fff;
             border-radius: 12px;
@@ -110,7 +104,6 @@
         }
         
         .info-row:last-child { border-bottom: none; }
-        
         .info-label { color: #6b7280; }
         .info-value { font-weight: 500; color: #111827; }
         
@@ -129,7 +122,6 @@
         
         .chat-url:hover { background: #f3f4f6; }
         
-        /* Editor */
         .editor-section {
             background: #fff;
             border-radius: 12px;
@@ -141,6 +133,7 @@
             display: flex;
             border-bottom: 1px solid #e5e7eb;
             background: #f9fafb;
+            overflow-x: auto;
         }
         
         .tab {
@@ -151,6 +144,7 @@
             cursor: pointer;
             border-bottom: 2px solid transparent;
             transition: all 0.15s;
+            white-space: nowrap;
         }
         
         .tab:hover { color: #374151; background: #fff; }
@@ -170,8 +164,14 @@
         }
         
         .editor-title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
+        }
+        
+        .editor-subtitle {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 2px;
         }
         
         .editor-actions {
@@ -180,7 +180,7 @@
         }
         
         .btn {
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
@@ -189,55 +189,134 @@
             transition: all 0.15s;
         }
         
-        .btn-primary {
-            background: #111827;
-            color: #fff;
-        }
-        
+        .btn-primary { background: #111827; color: #fff; }
         .btn-primary:hover { background: #374151; }
-        
-        .btn-secondary {
-            background: #fff;
-            color: #374151;
-            border: 1px solid #e5e7eb;
-        }
-        
+        .btn-secondary { background: #fff; color: #374151; border: 1px solid #e5e7eb; }
         .btn-secondary:hover { background: #f9fafb; }
-        
-        .btn-success {
-            background: #059669;
-            color: #fff;
-        }
-        
+        .btn-success { background: #059669; color: #fff; }
         .btn-success:hover { background: #047857; }
         
-        textarea.editor {
-            width: 100%;
-            min-height: 500px;
-            padding: 20px;
-            border: none;
-            font-family: 'SF Mono', 'Menlo', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            resize: vertical;
-            outline: none;
-            background: #fafafa;
+        .form-content {
+            padding: 24px;
+            max-height: 600px;
+            overflow-y: auto;
         }
         
-        textarea.editor:focus {
+        .form-section {
+            margin-bottom: 24px;
+        }
+        
+        .form-section:last-child { margin-bottom: 0; }
+        
+        .form-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-section-title .icon {
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group:last-child { margin-bottom: 0; }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+        
+        .form-hint {
+            font-size: 12px;
+            color: #9ca3af;
+            font-weight: 400;
+            margin-left: 4px;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.15s, box-shadow 0.15s;
             background: #fff;
         }
         
-        /* Loading State */
-        .loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 60px;
-            color: #6b7280;
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #111827;
+            box-shadow: 0 0 0 1px #111827;
         }
         
-        /* Toast */
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .memory-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .memory-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .memory-item-title {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .memory-item-delete {
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .add-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: #f3f4f6;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #6b7280;
+            cursor: pointer;
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .add-btn:hover { background: #e5e7eb; color: #374151; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
         .toast {
             position: fixed;
             bottom: 24px;
@@ -253,33 +332,13 @@
             z-index: 1000;
         }
         
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.error { background: #dc2626; }
+        .toast.success { background: #059669; }
         
-        .toast.error {
-            background: #dc2626;
-        }
-        
-        .toast.success {
-            background: #059669;
-        }
-        
-        /* Responsive */
         @media (max-width: 768px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .tabs {
-                overflow-x: auto;
-            }
-            
-            .tab {
-                padding: 12px 16px;
-                white-space: nowrap;
-            }
+            .main-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -287,15 +346,13 @@
     <div class="container">
         <div class="header">
             <div class="header-left">
-                <a href="/cc/command-center/projects.html" class="back-btn">
-                    ← Back
-                </a>
+                <a href="/cc/command-center/projects.html" class="back-btn">← Back</a>
                 <div class="business-info">
-                    <h1 id="businessName">Loading...</h1>
-                    <p id="businessDescription">Loading deployment...</p>
+                    <h1 id="businessName">Luna Labs</h1>
+                    <p id="businessDescription">AI Assistant powered by Maven</p>
                 </div>
             </div>
-            <span class="status-badge status-active" id="statusBadge">Active</span>
+            <span class="status-badge">Active</span>
         </div>
         
         <div class="main-grid">
@@ -303,46 +360,271 @@
                 <h3>Deployment Info</h3>
                 <div class="info-row">
                     <span class="info-label">Agent</span>
-                    <span class="info-value" id="agentName">-</span>
+                    <span class="info-value" id="agentName">Maven</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Model</span>
-                    <span class="info-value" id="modelName">-</span>
+                    <span class="info-value" id="modelName">kimi-coding/k2p5</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Created</span>
-                    <span class="info-value" id="createdAt">-</span>
+                    <span class="info-value" id="createdAt">2/16/2026</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Last Synced</span>
                     <span class="info-value" id="lastSynced">Never</span>
                 </div>
-                
-                <a href="#" class="chat-url" id="chatUrl" target="_blank">
+                <a href="https://srv1352214.hstgr.cloud" class="chat-url" id="chatUrl" target="_blank">
                     Open Chat UI →
                 </a>
             </div>
             
             <div class="editor-section">
                 <div class="tabs">
-                    <div class="tab active" data-tab="identity">Identity</div>
-                    <div class="tab" data-tab="soul">Soul</div>
-                    <div class="tab" data-tab="agents">Agents</div>
-                    <div class="tab" data-tab="tools">Tools</div>
-                    <div class="tab" data-tab="user">User</div>
-                    <div class="tab" data-tab="memory">Memory</div>
+                    <div class="tab active" data-tab="identity">🪪 Identity</div>
+                    <div class="tab" data-tab="soul">💫 Soul</div>
+                    <div class="tab" data-tab="tools">🔧 Tools</div>
+                    <div class="tab" data-tab="user">👤 User</div>
+                    <div class="tab" data-tab="memory">🧠 Memory</div>
                 </div>
                 
                 <div class="editor-header">
-                    <span class="editor-title" id="editorTitle">IDENTITY.md</span>
+                    <div>
+                        <div class="editor-title" id="editorTitle">Agent Identity</div>
+                        <div class="editor-subtitle" id="editorSubtitle">Define who the AI agent is</div>
+                    </div>
                     <div class="editor-actions">
-                        <button class="btn btn-secondary" onclick="fetchFromVPS()">Pull from VPS</button>
-                        <button class="btn btn-primary" onclick="saveConfig()">Save</button>
-                        <button class="btn btn-success" onclick="syncToVPS()">Deploy to Agent</button>
+                        <button class="btn btn-secondary" onclick="pullFromVPS()">Pull from VPS</button>
+                        <button class="btn btn-success" onclick="deployToAgent()">Deploy to Agent</button>
                     </div>
                 </div>
                 
-                <textarea class="editor" id="editor" placeholder="Paste your configuration here..."></textarea>
+                <!-- IDENTITY TAB -->
+                <div class="tab-content active" id="content-identity">
+                    <div class="form-content">
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">📋</span> Basic Information</div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Agent Name</label>
+                                    <input type="text" class="form-input" id="identity-name" placeholder="e.g., Maven">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Emoji</label>
+                                    <input type="text" class="form-input" id="identity-emoji" placeholder="e.g., 📋">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Title/Role</label>
+                                <input type="text" class="form-input" id="identity-title" placeholder="e.g., AI Assistant for Luna Labs">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Company/Organization</label>
+                                <input type="text" class="form-input" id="identity-company" placeholder="e.g., Luna Labs">
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">📝</span> Description</div>
+                            <div class="form-group">
+                                <label class="form-label">Agent Description <span class="form-hint">(What does this agent do?)</span></label>
+                                <textarea class="form-textarea" id="identity-description" placeholder="Describe what this AI agent does and its main responsibilities..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🎯</span> Responsibilities</div>
+                            <div class="form-group">
+                                <label class="form-label">Main Responsibilities <span class="form-hint">(One per line)</span></label>
+                                <textarea class="form-textarea" id="identity-responsibilities" placeholder="Answer customer questions&#10;Provide product information&#10;Schedule appointments&#10;Handle basic support requests"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- SOUL TAB -->
+                <div class="tab-content" id="content-soul">
+                    <div class="form-content">
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🎭</span> Personality</div>
+                            <div class="form-group">
+                                <label class="form-label">Communication Style</label>
+                                <select class="form-select" id="soul-style">
+                                    <option value="professional">Professional & Formal</option>
+                                    <option value="friendly">Friendly & Casual</option>
+                                    <option value="warm">Warm & Empathetic</option>
+                                    <option value="direct">Direct & Efficient</option>
+                                    <option value="playful">Playful & Fun</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Personality Traits <span class="form-hint">(Describe the agent's personality)</span></label>
+                                <textarea class="form-textarea" id="soul-traits" placeholder="e.g., Helpful, patient, knowledgeable, empathetic..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">💬</span> Behavior Guidelines</div>
+                            <div class="form-group">
+                                <label class="form-label">How should the agent respond?</label>
+                                <textarea class="form-textarea" id="soul-guidelines" placeholder="e.g., Always be helpful and provide accurate information. If unsure, offer to escalate to a human. Keep responses concise but thorough..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🚫</span> Boundaries</div>
+                            <div class="form-group">
+                                <label class="form-label">What should the agent NOT do?</label>
+                                <textarea class="form-textarea" id="soul-boundaries" placeholder="e.g., Don't make promises about pricing. Don't share confidential internal information. Don't provide medical/legal advice..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- TOOLS TAB -->
+                <div class="tab-content" id="content-tools">
+                    <div class="form-content">
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">⚙️</span> Available Capabilities</div>
+                            <div class="form-group">
+                                <label class="form-label">What can this agent do? <span class="form-hint">(Check all that apply)</span></label>
+                                <div style="display: grid; gap: 8px; margin-top: 8px;">
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                        <input type="checkbox" id="tool-search"> 🔍 Search the web for information
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                        <input type="checkbox" id="tool-calendar"> 📅 Access calendar/scheduling
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                        <input type="checkbox" id="tool-email"> 📧 Send emails
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                        <input type="checkbox" id="tool-files"> 📁 Read/write files
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                        <input type="checkbox" id="tool-code"> 💻 Execute code
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🔗</span> Custom Integrations</div>
+                            <div class="form-group">
+                                <label class="form-label">API Endpoints or Services <span class="form-hint">(Optional)</span></label>
+                                <textarea class="form-textarea" id="tools-custom" placeholder="List any custom APIs or services this agent should use..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">📌</span> Special Instructions</div>
+                            <div class="form-group">
+                                <label class="form-label">Tool-specific instructions</label>
+                                <textarea class="form-textarea" id="tools-instructions" placeholder="Any special instructions for how the agent should use its tools..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- USER TAB -->
+                <div class="tab-content" id="content-user">
+                    <div class="form-content">
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">👤</span> Business Owner Information</div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Primary Contact Name</label>
+                                    <input type="text" class="form-input" id="user-name" placeholder="e.g., John Smith">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">What to call them</label>
+                                    <input type="text" class="form-input" id="user-callname" placeholder="e.g., John, Mr. Smith">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Role/Title</label>
+                                    <input type="text" class="form-input" id="user-role" placeholder="e.g., CEO, Owner">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Timezone</label>
+                                    <select class="form-select" id="user-timezone">
+                                        <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                        <option value="America/Denver">Mountain Time (MT)</option>
+                                        <option value="America/Chicago">Central Time (CT)</option>
+                                        <option value="America/New_York">Eastern Time (ET)</option>
+                                        <option value="UTC">UTC</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🏢</span> Business Context</div>
+                            <div class="form-group">
+                                <label class="form-label">Industry</label>
+                                <input type="text" class="form-input" id="user-industry" placeholder="e.g., Technology, Healthcare, Retail">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Business Description</label>
+                                <textarea class="form-textarea" id="user-business" placeholder="Brief description of the business and what they do..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">⚡</span> Preferences</div>
+                            <div class="form-group">
+                                <label class="form-label">Communication Preferences</label>
+                                <textarea class="form-textarea" id="user-preferences" placeholder="e.g., Prefers brief responses. Likes bullet points. Responds better to formal tone..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- MEMORY TAB -->
+                <div class="tab-content" id="content-memory">
+                    <div class="form-content">
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">📚</span> Key Facts <span class="form-hint">(Things the agent must always remember)</span></div>
+                            <div id="memory-facts">
+                                <div class="memory-item">
+                                    <div class="memory-item-header">
+                                        <span class="memory-item-title">Fact #1</span>
+                                        <span class="memory-item-delete" onclick="this.closest('.memory-item').remove()">Remove</span>
+                                    </div>
+                                    <input type="text" class="form-input" placeholder="e.g., Our business hours are 9 AM - 5 PM PST">
+                                </div>
+                            </div>
+                            <button class="add-btn" onclick="addMemoryFact()">+ Add Key Fact</button>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">❓</span> FAQ Responses <span class="form-hint">(Common questions and answers)</span></div>
+                            <div id="memory-faqs">
+                                <div class="memory-item">
+                                    <div class="form-group">
+                                        <label class="form-label">Question</label>
+                                        <input type="text" class="form-input faq-question" placeholder="e.g., What are your prices?">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Answer</label>
+                                        <textarea class="form-textarea faq-answer" placeholder="The answer the agent should give..."></textarea>
+                                    </div>
+                                    <span class="memory-item-delete" onclick="this.closest('.memory-item').remove()">Remove FAQ</span>
+                                </div>
+                            </div>
+                            <button class="add-btn" onclick="addFAQ()">+ Add FAQ</button>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">📄</span> Additional Knowledge</div>
+                            <div class="form-group">
+                                <label class="form-label">Product/Service Information</label>
+                                <textarea class="form-textarea" id="memory-products" style="min-height: 150px;" placeholder="List products, services, pricing, or any other information the agent should know..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -351,178 +633,264 @@
     
     <script>
         const deploymentId = new URLSearchParams(window.location.search).get('id') || 'luna-labs-maven';
-        let deployment = null;
         let currentTab = 'identity';
-        let workspace = {
-            identity: '',
-            soul: '',
-            agents: '',
-            tools: '',
-            user: '',
-            memory: ''
+        
+        const tabTitles = {
+            identity: { title: 'Agent Identity', subtitle: 'Define who the AI agent is' },
+            soul: { title: 'Agent Soul', subtitle: 'Define personality and behavior' },
+            tools: { title: 'Tools & Capabilities', subtitle: 'Configure what the agent can do' },
+            user: { title: 'User Information', subtitle: 'Details about the business owner' },
+            memory: { title: 'Agent Memory', subtitle: 'Knowledge base and key facts' }
         };
         
         // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
-                // Save current content before switching
-                workspace[currentTab] = document.getElementById('editor').value;
-                
-                // Switch tab
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 
+                tab.classList.add('active');
                 currentTab = tab.dataset.tab;
-                document.getElementById('editorTitle') .textContent = currentTab.toUpperCase() + '.md';
-                document.getElementById('editor').value = workspace[currentTab] || '';
+                document.getElementById('content-' + currentTab).classList.add('active');
+                
+                document.getElementById('editorTitle').textContent = tabTitles[currentTab].title;
+                document.getElementById('editorSubtitle').textContent = tabTitles[currentTab].subtitle;
             });
         });
         
-        // Fallback deployment data (embedded for reliability)
-        const FALLBACK_DEPLOYMENTS = {
-            'luna-labs-maven': {
-                id: 'luna-labs-maven',
-                name: 'Luna Labs',
-                description: 'AI Assistant powered by Maven - White-label chat interface for enterprise customers',
-                chatUrl: 'https://srv1352214.hstgr.cloud',
-                agent: 'Maven',
-                model: 'kimi-coding/k2p5',
-                createdAt: '2026-02-16T21:48:00Z',
-                workspace: { identity: '', soul: '', agents: '', tools: '', user: '', memory: '' }
-            }
-        };
-
-        // Load deployment
-        async function loadDeployment() {
-            try {
-                const res = await fetch(`/api/deployments/${deploymentId}`);
-                if (!res.ok) throw new Error('API not available');
-                
-                deployment = await res.json();
-                
-                // Update UI
-                document.getElementById('businessName').textContent = deployment.name || 'Unknown';
-                document.getElementById('businessDescription').textContent = deployment.description || '';
-                document.getElementById('agentName').textContent = deployment.agent || '-';
-                document.getElementById('modelName').textContent = deployment.model || '-';
-                document.getElementById('createdAt').textContent = deployment.createdAt ? new Date(deployment.createdAt).toLocaleDateString() : '-';
-                document.getElementById('lastSynced').textContent = deployment.lastSyncedAt ? new Date(deployment.lastSyncedAt).toLocaleString() : 'Never';
-                document.getElementById('chatUrl').href = deployment.chatUrl || '#';
-                document.getElementById('chatUrl').textContent = deployment.chatUrl || 'No URL';
-                
-                // Load workspace
-                if (deployment.workspace) {
-                    workspace = { ...workspace, ...deployment.workspace };
-                }
-                document.getElementById('editor').value = workspace[currentTab] || '';
-                
-            } catch (error) {
-                console.warn('API failed, using fallback data:', error.message);
-                // Use fallback data
-                deployment = FALLBACK_DEPLOYMENTS[deploymentId];
-                if (deployment) {
-                    document.getElementById('businessName').textContent = deployment.name || 'Unknown';
-                    document.getElementById('businessDescription').textContent = deployment.description || '';
-                    document.getElementById('agentName').textContent = deployment.agent || '-';
-                    document.getElementById('modelName').textContent = deployment.model || '-';
-                    document.getElementById('createdAt').textContent = deployment.createdAt ? new Date(deployment.createdAt).toLocaleDateString() : '-';
-                    document.getElementById('lastSynced').textContent = 'Never';
-                    document.getElementById('chatUrl').href = deployment.chatUrl || '#';
-                    document.getElementById('chatUrl').textContent = deployment.chatUrl || 'No URL';
-                    
-                    if (deployment.workspace) {
-                        workspace = { ...workspace, ...deployment.workspace };
-                    }
-                    document.getElementById('editor').value = workspace[currentTab] || '';
-                } else {
-                    showToast('Deployment not found', 'error');
-                }
-            }
+        // Add memory fact
+        let factCount = 1;
+        function addMemoryFact() {
+            factCount++;
+            const html = `
+                <div class="memory-item">
+                    <div class="memory-item-header">
+                        <span class="memory-item-title">Fact #${factCount}</span>
+                        <span class="memory-item-delete" onclick="this.closest('.memory-item').remove()">Remove</span>
+                    </div>
+                    <input type="text" class="form-input" placeholder="Enter a key fact...">
+                </div>
+            `;
+            document.getElementById('memory-facts').insertAdjacentHTML('beforeend', html);
         }
         
-        // Save config locally
-        async function saveConfig() {
-            workspace[currentTab] = document.getElementById('editor').value;
+        // Add FAQ
+        function addFAQ() {
+            const html = `
+                <div class="memory-item">
+                    <div class="form-group">
+                        <label class="form-label">Question</label>
+                        <input type="text" class="form-input faq-question" placeholder="e.g., What are your prices?">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Answer</label>
+                        <textarea class="form-textarea faq-answer" placeholder="The answer the agent should give..."></textarea>
+                    </div>
+                    <span class="memory-item-delete" onclick="this.closest('.memory-item').remove()">Remove FAQ</span>
+                </div>
+            `;
+            document.getElementById('memory-faqs').insertAdjacentHTML('beforeend', html);
+        }
+        
+        // Generate MD content from forms
+        function generateIdentityMD() {
+            const name = document.getElementById('identity-name').value || 'Agent';
+            const emoji = document.getElementById('identity-emoji').value || '🤖';
+            const title = document.getElementById('identity-title').value || 'AI Assistant';
+            const company = document.getElementById('identity-company').value || 'Company';
+            const description = document.getElementById('identity-description').value || '';
+            const responsibilities = document.getElementById('identity-responsibilities').value || '';
             
-            try {
-                const res = await fetch(`/api/deployments/${deploymentId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ...deployment,
-                        workspace
-                    })
+            let md = `# IDENTITY.md - Who Am I?\n\n`;
+            md += `- **Name:** ${name}\n`;
+            md += `- **Title:** ${title}\n`;
+            md += `- **Company:** ${company}\n`;
+            md += `- **Emoji:** ${emoji}\n\n`;
+            
+            if (description) {
+                md += `## Description\n\n${description}\n\n`;
+            }
+            
+            if (responsibilities) {
+                md += `## Responsibilities\n\n`;
+                responsibilities.split('\n').filter(r => r.trim()).forEach(r => {
+                    md += `- ${r.trim()}\n`;
                 });
-                
-                if (!res.ok) throw new Error('Save failed');
-                
-                showToast('Configuration saved!', 'success');
-            } catch (error) {
-                showToast('Failed to save: ' + error.message, 'error');
             }
+            
+            return md;
         }
         
-        // Sync to VPS
-        async function syncToVPS() {
-            workspace[currentTab] = document.getElementById('editor').value;
+        function generateSoulMD() {
+            const style = document.getElementById('soul-style').value;
+            const traits = document.getElementById('soul-traits').value || '';
+            const guidelines = document.getElementById('soul-guidelines').value || '';
+            const boundaries = document.getElementById('soul-boundaries').value || '';
             
-            // Save first
-            await saveConfig();
+            let md = `# SOUL.md - Who You Are\n\n`;
+            md += `## Communication Style\n\n${style}\n\n`;
             
+            if (traits) {
+                md += `## Personality Traits\n\n${traits}\n\n`;
+            }
+            
+            if (guidelines) {
+                md += `## Behavior Guidelines\n\n${guidelines}\n\n`;
+            }
+            
+            if (boundaries) {
+                md += `## Boundaries\n\n${boundaries}\n\n`;
+            }
+            
+            return md;
+        }
+        
+        function generateToolsMD() {
+            const capabilities = [];
+            if (document.getElementById('tool-search').checked) capabilities.push('Web search');
+            if (document.getElementById('tool-calendar').checked) capabilities.push('Calendar access');
+            if (document.getElementById('tool-email').checked) capabilities.push('Email sending');
+            if (document.getElementById('tool-files').checked) capabilities.push('File operations');
+            if (document.getElementById('tool-code').checked) capabilities.push('Code execution');
+            
+            const custom = document.getElementById('tools-custom').value || '';
+            const instructions = document.getElementById('tools-instructions').value || '';
+            
+            let md = `# TOOLS.md - Available Tools\n\n`;
+            
+            if (capabilities.length) {
+                md += `## Capabilities\n\n`;
+                capabilities.forEach(c => md += `- ${c}\n`);
+                md += '\n';
+            }
+            
+            if (custom) {
+                md += `## Custom Integrations\n\n${custom}\n\n`;
+            }
+            
+            if (instructions) {
+                md += `## Special Instructions\n\n${instructions}\n\n`;
+            }
+            
+            return md;
+        }
+        
+        function generateUserMD() {
+            const name = document.getElementById('user-name').value || '';
+            const callname = document.getElementById('user-callname').value || '';
+            const role = document.getElementById('user-role').value || '';
+            const timezone = document.getElementById('user-timezone').value || 'America/Los_Angeles';
+            const industry = document.getElementById('user-industry').value || '';
+            const business = document.getElementById('user-business').value || '';
+            const preferences = document.getElementById('user-preferences').value || '';
+            
+            let md = `# USER.md - About the Business\n\n`;
+            
+            if (name) md += `- **Name:** ${name}\n`;
+            if (callname) md += `- **What to call them:** ${callname}\n`;
+            if (role) md += `- **Role:** ${role}\n`;
+            md += `- **Timezone:** ${timezone}\n`;
+            if (industry) md += `- **Industry:** ${industry}\n`;
+            md += '\n';
+            
+            if (business) {
+                md += `## Business Context\n\n${business}\n\n`;
+            }
+            
+            if (preferences) {
+                md += `## Preferences\n\n${preferences}\n\n`;
+            }
+            
+            return md;
+        }
+        
+        function generateMemoryMD() {
+            let md = `# MEMORY.md - Agent Knowledge Base\n\n`;
+            
+            // Key facts
+            const facts = document.querySelectorAll('#memory-facts .memory-item input');
+            if (facts.length) {
+                md += `## Key Facts\n\n`;
+                facts.forEach(f => {
+                    if (f.value.trim()) md += `- ${f.value.trim()}\n`;
+                });
+                md += '\n';
+            }
+            
+            // FAQs
+            const faqs = document.querySelectorAll('#memory-faqs .memory-item');
+            if (faqs.length) {
+                md += `## Frequently Asked Questions\n\n`;
+                faqs.forEach(faq => {
+                    const q = faq.querySelector('.faq-question')?.value?.trim();
+                    const a = faq.querySelector('.faq-answer')?.value?.trim();
+                    if (q && a) {
+                        md += `### ${q}\n\n${a}\n\n`;
+                    }
+                });
+            }
+            
+            // Products/knowledge
+            const products = document.getElementById('memory-products').value;
+            if (products) {
+                md += `## Product & Service Information\n\n${products}\n\n`;
+            }
+            
+            return md;
+        }
+        
+        // Deploy to agent
+        async function deployToAgent() {
             showToast('Deploying to agent...', '');
             
-            try {
-                const res = await fetch(`/api/deployments/${deploymentId}/sync`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const data = await res.json();
-                
-                if (!res.ok) throw new Error(data.error || 'Sync failed');
-                
-                const synced = data.results.filter(r => r.status === 'synced').length;
-                showToast(`Deployed! ${synced} files synced to agent.`, 'success');
-                
-                // Update last synced
-                document.getElementById('lastSynced').textContent = new Date().toLocaleString();
-                
-            } catch (error) {
-                showToast('Failed to deploy: ' + error.message, 'error');
-            }
-        }
-        
-        // Pull from VPS
-        async function fetchFromVPS() {
-            showToast('Fetching from VPS...', '');
+            const workspace = {
+                identity: generateIdentityMD(),
+                soul: generateSoulMD(),
+                tools: generateToolsMD(),
+                user: generateUserMD(),
+                memory: generateMemoryMD()
+            };
             
             try {
-                const res = await fetch(`/api/deployments/${deploymentId}/workspace-remote`);
-                if (!res.ok) throw new Error('Fetch failed');
-                
-                const remoteWorkspace = await res.json();
-                workspace = { ...workspace, ...remoteWorkspace };
-                document.getElementById('editor').value = workspace[currentTab] || '';
-                
-                showToast('Fetched workspace from VPS!', 'success');
+                // Sync each file to VPS
+                const results = await syncToVPS(workspace);
+                showToast(`Deployed! Agent updated with new configuration.`, 'success');
+                document.getElementById('lastSynced').textContent = new Date().toLocaleString();
             } catch (error) {
-                showToast('Failed to fetch: ' + error.message, 'error');
+                showToast('Deploy failed: ' + error.message, 'error');
             }
         }
         
-        // Toast
+        async function syncToVPS(workspace) {
+            const VPS_HOST = 'srv1352214.hstgr.cloud';
+            
+            // Use API endpoint to sync (this will be handled server-side)
+            const res = await fetch(`/api/deployments/${deploymentId}/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ workspace })
+            });
+            
+            if (!res.ok) {
+                // Fallback: show the generated content for manual copy
+                console.log('API sync failed, showing generated content');
+                console.log(workspace);
+                throw new Error('API not available - check console for generated content');
+            }
+            
+            return await res.json();
+        }
+        
+        function pullFromVPS() {
+            showToast('Pull from VPS not yet implemented', 'error');
+        }
+        
         function showToast(message, type = '') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.className = 'toast show ' + type;
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
-        
-        // Init
-        loadDeployment();
     </script>
 </body>
 </html>
