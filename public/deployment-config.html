@@ -1328,61 +1328,76 @@
             }
         }
         
-        // VPS configurations for direct sync
-        const VPS_CONFIGS = {
+        // Sync configurations - try local first (Mac Studio), then VPS direct
+        const SYNC_CONFIGS = {
             'luna-labs-maven': {
-                apiUrl: 'https://srv1352214.hstgr.cloud/api/workspace/sync',
+                localUrl: 'http://localhost:3700/api/sync',  // Local sync server on Mac Studio
+                vpsUrl: 'https://srv1352214.hstgr.cloud/api/workspace/sync',
                 apiKey: 'maven-sync-2026'
             }
         };
         
         async function syncToVPS(workspace) {
-            const vpsConfig = VPS_CONFIGS[deploymentId];
+            const config = SYNC_CONFIGS[deploymentId];
             
-            if (vpsConfig) {
-                // Direct sync to VPS
-                console.log('Syncing directly to VPS:', vpsConfig.apiUrl);
+            if (config) {
                 console.log('Workspace size:', JSON.stringify(workspace).length, 'bytes');
                 
+                // Try local sync server first (Mac Studio - most reliable)
+                if (config.localUrl) {
+                    try {
+                        console.log('Trying local sync server:', config.localUrl);
+                        const res = await fetch(config.localUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ workspace, deploymentId })
+                        });
+                        
+                        if (res.ok) {
+                            const data = await res.json();
+                            console.log('Local sync success:', data);
+                            return data;
+                        }
+                    } catch (localErr) {
+                        console.log('Local sync not available, trying VPS direct...');
+                    }
+                }
+                
+                // Fallback to VPS direct
                 try {
+                    console.log('Syncing to VPS:', config.vpsUrl);
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 30000);
                     
-                    const res = await fetch(vpsConfig.apiUrl, {
+                    const res = await fetch(config.vpsUrl, {
                         method: 'POST',
                         mode: 'cors',
                         signal: controller.signal,
                         headers: { 
                             'Content-Type': 'application/json',
-                            'X-API-Key': vpsConfig.apiKey
+                            'X-API-Key': config.apiKey
                         },
                         body: JSON.stringify({ workspace })
                     });
                     
                     clearTimeout(timeoutId);
-                    console.log('Response status:', res.status);
-                    
                     const text = await res.text();
-                    console.log('Response text:', text.substring(0, 200));
                     
                     let data;
                     try {
                         data = JSON.parse(text);
                     } catch (e) {
-                        throw new Error('Invalid response from VPS: ' + text.substring(0, 100));
+                        throw new Error('Invalid response: ' + text.substring(0, 100));
                     }
                     
                     if (!res.ok) {
-                        throw new Error(data.error || 'VPS sync failed with status ' + res.status);
+                        throw new Error(data.error || 'Sync failed');
                     }
                     
                     return data;
                 } catch (fetchError) {
-                    console.error('Fetch error:', fetchError.name, fetchError.message);
-                    if (fetchError.name === 'AbortError') {
-                        throw new Error('Request timed out - VPS not responding');
-                    }
-                    throw new Error('VPS sync failed: ' + fetchError.message);
+                    console.error('VPS sync error:', fetchError);
+                    throw new Error('Sync failed: ' + fetchError.message);
                 }
             } else {
                 // Fallback to dashboard API
