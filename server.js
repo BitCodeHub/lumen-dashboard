@@ -7481,6 +7481,43 @@ app.use('/api/sync', (req, res, next) => { req.db = pool; next(); }, realtimeSyn
 const deploymentsRoutes = require('./routes/deployments');
 app.use('/api/deployments', deploymentsRoutes);
 
+// Maven Chat Proxy - proxies requests to OpenClaw on srv1352214
+app.post('/api/maven/chat', async (req, res) => {
+  try {
+    const { message, sessionId } = req.body;
+    const MAVEN_URL = 'http://srv1352214.hstgr.cloud:44434';
+    const MAVEN_TOKEN = 'aHKwQzCd1WoapNkx8c01qIbTuzPOlDM2';
+    
+    // Use OpenClaw's webhook/agent endpoint
+    const response = await fetch(`${MAVEN_URL}/hooks/agent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${MAVEN_TOKEN}`,
+        'X-OpenClaw-Token': MAVEN_TOKEN
+      },
+      body: JSON.stringify({
+        message: message,
+        sessionKey: sessionId || 'web-chat',
+        deliver: false
+      }),
+      timeout: 60000
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      res.json({ success: true, response: data.response || data.content || data.message || 'Message received' });
+    } else {
+      const text = await response.text();
+      console.error('Maven API error:', response.status, text);
+      res.json({ success: false, response: 'Sorry, I could not process your request right now.' });
+    }
+  } catch (error) {
+    console.error('Maven chat proxy error:', error.message);
+    res.json({ success: false, response: 'Connection error. Please try again.' });
+  }
+});
+
 // Catch-all route for SPA (MUST be last)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
