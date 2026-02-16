@@ -1328,21 +1328,52 @@
             }
         }
         
-        async function syncToVPS(workspace) {
-            // Use API endpoint to sync
-            const res = await fetch(`/api/deployments/${deploymentId}/sync`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ workspace })
-            });
-            
-            const data = await res.json();
-            
-            if (!res.ok) {
-                throw new Error(data.error || 'API request failed');
+        // VPS configurations for direct sync
+        const VPS_CONFIGS = {
+            'luna-labs-maven': {
+                apiUrl: 'https://srv1352214.hstgr.cloud/api/workspace/sync',
+                apiKey: 'maven-sync-2026'
             }
+        };
+        
+        async function syncToVPS(workspace) {
+            const vpsConfig = VPS_CONFIGS[deploymentId];
             
-            return data;
+            if (vpsConfig) {
+                // Direct sync to VPS
+                console.log('Syncing directly to VPS:', vpsConfig.apiUrl);
+                const res = await fetch(vpsConfig.apiUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-API-Key': vpsConfig.apiKey
+                    },
+                    body: JSON.stringify({ workspace })
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'VPS sync failed');
+                }
+                
+                return data;
+            } else {
+                // Fallback to dashboard API
+                const res = await fetch(`/api/deployments/${deploymentId}/sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ workspace })
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'API request failed');
+                }
+                
+                return data;
+            }
         }
         
         function pullFromVPS() {
