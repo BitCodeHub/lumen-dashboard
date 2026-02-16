@@ -133,48 +133,64 @@ router.delete('/:id', async (req, res) => {
 // POST sync workspace to VPS
 router.post('/:id/sync', async (req, res) => {
   try {
-    const vpsConfig = VPS_CONFIGS[req.params.id];
-    if (!vpsConfig) {
-      return res.status(400).json({ error: 'No VPS configuration for this deployment' });
-    }
-
+    const data = await loadDeployments();
+    const deployment = data.deployments.find(d => d.id === req.params.id);
+    
     // Accept workspace from request body (generated MD content)
     const workspace = req.body.workspace || {};
     const results = [];
 
-    // Sync each workspace file
-    const files = [
-      { name: 'IDENTITY.md', content: workspace.identity },
-      { name: 'SOUL.md', content: workspace.soul },
-      { name: 'TOOLS.md', content: workspace.tools },
-      { name: 'AGENTS.md', content: workspace.agents },
-      { name: 'USER.md', content: workspace.user },
-      { name: 'MEMORY.md', content: workspace.memory }
-    ];
+    // Check if we have VPS config for direct SSH sync
+    const vpsConfig = VPS_CONFIGS[req.params.id];
+    
+    if (vpsConfig) {
+      // Try direct SSH sync (only works from Mac Studio, not Render)
+      const files = [
+        { name: 'IDENTITY.md', content: workspace.identity },
+        { name: 'SOUL.md', content: workspace.soul },
+        { name: 'TOOLS.md', content: workspace.tools },
+        { name: 'AGENTS.md', content: workspace.agents },
+        { name: 'USER.md', content: workspace.user },
+        { name: 'MEMORY.md', content: workspace.memory }
+      ];
 
-    for (const file of files) {
-      if (file.content) {
-        try {
-          // Escape content for shell
-          const escapedContent = file.content.replace(/'/g, "'\\''");
-          const cmd = `ssh ${vpsConfig.host} 'docker exec ${vpsConfig.container} bash -c "cat > ${vpsConfig.workspacePath}/${file.name}" << '\\'\\''EOFCONTENT'\\''
+      for (const file of files) {
+        if (file.content) {
+          try {
+            // Escape content for shell
+            const escapedContent = file.content.replace(/'/g, "'\\''");
+            const cmd = `ssh ${vpsConfig.host} 'docker exec ${vpsConfig.container} bash -c "cat > ${vpsConfig.workspacePath}/${file.name}" << '\\'\\''EOFCONTENT'\\''
 ${escapedContent}
 EOFCONTENT'`;
-          
-          await execPromise(cmd, { timeout: 30000 });
-          results.push({ file: file.name, status: 'synced' });
-        } catch (err) {
-          results.push({ file: file.name, status: 'error', error: err.message });
+            
+            await execPromise(cmd, { timeout: 30000 });
+            results.push({ file: file.name, status: 'synced' });
+          } catch (err) {
+            results.push({ file: file.name, status: 'error', error: err.message });
+          }
         }
       }
     }
 
-    // Update sync timestamp
+    // Always save workspace locally in the deployment record
     const index = data.deployments.findIndex(d => d.id === req.params.id);
-    data.deployments[index].lastSyncedAt = new Date().toISOString();
-    await saveDeployments(data);
+    if (index !== -1) {
+      data.deployments[index].workspace = workspace;
+      data.deployments[index].lastSyncedAt = new Date().toISOString();
+      await saveDeployments(data);
+      
+      // If no VPS config or SSH failed, workspace is still saved locally
+      if (!vpsConfig || results.some(r => r.status === 'error')) {
+        results.push({ info: 'Workspace saved to dashboard. Manual VPS sync may be needed.' });
+      }
+    }
 
-    res.json({ success: true, results });
+    res.json({ 
+      success: true, 
+      results,
+      workspaceSaved: true,
+      lastSyncedAt: new Date().toISOString()
+    });
   } catch (error) {
     console.error('Error syncing workspace:', error);
     res.status(500).json({ error: 'Failed to sync workspace', details: error.message });
