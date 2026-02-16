@@ -7477,6 +7477,10 @@ app.use('/api/command-center', (req, res, next) => { req.db = pool; next(); }, c
 const { router: realtimeSyncRoutes, autoSync } = require('./routes/realtime-sync');
 app.use('/api/sync', (req, res, next) => { req.db = pool; next(); }, realtimeSyncRoutes);
 
+// AI Agent Deployments routes
+const deploymentsRoutes = require('./routes/deployments');
+app.use('/api/deployments', deploymentsRoutes);
+
 // Catch-all route for SPA (MUST be last)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

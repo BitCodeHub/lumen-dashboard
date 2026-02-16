@@ -563,6 +563,18 @@
           </button>
         </div>
 
+        <!-- AI Agent Deployment Section -->
+        <div class="border-t border-zinc-800/50 pt-3 mb-4">
+          <div class="px-3 py-2">
+            <span class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">SaaS Platform</span>
+          </div>
+          <button onclick="switchView('deployments'); closeSidebarOnMobile();" class="nav-item relative w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50" data-filter="deployments">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7m0 0a3 3 0 01-3 3m0 3h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008zm-3 6h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008z" /></svg>
+            <span>AI Agent Deployment</span>
+            <span id="count-deployments" class="ml-auto text-xs text-zinc-600 tabular-nums">🚀</span>
+          </button>
+        </div>
+
         <!-- Pitches Section (Shark Tank) -->
         <div class="border-t border-zinc-800/50 pt-3 mb-4">
           <div class="px-3 py-2">
@@ -782,6 +794,199 @@
               <div class="h-48 rounded-2xl skeleton"></div>
               <div class="h-48 rounded-2xl skeleton"></div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Agent Deployments View -->
+      <div id="deployments-view" class="flex-1 overflow-y-auto hidden">
+        <div id="deployments-content" class="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+          <!-- Header -->
+          <div class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <div>
+                <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+                  <span class="text-3xl">🚀</span> AI Agent Deployment Center
+                </h1>
+                <p class="text-zinc-400 mt-1">Deploy AI agents for businesses. White-label clones powered by Lumen AI.</p>
+              </div>
+              <button onclick="showNewDeploymentModal()" class="px-4 py-2.5 bg-accent hover:bg-accent-hover rounded-lg text-white text-sm font-medium flex items-center gap-2 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                New Deployment
+              </button>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div class="bg-surface-900 border border-zinc-800/50 rounded-xl p-4">
+                <div class="text-zinc-400 text-xs uppercase tracking-wider mb-1">Total Deployments</div>
+                <div id="stat-total-deployments" class="text-2xl font-bold text-white">0</div>
+              </div>
+              <div class="bg-surface-900 border border-zinc-800/50 rounded-xl p-4">
+                <div class="text-zinc-400 text-xs uppercase tracking-wider mb-1">Active</div>
+                <div id="stat-active-deployments" class="text-2xl font-bold text-emerald-400">0</div>
+              </div>
+              <div class="bg-surface-900 border border-zinc-800/50 rounded-xl p-4">
+                <div class="text-zinc-400 text-xs uppercase tracking-wider mb-1">Monthly Revenue</div>
+                <div id="stat-mrr" class="text-2xl font-bold text-amber-400">$0</div>
+              </div>
+              <div class="bg-surface-900 border border-zinc-800/50 rounded-xl p-4">
+                <div class="text-zinc-400 text-xs uppercase tracking-wider mb-1">Total Messages</div>
+                <div id="stat-total-messages" class="text-2xl font-bold text-blue-400">0</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Deployments Table -->
+          <div class="bg-surface-900 border border-zinc-800/50 rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-zinc-800/50">
+                    <th class="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider px-4 py-3">Business</th>
+                    <th class="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider px-4 py-3">Agent</th>
+                    <th class="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider px-4 py-3">Hosting</th>
+                    <th class="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider px-4 py-3">Plan</th>
+                    <th class="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider px-4 py-3">Messages</th>
+                    <th class="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider px-4 py-3">Status</th>
+                    <th class="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider px-4 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="deployments-table-body">
+                  <!-- Deployments will be loaded here -->
+                  <tr>
+                    <td colspan="7" class="text-center text-zinc-500 py-12">
+                      <div class="flex flex-col items-center gap-3">
+                        <span class="text-4xl">🤖</span>
+                        <p>No deployments yet</p>
+                        <button onclick="showNewDeploymentModal()" class="text-accent hover:text-accent-hover text-sm">Create your first deployment →</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- New Deployment Modal -->
+      <div id="new-deployment-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="hideNewDeploymentModal()"></div>
+        <div class="absolute inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-2xl md:max-h-[90vh] bg-surface-900 border border-zinc-800/50 rounded-2xl overflow-hidden flex flex-col">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-800/50">
+            <h2 class="text-lg font-semibold text-white">New AI Agent Deployment</h2>
+            <button onclick="hideNewDeploymentModal()" class="text-zinc-400 hover:text-white">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-6">
+            <form id="new-deployment-form" class="space-y-6">
+              <!-- Business Info -->
+              <div class="space-y-4">
+                <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Business Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-1">Company Name *</label>
+                    <input type="text" name="companyName" required class="w-full bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-accent" placeholder="Acme Corporation">
+                  </div>
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-1">Contact Email *</label>
+                    <input type="email" name="contactEmail" required class="w-full bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-accent" placeholder="admin@acme.com">
+                  </div>
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-1">Contact Name</label>
+                    <input type="text" name="contactName" class="w-full bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-accent" placeholder="John Smith">
+                  </div>
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-1">Contact Phone</label>
+                    <input type="tel" name="contactPhone" class="w-full bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-accent" placeholder="+1-555-123-4567">
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Agent Branding -->
+              <div class="space-y-4">
+                <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Agent Branding</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-1">Agent Name *</label>
+                    <input type="text" name="agentName" required class="w-full bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-accent" placeholder="Alex">
+                  </div>
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-1">Primary Color</label>
+                    <div class="flex gap-2">
+                      <input type="color" name="primaryColor" value="#6366f1" class="w-12 h-10 rounded-lg cursor-pointer bg-transparent border border-zinc-800">
+                      <input type="text" name="primaryColorHex" value="#6366f1" class="flex-1 bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-accent">
+                    </div>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm text-zinc-400 mb-1">Company Logo URL</label>
+                    <input type="url" name="logoUrl" class="w-full bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-accent" placeholder="https://acme.com/logo.png">
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Deployment Options -->
+              <div class="space-y-4">
+                <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Deployment</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-1">Hosting *</label>
+                    <select name="hosting" required class="w-full bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accent">
+                      <option value="lumen">Lumen AI Solutions (Managed)</option>
+                      <option value="customer">Customer Server (On-Prem)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-1">Use Case</label>
+                    <select name="useCase" class="w-full bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accent">
+                      <option value="support">Customer Support</option>
+                      <option value="sales">Sales & Lead Gen</option>
+                      <option value="scheduling">Appointment Scheduling</option>
+                      <option value="internal">Internal Operations</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Pricing -->
+              <div class="space-y-4">
+                <h3 class="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Pricing</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-1">Plan *</label>
+                    <select name="plan" required class="w-full bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accent">
+                      <option value="smb">SMB - $500/mo (5K messages)</option>
+                      <option value="business">Business - $1,500/mo (25K messages)</option>
+                      <option value="enterprise">Enterprise - $5,000/mo (Unlimited)</option>
+                      <option value="custom">Custom Pricing</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-1">Custom Monthly Price</label>
+                    <div class="relative">
+                      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
+                      <input type="number" name="customPrice" class="w-full bg-surface-950 border border-zinc-800 rounded-lg pl-7 pr-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-accent" placeholder="0">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Notes -->
+              <div>
+                <label class="block text-sm text-zinc-400 mb-1">Notes</label>
+                <textarea name="notes" rows="3" class="w-full bg-surface-950 border border-zinc-800 rounded-lg px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-accent resize-none" placeholder="Any additional information about this deployment..."></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-zinc-800/50">
+            <button onclick="hideNewDeploymentModal()" class="px-4 py-2 text-zinc-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
+            <button onclick="saveDeployment()" class="px-4 py-2.5 bg-accent hover:bg-accent-hover rounded-lg text-white text-sm font-medium flex items-center gap-2 transition-colors">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+              Save Deployment
+            </button>
           </div>
         </div>
       </div>
@@ -1576,6 +1781,7 @@
       document.getElementById('resources-view').classList.add('hidden');
       document.getElementById('lumen-tools-view').classList.add('hidden');
       document.getElementById('app-scanner-view').classList.add('hidden');
+      document.getElementById('deployments-view').classList.add('hidden');
       
       // Update header
       document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1636,6 +1842,12 @@
         document.getElementById('current-filter').textContent = 'iOS App Scanner';
         document.getElementById('briefing-count').textContent = '';
         document.querySelector('[data-filter="app-scanner"]').classList.add('active');
+      } else if (view === 'deployments') {
+        document.getElementById('deployments-view').classList.remove('hidden');
+        document.getElementById('current-filter').textContent = 'AI Agent Deployment';
+        document.getElementById('briefing-count').textContent = '';
+        document.querySelector('[data-filter="deployments"]').classList.add('active');
+        loadDeployments();
       }
     }
 
@@ -3514,6 +3726,210 @@
         fetchBriefings();
       }, 300);
     });
+
+    // ============================================
+    // AI AGENT DEPLOYMENTS
+    // ============================================
+    let deployments = [];
+    
+    const planConfig = {
+      'smb': { label: 'SMB', price: 500, messages: 5000, color: 'text-blue-400' },
+      'business': { label: 'Business', price: 1500, messages: 25000, color: 'text-emerald-400' },
+      'enterprise': { label: 'Enterprise', price: 5000, messages: -1, color: 'text-purple-400' },
+      'custom': { label: 'Custom', price: 0, messages: -1, color: 'text-amber-400' }
+    };
+    
+    const hostingConfig = {
+      'lumen': { label: 'Lumen AI', icon: '☁️', color: 'text-indigo-400' },
+      'customer': { label: 'Self-Hosted', icon: '🏢', color: 'text-orange-400' }
+    };
+    
+    const statusConfig = {
+      'setup': { label: 'Setup', color: 'bg-amber-500/20 text-amber-400', dot: 'bg-amber-400' },
+      'active': { label: 'Active', color: 'bg-emerald-500/20 text-emerald-400', dot: 'bg-emerald-400' },
+      'paused': { label: 'Paused', color: 'bg-zinc-500/20 text-zinc-400', dot: 'bg-zinc-400' },
+      'cancelled': { label: 'Cancelled', color: 'bg-red-500/20 text-red-400', dot: 'bg-red-400' }
+    };
+    
+    async function loadDeployments() {
+      try {
+        const response = await fetch('/api/deployments');
+        const data = await response.json();
+        deployments = data.deployments || [];
+        renderDeployments();
+        updateDeploymentStats();
+      } catch (error) {
+        console.error('Error loading deployments:', error);
+        // Show empty state
+        renderDeployments();
+      }
+    }
+    
+    function renderDeployments() {
+      const tbody = document.getElementById('deployments-table-body');
+      
+      if (!deployments || deployments.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center text-zinc-500 py-12">
+              <div class="flex flex-col items-center gap-3">
+                <span class="text-4xl">🤖</span>
+                <p>No deployments yet</p>
+                <button onclick="showNewDeploymentModal()" class="text-accent hover:text-accent-hover text-sm">Create your first deployment →</button>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = deployments.map(d => {
+        const plan = planConfig[d.plan] || planConfig['custom'];
+        const hosting = hostingConfig[d.hosting] || hostingConfig['lumen'];
+        const status = statusConfig[d.status] || statusConfig['setup'];
+        const price = d.customPrice || plan.price;
+        
+        return `
+          <tr class="border-b border-zinc-800/30 hover:bg-zinc-800/20 transition-colors">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-accent/20 to-purple-500/20 flex items-center justify-center text-sm">
+                  ${d.companyName?.charAt(0) || '?'}
+                </div>
+                <div>
+                  <div class="font-medium text-white">${d.companyName || 'Unknown'}</div>
+                  <div class="text-xs text-zinc-500">${d.contactEmail || ''}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <span class="text-white">${d.agentName || 'AI Agent'}</span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="${hosting.color}">${hosting.icon} ${hosting.label}</span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="${plan.color}">$${price.toLocaleString()}/mo</span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="text-zinc-300 tabular-nums">${(d.messagesThisMonth || 0).toLocaleString()}</span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${status.color}">
+                <span class="w-1.5 h-1.5 rounded-full ${status.dot}"></span>
+                ${status.label}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <button onclick="viewDeployment('${d.id}')" class="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors" title="View Details">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                </button>
+                <button onclick="deployAgent('${d.id}')" class="p-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors" title="Deploy">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    function updateDeploymentStats() {
+      const total = deployments.length;
+      const active = deployments.filter(d => d.status === 'active').length;
+      const mrr = deployments
+        .filter(d => d.status === 'active')
+        .reduce((sum, d) => sum + (d.customPrice || planConfig[d.plan]?.price || 0), 0);
+      const messages = deployments.reduce((sum, d) => sum + (d.messagesThisMonth || 0), 0);
+      
+      document.getElementById('stat-total-deployments').textContent = total;
+      document.getElementById('stat-active-deployments').textContent = active;
+      document.getElementById('stat-mrr').textContent = '$' + mrr.toLocaleString();
+      document.getElementById('stat-total-messages').textContent = messages.toLocaleString();
+    }
+    
+    function showNewDeploymentModal() {
+      document.getElementById('new-deployment-modal').classList.remove('hidden');
+      document.getElementById('new-deployment-form').reset();
+    }
+    
+    function hideNewDeploymentModal() {
+      document.getElementById('new-deployment-modal').classList.add('hidden');
+    }
+    
+    async function saveDeployment() {
+      const form = document.getElementById('new-deployment-form');
+      const formData = new FormData(form);
+      
+      const deployment = {
+        companyName: formData.get('companyName'),
+        contactEmail: formData.get('contactEmail'),
+        contactName: formData.get('contactName'),
+        contactPhone: formData.get('contactPhone'),
+        agentName: formData.get('agentName'),
+        primaryColor: formData.get('primaryColor'),
+        logoUrl: formData.get('logoUrl'),
+        hosting: formData.get('hosting'),
+        useCase: formData.get('useCase'),
+        plan: formData.get('plan'),
+        customPrice: parseFloat(formData.get('customPrice')) || null,
+        notes: formData.get('notes'),
+        status: 'setup',
+        messagesThisMonth: 0,
+        createdAt: new Date().toISOString()
+      };
+      
+      try {
+        const response = await fetch('/api/deployments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(deployment)
+        });
+        
+        if (response.ok) {
+          hideNewDeploymentModal();
+          loadDeployments();
+          showToast('Deployment created successfully!', 'success');
+        } else {
+          showToast('Failed to create deployment', 'error');
+        }
+      } catch (error) {
+        console.error('Error saving deployment:', error);
+        showToast('Error saving deployment', 'error');
+      }
+    }
+    
+    function viewDeployment(id) {
+      const deployment = deployments.find(d => d.id === id);
+      if (deployment) {
+        // For now, show alert with details. Later: full detail modal
+        alert(`Deployment Details:\n\nCompany: ${deployment.companyName}\nAgent: ${deployment.agentName}\nPlan: ${deployment.plan}\nStatus: ${deployment.status}\n\nTell Unc Lumen to deploy this agent!`);
+      }
+    }
+    
+    function deployAgent(id) {
+      const deployment = deployments.find(d => d.id === id);
+      if (deployment) {
+        const msg = `Deploy AI agent "${deployment.agentName}" for ${deployment.companyName}?\\n\\nThis will:\\n1. Create isolated agent instance\\n2. Set up memU for their data\\n3. Generate branded chat widget\\n4. Deploy to ${deployment.hosting === 'lumen' ? 'Lumen servers' : 'their server'}`;
+        if (confirm(msg)) {
+          showToast(`Tell Unc Lumen: "Deploy AI agent for ${deployment.companyName}"`, 'info');
+        }
+      }
+    }
+    
+    function showToast(message, type = 'info') {
+      // Simple toast notification
+      const toast = document.createElement('div');
+      toast.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg text-white text-sm font-medium z-50 animate-slide-in-up ${
+        type === 'success' ? 'bg-emerald-600' : 
+        type === 'error' ? 'bg-red-600' : 
+        'bg-accent'
+      }`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
 
     // ============================================
     // PITCHES (Shark Tank)
