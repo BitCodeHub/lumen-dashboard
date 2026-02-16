@@ -10,7 +10,7 @@
       "agent": "Maven",
       "model": "kimi-coding/k2p5",
       "createdAt": "2026-02-16T21:48:00Z",
-      "updatedAt": "2026-02-16T22:22:00Z",
+      "updatedAt": "2026-02-16T22:31:00Z",
       "type": "chat-ui",
       "tags": ["ai", "chat", "white-label", "luna-labs", "saas", "ssl"],
       "business": {
@@ -18,7 +18,16 @@
         "industry": "AI/Technology",
         "contact": "",
         "notes": "First white-label SaaS deployment - Demo customer"
-      }
+      },
+      "workspace": {
+        "identity": "",
+        "soul": "",
+        "agents": "",
+        "tools": "",
+        "user": "",
+        "memory": ""
+      },
+      "lastSyncedAt": null
     }
   ]
 }

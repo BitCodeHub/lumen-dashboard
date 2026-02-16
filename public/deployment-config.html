@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Configuration - Lumen AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+            color: #111827;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .back-btn:hover { background: #f9fafb; }
+        
+        .business-info h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .business-info p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 24px;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            height: fit-content;
+        }
+        
+        .sidebar h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+        }
+        
+        .info-row:last-child { border-bottom: none; }
+        
+        .info-label { color: #6b7280; }
+        .info-value { font-weight: 500; color: #111827; }
+        
+        .chat-url {
+            display: block;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #3b82f6;
+            word-break: break-all;
+            text-decoration: none;
+        }
+        
+        .chat-url:hover { background: #f3f4f6; }
+        
+        /* Editor */
+        .editor-section {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+        
+        .tab {
+            padding: 16px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+        }
+        
+        .tab:hover { color: #374151; background: #fff; }
+        
+        .tab.active {
+            color: #111827;
+            background: #fff;
+            border-bottom-color: #111827;
+        }
+        
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .editor-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .editor-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+        }
+        
+        .btn-primary {
+            background: #111827;
+            color: #fff;
+        }
+        
+        .btn-primary:hover { background: #374151; }
+        
+        .btn-secondary {
+            background: #fff;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .btn-secondary:hover { background: #f9fafb; }
+        
+        .btn-success {
+            background: #059669;
+            color: #fff;
+        }
+        
+        .btn-success:hover { background: #047857; }
+        
+        textarea.editor {
+            width: 100%;
+            min-height: 500px;
+            padding: 20px;
+            border: none;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+            background: #fafafa;
+        }
+        
+        textarea.editor:focus {
+            background: #fff;
+        }
+        
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            color: #6b7280;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            background: #111827;
+            color: #fff;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .toast.error {
+            background: #dc2626;
+        }
+        
+        .toast.success {
+            background: #059669;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                overflow-x: auto;
+            }
+            
+            .tab {
+                padding: 12px 16px;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <a href="/cc/command-center/projects.html" class="back-btn">
+                    ← Back
+                </a>
+                <div class="business-info">
+                    <h1 id="businessName">Loading...</h1>
+                    <p id="businessDescription">Loading deployment...</p>
+                </div>
+            </div>
+            <span class="status-badge status-active" id="statusBadge">Active</span>
+        </div>
+        
+        <div class="main-grid">
+            <div class="sidebar">
+                <h3>Deployment Info</h3>
+                <div class="info-row">
+                    <span class="info-label">Agent</span>
+                    <span class="info-value" id="agentName">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Model</span>
+                    <span class="info-value" id="modelName">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Created</span>
+                    <span class="info-value" id="createdAt">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Last Synced</span>
+                    <span class="info-value" id="lastSynced">Never</span>
+                </div>
+                
+                <a href="#" class="chat-url" id="chatUrl" target="_blank">
+                    Open Chat UI →
+                </a>
+            </div>
+            
+            <div class="editor-section">
+                <div class="tabs">
+                    <div class="tab active" data-tab="identity">Identity</div>
+                    <div class="tab" data-tab="soul">Soul</div>
+                    <div class="tab" data-tab="agents">Agents</div>
+                    <div class="tab" data-tab="tools">Tools</div>
+                    <div class="tab" data-tab="user">User</div>
+                    <div class="tab" data-tab="memory">Memory</div>
+                </div>
+                
+                <div class="editor-header">
+                    <span class="editor-title" id="editorTitle">IDENTITY.md</span>
+                    <div class="editor-actions">
+                        <button class="btn btn-secondary" onclick="fetchFromVPS()">Pull from VPS</button>
+                        <button class="btn btn-primary" onclick="saveConfig()">Save</button>
+                        <button class="btn btn-success" onclick="syncToVPS()">Deploy to Agent</button>
+                    </div>
+                </div>
+                
+                <textarea class="editor" id="editor" placeholder="Paste your configuration here..."></textarea>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        const deploymentId = new URLSearchParams(window.location.search).get('id') || 'luna-labs-maven';
+        let deployment = null;
+        let currentTab = 'identity';
+        let workspace = {
+            identity: '',
+            soul: '',
+            agents: '',
+            tools: '',
+            user: '',
+            memory: ''
+        };
+        
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Save current content before switching
+                workspace[currentTab] = document.getElementById('editor').value;
+                
+                // Switch tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                currentTab = tab.dataset.tab;
+                document.getElementById('editorTitle') .textContent = currentTab.toUpperCase() + '.md';
+                document.getElementById('editor').value = workspace[currentTab] || '';
+            });
+        });
+        
+        // Load deployment
+        async function loadDeployment() {
+            try {
+                const res = await fetch(`/api/deployments/${deploymentId}`);
+                if (!res.ok) throw new Error('Deployment not found');
+                
+                deployment = await res.json();
+                
+                // Update UI
+                document.getElementById('businessName').textContent = deployment.name || 'Unknown';
+                document.getElementById('businessDescription').textContent = deployment.description || '';
+                document.getElementById('agentName').textContent = deployment.agent || '-';
+                document.getElementById('modelName').textContent = deployment.model || '-';
+                document.getElementById('createdAt').textContent = deployment.createdAt ? new Date(deployment.createdAt).toLocaleDateString() : '-';
+                document.getElementById('lastSynced').textContent = deployment.lastSyncedAt ? new Date(deployment.lastSyncedAt).toLocaleString() : 'Never';
+                document.getElementById('chatUrl').href = deployment.chatUrl || '#';
+                document.getElementById('chatUrl').textContent = deployment.chatUrl || 'No URL';
+                
+                // Load workspace
+                if (deployment.workspace) {
+                    workspace = { ...workspace, ...deployment.workspace };
+                }
+                document.getElementById('editor').value = workspace[currentTab] || '';
+                
+            } catch (error) {
+                showToast('Failed to load deployment: ' + error.message, 'error');
+            }
+        }
+        
+        // Save config locally
+        async function saveConfig() {
+            workspace[currentTab] = document.getElementById('editor').value;
+            
+            try {
+                const res = await fetch(`/api/deployments/${deploymentId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...deployment,
+                        workspace
+                    })
+                });
+                
+                if (!res.ok) throw new Error('Save failed');
+                
+                showToast('Configuration saved!', 'success');
+            } catch (error) {
+                showToast('Failed to save: ' + error.message, 'error');
+            }
+        }
+        
+        // Sync to VPS
+        async function syncToVPS() {
+            workspace[currentTab] = document.getElementById('editor').value;
+            
+            // Save first
+            await saveConfig();
+            
+            showToast('Deploying to agent...', '');
+            
+            try {
+                const res = await fetch(`/api/deployments/${deploymentId}/sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error || 'Sync failed');
+                
+                const synced = data.results.filter(r => r.status === 'synced').length;
+                showToast(`Deployed! ${synced} files synced to agent.`, 'success');
+                
+                // Update last synced
+                document.getElementById('lastSynced').textContent = new Date().toLocaleString();
+                
+            } catch (error) {
+                showToast('Failed to deploy: ' + error.message, 'error');
+            }
+        }
+        
+        // Pull from VPS
+        async function fetchFromVPS() {
+            showToast('Fetching from VPS...', '');
+            
+            try {
+                const res = await fetch(`/api/deployments/${deploymentId}/workspace-remote`);
+                if (!res.ok) throw new Error('Fetch failed');
+                
+                const remoteWorkspace = await res.json();
+                workspace = { ...workspace, ...remoteWorkspace };
+                document.getElementById('editor').value = workspace[currentTab] || '';
+                
+                showToast('Fetched workspace from VPS!', 'success');
+            } catch (error) {
+                showToast('Failed to fetch: ' + error.message, 'error');
+            }
+        }
+        
+        // Toast
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Init
+        loadDeployment();
+    </script>
+</body>
+</html>
