@@ -5340,8 +5340,19 @@
     // ============================================
     // INITIALIZATION
     // ============================================
-    // Start with AI Ideas view (since briefings are empty)
-    switchView('ideas');
+    // Check for view query parameter (e.g., /?view=deployments)
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    
+    // Valid views that can be linked to directly
+    const validViews = ['briefings', 'ideas', 'expenses', 'deployments', 'saas', 'analytics', 'lumen-tools'];
+    
+    if (viewParam && validViews.includes(viewParam)) {
+      switchView(viewParam);
+    } else {
+      // Default: Start with AI Ideas view (since briefings are empty)
+      switchView('ideas');
+    }
     
     // Also load briefings in background for when user switches to it
     fetchStats();
