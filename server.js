@@ -1848,55 +1848,6 @@ app.post('/api/auth/logout', (req, res) => {
   });
 });
 
-// Admin password reset (temporary - remove after use)
-app.post('/api/auth/admin-reset', async (req, res) => {
-  try {
-    const { email, newPassword, adminKey } = req.body;
-    
-    // Simple admin key protection
-    if (adminKey !== 'lumen-reset-2026') {
-      return res.status(403).json({ error: 'Invalid admin key' });
-    }
-    
-    if (!email || !newPassword) {
-      return res.status(400).json({ error: 'Email and new password required' });
-    }
-    
-    const client = await pool.connect();
-    try {
-      // Find user by email
-      const result = await client.query(
-        'SELECT id, username, email FROM lumen_users WHERE email = $1 OR username = $1',
-        [email]
-      );
-      
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'User not found', searched: email });
-      }
-      
-      const user = result.rows[0];
-      const hashedPassword = await auth.hashPassword(newPassword);
-      
-      await client.query(
-        'UPDATE lumen_users SET password_hash = $1 WHERE id = $2',
-        [hashedPassword, user.id]
-      );
-      
-      res.json({ 
-        success: true, 
-        message: 'Password reset successfully',
-        username: user.username,
-        hint: 'Use this username to login'
-      });
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    console.error('[Auth] Admin reset error:', err);
-    res.status(500).json({ error: 'Reset failed: ' + err.message });
-  }
-});
-
 // Check session
 app.get('/api/auth/me', async (req, res) => {
   if (!req.session.userId) {
