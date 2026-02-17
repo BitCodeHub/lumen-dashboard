@@ -2,6 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const fs = require('fs');
+const multer = require('multer');
+
+// File upload configuration for Maven multimodal
+const upload = multer({ 
+  dest: '/tmp/uploads/',
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB max
+});
 const path = require('path');
 const crypto = require('crypto');
 const { Pool } = require('pg');
@@ -7551,24 +7558,23 @@ app.use('/api/deployments', deploymentsRoutes);
 // Maven Chat Proxy - proxies requests to OpenClaw on srv1352214
 app.post('/api/maven/chat', async (req, res) => {
   try {
-    const { message, sessionId } = req.body;
-    const MAVEN_URL = 'http://srv1352214.hstgr.cloud:44434';
-    const MAVEN_TOKEN = 'aHKwQzCd1WoapNkx8c01qIbTuzPOlDM2';
+    const { message, sessionId, files } = req.body;
+    // Use enterprise bridge (has image compression for Kimi's 2MB limit)
+    const MAVEN_URL = 'https://srv1352214.hstgr.cloud';
+    const MAVEN_TOKEN = 'demo-token-2026';
     
-    // Use OpenClaw's webhook/agent endpoint
-    const response = await fetch(`${MAVEN_URL}/hooks/agent`, {
+    // Route through enterprise bridge which has image compression
+    const response = await fetch(`${MAVEN_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${MAVEN_TOKEN}`,
-        'X-OpenClaw-Token': MAVEN_TOKEN
+        'Authorization': `Bearer ${MAVEN_TOKEN}`
       },
       body: JSON.stringify({
         message: message,
-        sessionKey: sessionId || 'web-chat',
-        deliver: false
+        agentId: 'main'
       }),
-      timeout: 60000
+      timeout: 120000
     });
     
     if (response.ok) {
@@ -7581,6 +7587,55 @@ app.post('/api/maven/chat', async (req, res) => {
     }
   } catch (error) {
     console.error('Maven chat proxy error:', error.message);
+    res.json({ success: false, response: 'Connection error. Please try again.' });
+  }
+});
+
+// Maven chat with files (multimodal) - routes through enterprise bridge
+app.post('/api/maven/chat-with-files', upload.array('files', 10), async (req, res) => {
+  try {
+    const { message } = req.body;
+    const files = req.files || [];
+    const MAVEN_URL = 'https://srv1352214.hstgr.cloud';
+    const MAVEN_TOKEN = 'demo-token-2026';
+    
+    // Build form data for multimodal request
+    const FormData = (await import('form-data')).default;
+    const form = new FormData();
+    form.append('message', message || 'Analyze these files');
+    
+    for (const file of files) {
+      form.append('files', fs.createReadStream(file.path), {
+        filename: file.originalname,
+        contentType: file.mimetype
+      });
+    }
+    
+    const response = await fetch(`${MAVEN_URL}/api/chat-with-files`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${MAVEN_TOKEN}`,
+        ...form.getHeaders()
+      },
+      body: form,
+      timeout: 180000
+    });
+    
+    // Clean up uploaded files
+    for (const file of files) {
+      try { fs.unlinkSync(file.path); } catch(e) {}
+    }
+    
+    if (response.ok) {
+      const data = await response.json();
+      res.json({ success: true, response: data.response || 'Processed' });
+    } else {
+      const text = await response.text();
+      console.error('Maven multimodal error:', response.status, text);
+      res.json({ success: false, response: 'Failed to process files.' });
+    }
+  } catch (error) {
+    console.error('Maven multimodal proxy error:', error.message);
     res.json({ success: false, response: 'Connection error. Please try again.' });
   }
 });
