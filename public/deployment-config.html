@@ -1300,8 +1300,7 @@
             };
             showToast(`✅ Loaded "${templateNames[templateName] || templateName}" template`, 'success');
             
-            // Reset selector
-            document.getElementById('templateSelect').value = '';
+            // Keep the selected template visible in dropdown (don't reset)
         }
         // ========== END TEMPLATE DATA ==========
         
