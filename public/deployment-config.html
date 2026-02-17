@@ -1328,10 +1328,10 @@
             }
         }
         
-        // Sync configurations - try local first (Mac Studio), then VPS direct
+        // Sync configurations - use proxy through main dashboard server
         const SYNC_CONFIGS = {
             'luna-labs-maven': {
-                localUrl: 'http://localhost:3700/api/sync',  // Local sync server on Mac Studio
+                localUrl: '/api/local-sync',  // Proxy through dashboard (no CORS issues)
                 vpsUrl: 'https://srv1352214.hstgr.cloud/api/workspace/sync',
                 apiKey: 'maven-sync-2026'
             }

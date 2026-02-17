@@ -142,6 +142,24 @@ app.get('/health', async (req, res) => {
   res.status(statusCode).json(healthCheck);
 });
 
+// LOCAL SYNC ENDPOINT (Public, no auth - for Deploy to Agent button)
+// Proxies to local-sync-server.js on port 3700
+app.post('/api/local-sync', async (req, res) => {
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch('http://localhost:3700/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body)
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error('[LocalSync] Proxy error:', err.message);
+    res.status(500).json({ error: 'Local sync failed: ' + err.message });
+  }
+});
+
 // Session management with error handling
 try {
   const sessionStore = new pgSession({
@@ -7751,3 +7769,4 @@ app.get('/api/rayban-research', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
