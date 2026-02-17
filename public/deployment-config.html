@@ -518,21 +518,49 @@
                         <div class="editor-subtitle" id="editorSubtitle">Define who the AI agent is</div>
                     </div>
                     <div class="editor-actions">
-                        <select class="form-select" id="templateSelect" style="width: 220px; margin-right: 8px;" onchange="loadTemplate(this.value)">
-                            <option value="">Load Template...</option>
-                            <optgroup label="Lumen AI Team">
+                        <select class="form-select" id="templateSelect" style="width: 240px; margin-right: 8px;" onchange="loadTemplate(this.value)">
+                            <option value="">🎯 Load Template (30+)...</option>
+                            <optgroup label="🏢 Lumen AI Team">
                                 <option value="lumen">💎 Unc Lumen (CTO)</option>
                                 <option value="luna">🌙 Luna (Chief of Staff)</option>
                             </optgroup>
-                            <optgroup label="Enterprise Roles">
+                            <optgroup label="🎧 Customer-Facing">
                                 <option value="customerService">🎧 Customer Service</option>
-                                <option value="salesSDR">💼 Sales (SDR)</option>
-                                <option value="executiveAssistant">📅 Executive Assistant</option>
-                                <option value="techSupport">🔧 Tech Support</option>
-                                <option value="hrRecruiter">👥 HR & Recruiting</option>
-                                <option value="opsIT">⚙️ Operations/IT</option>
+                                <option value="salesSDR">💼 Sales SDR</option>
+                                <option value="accountManager">🤝 Account Manager</option>
+                                <option value="appointmentScheduler">📅 Appointment Scheduler</option>
                             </optgroup>
-                            <option value="blank">📝 Blank Template</option>
+                            <optgroup label="📱 Marketing & Content">
+                                <option value="socialMediaManager">📱 Social Media Manager</option>
+                                <option value="contentWriter">✍️ Content Writer</option>
+                                <option value="emailMarketing">📧 Email Marketing</option>
+                                <option value="seoSpecialist">🔍 SEO Specialist</option>
+                            </optgroup>
+                            <optgroup label="🔧 Technical">
+                                <option value="techSupport">🔧 Tech Support</option>
+                                <option value="devOpsAssistant">⚙️ DevOps Assistant</option>
+                                <option value="dataAnalyst">📊 Data Analyst</option>
+                            </optgroup>
+                            <optgroup label="🏠 Internal Operations">
+                                <option value="executiveAssistant">📅 Executive Assistant</option>
+                                <option value="hrRecruiter">👥 HR & Recruiting</option>
+                                <option value="onboardingSpecialist">🚀 Onboarding Specialist</option>
+                                <option value="opsIT">💻 IT Operations</option>
+                            </optgroup>
+                            <optgroup label="💰 Finance & Legal">
+                                <option value="accountingAssistant">💰 Accounting Assistant</option>
+                                <option value="legalAssistant">⚖️ Legal Assistant</option>
+                                <option value="complianceOfficer">📋 Compliance Officer</option>
+                            </optgroup>
+                            <optgroup label="🏥 Industry-Specific">
+                                <option value="healthcareScheduler">🏥 Healthcare Scheduler</option>
+                                <option value="realEstateAgent">🏠 Real Estate Agent</option>
+                                <option value="insuranceAgent">🛡️ Insurance Agent</option>
+                                <option value="ecommerceSupport">🛒 E-commerce Support</option>
+                                <option value="travelAgent">✈️ Travel Agent</option>
+                                <option value="restaurantHost">🍽️ Restaurant Host</option>
+                            </optgroup>
+                            <option value="blank">📝 Start from Blank</option>
                         </select>
                         <button class="btn btn-secondary" onclick="pullFromVPS()">Pull from VPS</button>
                         <button class="btn btn-success" onclick="deployToAgent()">Deploy to Agent</button>
@@ -894,6 +922,9 @@
     
     <div class="toast" id="toast"></div>
     
+    <!-- External templates library (30+ roles) -->
+    <script src="/js/agent-templates.js"></script>
+    
     <script>
         const deploymentId = new URLSearchParams(window.location.search).get('id') || 'luna-labs-maven';
         let currentTab = 'identity';
@@ -1153,9 +1184,13 @@
         function loadTemplate(templateName) {
             if (!templateName) return;
             
-            const template = templates[templateName];
+            // Check both inline templates and external AGENT_TEMPLATES
+            let template = templates[templateName];
+            if (!template && typeof AGENT_TEMPLATES !== 'undefined') {
+                template = AGENT_TEMPLATES[templateName];
+            }
             if (!template) {
-                showToast('Template not found', 'error');
+                showToast('Template not found: ' + templateName, 'error');
                 return;
             }
             
@@ -1227,17 +1262,43 @@
             document.getElementById('memory-products').value = template.memory.products || '';
             
             const templateNames = {
+                // Lumen AI Team
                 lumen: "Unc Lumen (CTO)",
-                luna: "Luna (CoS)",
+                luna: "Luna (Chief of Staff)",
+                // Customer-Facing
                 customerService: "Customer Service",
                 salesSDR: "Sales SDR",
-                executiveAssistant: "Executive Assistant",
+                accountManager: "Account Manager",
+                appointmentScheduler: "Appointment Scheduler",
+                // Marketing & Content
+                socialMediaManager: "Social Media Manager",
+                contentWriter: "Content Writer",
+                emailMarketing: "Email Marketing",
+                seoSpecialist: "SEO Specialist",
+                // Technical
                 techSupport: "Tech Support",
+                devOpsAssistant: "DevOps Assistant",
+                dataAnalyst: "Data Analyst",
+                // Internal Operations
+                executiveAssistant: "Executive Assistant",
                 hrRecruiter: "HR & Recruiting",
-                opsIT: "Operations/IT",
-                blank: "Blank"
+                onboardingSpecialist: "Onboarding Specialist",
+                opsIT: "IT Operations",
+                // Finance & Legal
+                accountingAssistant: "Accounting Assistant",
+                legalAssistant: "Legal Assistant",
+                complianceOfficer: "Compliance Officer",
+                // Industry-Specific
+                healthcareScheduler: "Healthcare Scheduler",
+                realEstateAgent: "Real Estate Agent",
+                insuranceAgent: "Insurance Agent",
+                ecommerceSupport: "E-commerce Support",
+                travelAgent: "Travel Agent",
+                restaurantHost: "Restaurant Host",
+                // Basic
+                blank: "Blank Template"
             };
-            showToast(`✅ Loaded ${templateNames[templateName] || templateName} template`, 'success');
+            showToast(`✅ Loaded "${templateNames[templateName] || templateName}" template`, 'success');
             
             // Reset selector
             document.getElementById('templateSelect').value = '';
