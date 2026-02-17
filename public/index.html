@@ -4064,7 +4064,7 @@
     
     function editDeployment(id) {
       hideDeploymentDetailModal();
-      showToast('Edit functionality coming soon!', 'info');
+      window.location.href = `/deployment-config.html?id=${id}`;
     }
     
     async function deleteDeployment(id) {
