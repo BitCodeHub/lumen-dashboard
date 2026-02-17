@@ -869,6 +869,48 @@ Example:
                                 <textarea class="form-textarea" id="memory-products" style="min-height: 150px;" placeholder="List products, services, pricing, or any other information the agent should know..."></textarea>
                             </div>
                         </div>
+                        
+                        <!-- KNOWLEDGE BASE UPLOAD SECTION -->
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">📚</span> Knowledge Base Documents <span class="form-hint">(Upload files for Maven to learn from)</span></div>
+                            
+                            <div style="background: rgba(59, 130, 246, 0.1); border: 2px dashed rgba(59, 130, 246, 0.4); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 16px;" id="upload-dropzone">
+                                <div style="font-size: 36px; margin-bottom: 12px;">📤</div>
+                                <div style="font-size: 14px; font-weight: 600; color: #e5e5e5; margin-bottom: 8px;">Drop files here or click to upload</div>
+                                <div style="font-size: 12px; color: #888; margin-bottom: 16px;">Supported: PDF, DOCX, TXT, MD, CSV, JSON (Max 10MB each)</div>
+                                <input type="file" id="knowledge-file-input" multiple accept=".pdf,.docx,.doc,.txt,.md,.csv,.json" style="display: none;">
+                                <button class="add-btn" onclick="document.getElementById('knowledge-file-input').click()" style="margin: 0 auto;">
+                                    <span>📁</span> Choose Files
+                                </button>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Upload Category</label>
+                                <select class="form-select" id="upload-category">
+                                    <option value="docs">📄 General Docs</option>
+                                    <option value="guides">📖 Guides & Tutorials</option>
+                                    <option value="policies">📋 Policies & Compliance</option>
+                                    <option value="products">📦 Product Information</option>
+                                    <option value="processes">⚙️ Processes & Workflows</option>
+                                </select>
+                            </div>
+                            
+                            <div id="upload-queue" style="margin-bottom: 16px;"></div>
+                            
+                            <button class="add-btn" id="upload-btn" onclick="uploadKnowledgeFiles()" style="display: none; background: #22c55e;">
+                                <span>⬆️</span> Upload to Maven's Knowledge Base
+                            </button>
+                            
+                            <div style="margin-top: 16px;">
+                                <div style="font-size: 13px; font-weight: 600; color: #e5e5e5; margin-bottom: 8px;">📚 Current Knowledge Base</div>
+                                <div id="knowledge-files-list" style="background: #1a1a1a; border-radius: 8px; padding: 12px; max-height: 200px; overflow-y: auto;">
+                                    <div style="color: #888; font-size: 12px; text-align: center;">Loading...</div>
+                                </div>
+                                <button class="add-btn" onclick="refreshKnowledgeFiles()" style="margin-top: 8px; background: transparent; border: 1px solid #475569;">
+                                    <span>🔄</span> Refresh List
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1604,6 +1646,199 @@ Example:
             toast.textContent = message;
             toast.className = 'toast show ' + type;
             setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // ========== KNOWLEDGE BASE UPLOAD FUNCTIONS ==========
+        
+        let selectedFiles = [];
+        
+        // Initialize upload dropzone
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropzone = document.getElementById('upload-dropzone');
+            const fileInput = document.getElementById('knowledge-file-input');
+            
+            if (dropzone && fileInput) {
+                // Drag and drop handlers
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.style.borderColor = '#3b82f6';
+                    dropzone.style.background = 'rgba(59, 130, 246, 0.2)';
+                });
+                
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                    dropzone.style.background = 'rgba(59, 130, 246, 0.1)';
+                });
+                
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                    dropzone.style.background = 'rgba(59, 130, 246, 0.1)';
+                    handleFiles(e.dataTransfer.files);
+                });
+                
+                fileInput.addEventListener('change', (e) => {
+                    handleFiles(e.target.files);
+                });
+            }
+            
+            // Load existing knowledge files on tab switch
+            refreshKnowledgeFiles();
+        });
+        
+        function handleFiles(files) {
+            const queue = document.getElementById('upload-queue');
+            const uploadBtn = document.getElementById('upload-btn');
+            
+            for (const file of files) {
+                // Check file size (10MB limit)
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast(`${file.name} is too large (max 10MB)`, 'error');
+                    continue;
+                }
+                
+                // Check file type
+                const validTypes = ['.pdf', '.docx', '.doc', '.txt', '.md', '.csv', '.json'];
+                const ext = '.' + file.name.split('.').pop().toLowerCase();
+                if (!validTypes.includes(ext)) {
+                    showToast(`${file.name} is not a supported file type`, 'error');
+                    continue;
+                }
+                
+                selectedFiles.push(file);
+                
+                // Add to queue display
+                const item = document.createElement('div');
+                item.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; margin-bottom: 8px;';
+                item.innerHTML = `
+                    <span>📄</span>
+                    <span style="flex: 1; font-size: 13px; color: #e5e5e5;">${file.name}</span>
+                    <span style="font-size: 11px; color: #888;">${(file.size / 1024).toFixed(1)} KB</span>
+                    <span style="cursor: pointer; color: #ef4444;" onclick="removeFromQueue(this, '${file.name}')">✕</span>
+                `;
+                queue.appendChild(item);
+            }
+            
+            if (selectedFiles.length > 0) {
+                uploadBtn.style.display = 'block';
+            }
+        }
+        
+        function removeFromQueue(el, filename) {
+            selectedFiles = selectedFiles.filter(f => f.name !== filename);
+            el.closest('div').remove();
+            
+            if (selectedFiles.length === 0) {
+                document.getElementById('upload-btn').style.display = 'none';
+            }
+        }
+        
+        async function uploadKnowledgeFiles() {
+            if (selectedFiles.length === 0) return;
+            
+            const category = document.getElementById('upload-category').value;
+            const uploadBtn = document.getElementById('upload-btn');
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span>⏳</span> Uploading...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('category', category);
+                formData.append('deploymentId', deploymentId);
+                
+                for (const file of selectedFiles) {
+                    formData.append('files', file);
+                }
+                
+                const res = await fetch('/api/knowledge/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'Upload failed');
+                }
+                
+                showToast(`✅ ${selectedFiles.length} file(s) uploaded to Maven's knowledge base`, 'success');
+                
+                // Clear queue
+                selectedFiles = [];
+                document.getElementById('upload-queue').innerHTML = '';
+                uploadBtn.style.display = 'none';
+                document.getElementById('knowledge-file-input').value = '';
+                
+                // Refresh file list
+                refreshKnowledgeFiles();
+                
+            } catch (err) {
+                showToast('Upload failed: ' + err.message, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<span>⬆️</span> Upload to Maven\'s Knowledge Base';
+            }
+        }
+        
+        async function refreshKnowledgeFiles() {
+            const list = document.getElementById('knowledge-files-list');
+            if (!list) return;
+            
+            list.innerHTML = '<div style="color: #888; font-size: 12px; text-align: center;">Loading...</div>';
+            
+            try {
+                const res = await fetch(`/api/knowledge/list?deploymentId=${deploymentId}`);
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'Failed to load');
+                }
+                
+                if (!data.files || data.files.length === 0) {
+                    list.innerHTML = '<div style="color: #888; font-size: 12px; text-align: center;">No documents uploaded yet</div>';
+                    return;
+                }
+                
+                list.innerHTML = data.files.map(f => `
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid #2a2a2a;">
+                        <span>${getCategoryIcon(f.category)}</span>
+                        <span style="flex: 1; font-size: 12px; color: #e5e5e5;">${f.name}</span>
+                        <span style="font-size: 10px; color: #888;">${f.category}</span>
+                        <span style="cursor: pointer; color: #ef4444; font-size: 11px;" onclick="deleteKnowledgeFile('${f.category}', '${f.name}')">🗑️</span>
+                    </div>
+                `).join('');
+                
+            } catch (err) {
+                list.innerHTML = '<div style="color: #ef4444; font-size: 12px; text-align: center;">Failed to load files</div>';
+            }
+        }
+        
+        function getCategoryIcon(cat) {
+            const icons = { docs: '📄', guides: '📖', policies: '📋', products: '📦', processes: '⚙️' };
+            return icons[cat] || '📄';
+        }
+        
+        async function deleteKnowledgeFile(category, filename) {
+            if (!confirm(`Delete ${filename}?`)) return;
+            
+            try {
+                const res = await fetch('/api/knowledge/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deploymentId, category, filename })
+                });
+                
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Delete failed');
+                }
+                
+                showToast('File deleted', 'success');
+                refreshKnowledgeFiles();
+                
+            } catch (err) {
+                showToast('Delete failed: ' + err.message, 'error');
+            }
         }
     </script>
 </body>

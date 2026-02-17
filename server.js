@@ -207,6 +207,121 @@ app.post('/api/local-sync', async (req, res) => {
   }
 });
 
+// ========== KNOWLEDGE BASE UPLOAD ENDPOINTS ==========
+
+const knowledgeUpload = multer({ 
+  dest: '/tmp/knowledge-uploads/',
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+// VPS config for knowledge operations
+const MAVEN_VPS = {
+  host: 'srv1352214.hstgr.cloud',
+  apiKey: 'maven-sync-2026'
+};
+
+// Upload knowledge files
+app.post('/api/knowledge/upload', knowledgeUpload.array('files', 10), async (req, res) => {
+  const { execSync } = require('child_process');
+  const fs = require('fs');
+  
+  try {
+    const { category, deploymentId } = req.body;
+    const files = req.files;
+    
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No files provided' });
+    }
+    
+    console.log(`[Knowledge] Uploading ${files.length} files to category: ${category}`);
+    
+    const uploaded = [];
+    
+    for (const file of files) {
+      const targetPath = `/data/.openclaw/workspace/knowledge/${category}/${file.originalname}`;
+      
+      // Copy file to VPS via SSH
+      try {
+        // First copy to VPS /tmp
+        execSync(`scp "${file.path}" root@${MAVEN_VPS.host}:/tmp/`, { timeout: 30000 });
+        
+        // Then copy into Docker container
+        execSync(`ssh root@${MAVEN_VPS.host} 'docker cp /tmp/${file.filename} openclaw-6zsj-openclaw-1:${targetPath} && rm /tmp/${file.filename}'`, { timeout: 30000 });
+        
+        // Rename in container to original filename
+        execSync(`ssh root@${MAVEN_VPS.host} 'docker exec openclaw-6zsj-openclaw-1 mv "${targetPath.replace(file.originalname, file.filename)}" "${targetPath}" 2>/dev/null || true'`, { timeout: 10000 });
+        
+        uploaded.push({ name: file.originalname, category });
+        console.log(`[Knowledge] Uploaded: ${file.originalname}`);
+      } catch (uploadErr) {
+        console.error(`[Knowledge] Failed to upload ${file.originalname}:`, uploadErr.message);
+      }
+      
+      // Clean up temp file
+      fs.unlinkSync(file.path);
+    }
+    
+    res.json({ success: true, uploaded, count: uploaded.length });
+    
+  } catch (err) {
+    console.error('[Knowledge] Upload error:', err.message);
+    res.status(500).json({ error: 'Upload failed: ' + err.message });
+  }
+});
+
+// List knowledge files
+app.get('/api/knowledge/list', async (req, res) => {
+  const { execSync } = require('child_process');
+  
+  try {
+    const { deploymentId } = req.query;
+    
+    // Get file list from Docker container
+    const output = execSync(`ssh root@${MAVEN_VPS.host} 'docker exec openclaw-6zsj-openclaw-1 find /data/.openclaw/workspace/knowledge -type f -name "*.md" -o -name "*.txt" -o -name "*.pdf" -o -name "*.docx" -o -name "*.csv" -o -name "*.json" 2>/dev/null | head -100'`, { timeout: 15000 }).toString();
+    
+    const files = output.trim().split('\n')
+      .filter(f => f && !f.includes('INDEX.md') && !f.includes('README.md'))
+      .map(f => {
+        const parts = f.split('/');
+        const name = parts.pop();
+        const category = parts.pop();
+        return { name, category, path: f };
+      });
+    
+    res.json({ success: true, files });
+    
+  } catch (err) {
+    console.error('[Knowledge] List error:', err.message);
+    res.json({ success: true, files: [] }); // Return empty on error
+  }
+});
+
+// Delete knowledge file
+app.post('/api/knowledge/delete', async (req, res) => {
+  const { execSync } = require('child_process');
+  
+  try {
+    const { deploymentId, category, filename } = req.body;
+    
+    if (!category || !filename) {
+      return res.status(400).json({ error: 'Missing category or filename' });
+    }
+    
+    // Delete file from Docker container
+    const targetPath = `/data/.openclaw/workspace/knowledge/${category}/${filename}`;
+    execSync(`ssh root@${MAVEN_VPS.host} 'docker exec openclaw-6zsj-openclaw-1 rm -f "${targetPath}"'`, { timeout: 15000 });
+    
+    console.log(`[Knowledge] Deleted: ${targetPath}`);
+    res.json({ success: true });
+    
+  } catch (err) {
+    console.error('[Knowledge] Delete error:', err.message);
+    res.status(500).json({ error: 'Delete failed: ' + err.message });
+  }
+});
+
+// ========== END KNOWLEDGE BASE ENDPOINTS ==========
+
 // Session management with error handling
 try {
   const sessionStore = new pgSession({
