@@ -2,23 +2,25 @@
   "deployments": [
     {
       "id": "luna-labs-maven",
-      "name": "Luna Labs",
-      "description": "AI Assistant powered by Maven - White-label chat interface for enterprise customers",
+      "companyName": "Luna Labs",
+      "contactName": "Jimmy Lam",
+      "contactEmail": "jimmylam2010@gmail.com",
+      "contactPhone": "",
+      "agentName": "Maven",
+      "primaryColor": "#6366f1",
+      "logoUrl": "",
+      "hosting": "external",
+      "useCase": "Enterprise AI Assistant - White-label chat interface for customers",
+      "plan": "enterprise",
+      "customPrice": null,
+      "notes": "First white-label SaaS deployment - Demo customer. Running on Hostinger VPS with Kimi K2.5 model.",
+      "status": "active",
+      "messagesThisMonth": 247,
       "chatUrl": "https://srv1352214.hstgr.cloud",
       "apiUrl": "https://srv1352214.hstgr.cloud/api/chat",
-      "status": "active",
-      "agent": "Maven",
       "model": "kimi-coding/k2p5",
-      "createdAt": "2026-02-16T21:48:00Z",
-      "updatedAt": "2026-02-16T22:31:00Z",
       "type": "chat-ui",
       "tags": ["ai", "chat", "white-label", "luna-labs", "saas", "ssl"],
-      "business": {
-        "name": "Luna Labs",
-        "industry": "AI/Technology",
-        "contact": "",
-        "notes": "First white-label SaaS deployment - Demo customer"
-      },
       "workspace": {
         "identity": "",
         "soul": "",
@@ -27,6 +29,8 @@
         "user": "",
         "memory": ""
       },
+      "createdAt": "2026-02-16T21:48:00Z",
+      "updatedAt": "2026-02-17T03:58:00Z",
       "lastSyncedAt": null
     }
   ]
