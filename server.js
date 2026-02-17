@@ -143,20 +143,60 @@ app.get('/health', async (req, res) => {
 });
 
 // LOCAL SYNC ENDPOINT (Public, no auth - for Deploy to Agent button)
-// Proxies to local-sync-server.js on port 3700
+// On local: proxies to local-sync-server.js on port 3700
+// On Render: calls VPS workspace API directly
 app.post('/api/local-sync', async (req, res) => {
+  const fetch = (await import('node-fetch')).default;
+  const isProduction = process.env.RENDER || process.env.NODE_ENV === 'production';
+  
+  // VPS config for direct sync
+  const VPS_CONFIG = {
+    apiUrl: 'https://srv1352214.hstgr.cloud/api/workspace/sync',
+    apiKey: 'maven-sync-2026'
+  };
+  
   try {
-    const fetch = (await import('node-fetch')).default;
-    const response = await fetch('http://localhost:3700/api/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body)
-    });
+    let response;
+    
+    if (isProduction) {
+      // On Render: call VPS directly
+      console.log('[LocalSync] Production mode - calling VPS directly');
+      response = await fetch(VPS_CONFIG.apiUrl, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Key': VPS_CONFIG.apiKey
+        },
+        body: JSON.stringify(req.body)
+      });
+    } else {
+      // On local: try local sync server first
+      try {
+        console.log('[LocalSync] Local mode - trying local sync server');
+        response = await fetch('http://localhost:3700/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(req.body)
+        });
+      } catch (localErr) {
+        // Fallback to VPS direct
+        console.log('[LocalSync] Local server not available, falling back to VPS');
+        response = await fetch(VPS_CONFIG.apiUrl, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-API-Key': VPS_CONFIG.apiKey
+          },
+          body: JSON.stringify(req.body)
+        });
+      }
+    }
+    
     const data = await response.json();
     res.json(data);
   } catch (err) {
-    console.error('[LocalSync] Proxy error:', err.message);
-    res.status(500).json({ error: 'Local sync failed: ' + err.message });
+    console.error('[LocalSync] Sync error:', err.message);
+    res.status(500).json({ error: 'Sync failed: ' + err.message });
   }
 });
 
