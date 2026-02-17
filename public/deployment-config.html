@@ -649,155 +649,110 @@
                     </div>
                 </div>
                 
-                <!-- TOOLS TAB - REDESIGNED -->
+                <!-- TOOLS TAB - REDESIGNED WITH SYSTEM VS AGENT SEPARATION -->
                 <div class="tab-content" id="content-tools">
                     <div class="form-content">
-                        <!-- Core Capabilities Section -->
-                        <div class="core-capabilities-box">
-                            <div class="core-capabilities-title">
-                                <span>⚡</span> Core Agent Capabilities (Always Available)
+                        <!-- SECTION 1: System Capabilities (Read-only) -->
+                        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 24px; opacity: 0.85;">
+                            <div style="display: flex; align-items: center; justify-content: between; margin-bottom: 16px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 20px;">🔒</span>
+                                    <div>
+                                        <div style="font-size: 14px; font-weight: 600; color: #94a3b8;">System Capabilities</div>
+                                        <div style="font-size: 11px; color: #64748b;">Managed by Lumen AI • Based on your SaaS plan</div>
+                                    </div>
+                                </div>
+                                <span id="plan-badge" style="margin-left: auto; padding: 4px 12px; background: #7c3aed; color: white; border-radius: 20px; font-size: 11px; font-weight: 600;">ENTERPRISE</span>
                             </div>
-                            <div class="core-capabilities-desc">
-                                Maven is a full autonomous AI agent. These capabilities are built-in and always available. Technical users can work directly with Maven to configure additional tools as needed.
+                            
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                                <div class="sys-cap-item" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px;">
+                                    <span style="color: #22c55e;">✓</span>
+                                    <span style="font-size: 13px; color: #e2e8f0;">Web Search</span>
+                                    <span style="margin-left: auto; font-size: 10px; color: #64748b;">Brave API</span>
+                                </div>
+                                <div class="sys-cap-item" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px;">
+                                    <span style="color: #22c55e;">✓</span>
+                                    <span style="font-size: 13px; color: #e2e8f0;">Shell Commands</span>
+                                </div>
+                                <div class="sys-cap-item" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px;">
+                                    <span style="color: #22c55e;">✓</span>
+                                    <span style="font-size: 13px; color: #e2e8f0;">Browser Automation</span>
+                                </div>
+                                <div class="sys-cap-item" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px;">
+                                    <span style="color: #22c55e;">✓</span>
+                                    <span style="font-size: 13px; color: #e2e8f0;">File Read/Write</span>
+                                </div>
+                                <div class="sys-cap-item" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px;">
+                                    <span style="color: #22c55e;">✓</span>
+                                    <span style="font-size: 13px; color: #e2e8f0;">Multimodal (Images)</span>
+                                </div>
+                                <div class="sys-cap-item" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px;">
+                                    <span style="color: #22c55e;">✓</span>
+                                    <span style="font-size: 13px; color: #e2e8f0;">PDF/DOCX/Excel</span>
+                                </div>
+                                <div class="sys-cap-item" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px;">
+                                    <span style="color: #22c55e;">✓</span>
+                                    <span style="font-size: 13px; color: #e2e8f0;">Memory System</span>
+                                </div>
+                                <div class="sys-cap-item" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px;">
+                                    <span style="color: #22c55e;">✓</span>
+                                    <span style="font-size: 13px; color: #e2e8f0;">Subagent Spawning</span>
+                                </div>
                             </div>
-                            <div>
-                                <span class="capability-badge"><span class="check">✓</span> Execute Code</span>
-                                <span class="capability-badge"><span class="check">✓</span> Read/Write Files</span>
-                                <span class="capability-badge"><span class="check">✓</span> Web Search</span>
-                                <span class="capability-badge"><span class="check">✓</span> Web Browsing</span>
-                                <span class="capability-badge"><span class="check">✓</span> Shell Commands</span>
-                                <span class="capability-badge"><span class="check">✓</span> Memory System</span>
-                                <span class="capability-badge"><span class="check">✓</span> Image Analysis</span>
-                                <span class="capability-badge"><span class="check">✓</span> API Calls</span>
+                            
+                            <div style="padding: 12px; background: rgba(100, 116, 139, 0.1); border-radius: 8px; border: 1px dashed #475569;">
+                                <div style="font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+                                    <span>ℹ️</span>
+                                    <span>These capabilities are configured at the system level and cannot be modified here. Contact support to upgrade your plan or enable additional features.</span>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="form-section">
-                            <div class="form-section-title"><span class="icon">🔌</span> Configured Integrations <span class="form-hint">(Set up during onboarding)</span></div>
-                            <p style="font-size: 13px; color: #888; margin-bottom: 16px;">
-                                Configure connections to the business's existing tools. These are set up by you during customer onboarding based on their tech stack.
-                            </p>
-                            
-                            <!-- Calendar Integration -->
-                            <div class="integration-card" onclick="toggleIntegration(this)">
-                                <div class="integration-header">
-                                    <div class="integration-info">
-                                        <div class="integration-icon">📅</div>
-                                        <div>
-                                            <div class="integration-name">Calendar Access</div>
-                                            <div class="integration-desc">Google Calendar, Outlook, Cal.com</div>
-                                        </div>
-                                    </div>
-                                    <span class="integration-status not-configured">Not Configured</span>
-                                </div>
-                                <div class="integration-fields">
-                                    <div class="form-group">
-                                        <label class="form-label">Calendar Provider</label>
-                                        <select class="form-select" id="tool-calendar-provider">
-                                            <option value="">Select provider...</option>
-                                            <option value="google">Google Calendar</option>
-                                            <option value="outlook">Microsoft Outlook</option>
-                                            <option value="calcom">Cal.com</option>
-                                            <option value="ical">Apple iCal</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">API Key or OAuth Token</label>
-                                        <input type="password" class="form-input" id="tool-calendar-key" placeholder="Enter API key or token...">
-                                    </div>
+                        <!-- SECTION 2: Agent Tool Guidance (Editable) -->
+                        <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                                <span style="font-size: 20px;">📝</span>
+                                <div>
+                                    <div style="font-size: 14px; font-weight: 600; color: #e5e5e5;">Agent Tool Guidance</div>
+                                    <div style="font-size: 11px; color: #888;">Instructions for how the agent should use available tools • Synced to TOOLS.md</div>
                                 </div>
                             </div>
                             
-                            <!-- Email Integration -->
-                            <div class="integration-card" onclick="toggleIntegration(this)">
-                                <div class="integration-header">
-                                    <div class="integration-info">
-                                        <div class="integration-icon">📧</div>
-                                        <div>
-                                            <div class="integration-name">Email Sending</div>
-                                            <div class="integration-desc">Gmail, Outlook, SendGrid, SMTP</div>
-                                        </div>
-                                    </div>
-                                    <span class="integration-status not-configured">Not Configured</span>
-                                </div>
-                                <div class="integration-fields">
-                                    <div class="form-group">
-                                        <label class="form-label">Email Provider</label>
-                                        <select class="form-select" id="tool-email-provider">
-                                            <option value="">Select provider...</option>
-                                            <option value="gmail">Gmail API</option>
-                                            <option value="outlook">Microsoft Graph</option>
-                                            <option value="sendgrid">SendGrid</option>
-                                            <option value="smtp">Custom SMTP</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">API Key or Credentials</label>
-                                        <input type="password" class="form-input" id="tool-email-key" placeholder="Enter API key or credentials...">
-                                    </div>
-                                </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label">Custom Tool Instructions</label>
+                                <textarea class="form-textarea" id="tools-instructions" rows="6" placeholder="Add specific instructions for how the agent should use tools...
+
+Example:
+- When searching the web, always cite sources
+- For calendar operations, default to Pacific timezone
+- When sending emails, always CC the manager
+- Use browser automation only for approved websites"></textarea>
                             </div>
                             
-                            <!-- CRM Integration -->
-                            <div class="integration-card" onclick="toggleIntegration(this)">
-                                <div class="integration-header">
-                                    <div class="integration-info">
-                                        <div class="integration-icon">👥</div>
-                                        <div>
-                                            <div class="integration-name">CRM / Customer Data</div>
-                                            <div class="integration-desc">Salesforce, HubSpot, Pipedrive</div>
-                                        </div>
-                                    </div>
-                                    <span class="integration-status not-configured">Not Configured</span>
-                                </div>
-                                <div class="integration-fields">
-                                    <div class="form-group">
-                                        <label class="form-label">CRM Platform</label>
-                                        <select class="form-select" id="tool-crm-provider">
-                                            <option value="">Select CRM...</option>
-                                            <option value="salesforce">Salesforce</option>
-                                            <option value="hubspot">HubSpot</option>
-                                            <option value="pipedrive">Pipedrive</option>
-                                            <option value="airtable">Airtable</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">API Key</label>
-                                        <input type="password" class="form-input" id="tool-crm-key" placeholder="Enter API key...">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- File Storage Integration -->
-                            <div class="integration-card" onclick="toggleIntegration(this)">
-                                <div class="integration-header">
-                                    <div class="integration-info">
-                                        <div class="integration-icon">📁</div>
-                                        <div>
-                                            <div class="integration-name">Company Files / Documents</div>
-                                            <div class="integration-desc">Google Drive, Dropbox, SharePoint</div>
-                                        </div>
-                                    </div>
-                                    <span class="integration-status not-configured">Not Configured</span>
-                                </div>
-                                <div class="integration-fields">
-                                    <div class="form-group">
-                                        <label class="form-label">Storage Provider</label>
-                                        <select class="form-select" id="tool-storage-provider">
-                                            <option value="">Select provider...</option>
-                                            <option value="gdrive">Google Drive</option>
-                                            <option value="dropbox">Dropbox</option>
-                                            <option value="sharepoint">SharePoint</option>
-                                            <option value="notion">Notion</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">API Key or OAuth Token</label>
-                                        <input type="password" class="form-input" id="tool-storage-key" placeholder="Enter API key or token...">
-                                    </div>
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label">Custom API Endpoints <span class="form-hint">(for agent reference only)</span></label>
+                                <textarea class="form-textarea" id="tools-custom" rows="4" placeholder="Document any custom APIs the agent should know about...
+
+Example:
+- Internal CRM API: https://api.company.com/crm
+- Support ticket system: https://support.company.com/api"></textarea>
                             </div>
                         </div>
+                        
+                        <!-- Hidden: Original integration fields kept for backwards compatibility but not displayed -->
+                        <div style="display: none;">
+                            <select id="tool-calendar-provider"><option value=""></option></select>
+                            <input type="hidden" id="tool-calendar-key">
+                            <select id="tool-email-provider"><option value=""></option></select>
+                            <input type="hidden" id="tool-email-key">
+                            <select id="tool-crm-provider"><option value=""></option></select>
+                            <input type="hidden" id="tool-crm-key">
+                            <select id="tool-storage-provider"><option value=""></option></select>
+                            <input type="hidden" id="tool-storage-key">
+                        </div>
+                        
+                        <!-- Old integration cards removed - system configs are read-only now -->
                         
                         <div class="form-section">
                             <div class="form-section-title"><span class="icon">🔗</span> Custom API Endpoints</div>
@@ -1425,41 +1380,27 @@
         }
         
         function generateToolsMD() {
-            let md = `# TOOLS.md - Available Tools & Integrations\n\n`;
+            let md = `# TOOLS.md - Agent Tool Guidance\n\n`;
             
-            md += `## Core Capabilities\n\n`;
-            md += `This agent has full autonomous capabilities including:\n`;
-            md += `- Execute code and shell commands\n`;
-            md += `- Read and write files\n`;
-            md += `- Search and browse the web\n`;
-            md += `- Memory and knowledge management\n`;
-            md += `- Image analysis\n`;
-            md += `- API integrations\n\n`;
+            md += `## Note\n\n`;
+            md += `System capabilities (web search, browser, exec, files, etc.) are managed at the platform level.\n`;
+            md += `This file contains agent-specific guidance for using those tools.\n\n`;
             
-            // Configured integrations
-            const calProvider = document.getElementById('tool-calendar-provider').value;
-            const emailProvider = document.getElementById('tool-email-provider').value;
-            const crmProvider = document.getElementById('tool-crm-provider').value;
-            const storageProvider = document.getElementById('tool-storage-provider').value;
-            
-            if (calProvider || emailProvider || crmProvider || storageProvider) {
-                md += `## Configured Integrations\n\n`;
-                if (calProvider) md += `- **Calendar:** ${calProvider}\n`;
-                if (emailProvider) md += `- **Email:** ${emailProvider}\n`;
-                if (crmProvider) md += `- **CRM:** ${crmProvider}\n`;
-                if (storageProvider) md += `- **File Storage:** ${storageProvider}\n`;
-                md += '\n';
-            }
-            
-            const custom = document.getElementById('tools-custom').value || '';
             const instructions = document.getElementById('tools-instructions').value || '';
-            
-            if (custom) {
-                md += `## Custom API Endpoints\n\n${custom}\n\n`;
-            }
+            const custom = document.getElementById('tools-custom').value || '';
             
             if (instructions) {
-                md += `## Integration Instructions\n\n${instructions}\n\n`;
+                md += `## Tool Usage Instructions\n\n${instructions}\n\n`;
+            }
+            
+            if (custom) {
+                md += `## Custom API References\n\n${custom}\n\n`;
+            }
+            
+            // If nothing custom, add placeholder
+            if (!instructions && !custom) {
+                md += `## Tool Usage Instructions\n\n`;
+                md += `No custom instructions configured. The agent will use default tool behaviors.\n\n`;
             }
             
             return md;
